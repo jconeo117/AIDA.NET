@@ -1,0 +1,84 @@
+# Qué catálogo se coteja. En datos porque cambia con el país: el código que se
+# reporta en Colombia (I10X) no es el que se reporta en otro sitio (I10), y eso
+# es una decisión de despliegue, no de código.
+#
+# `kind: reference` = una sola fuente ya autorizada, un archivo.
+# `kind: dual`      = dos agregadores que se validan cruzados, un .json y un
+#                     .csv, en ese orden. Es el camino del catálogo de
+#                     `data/health/cie10/`.
+#
+# El tipo se declara y no se deduce del número de archivos: deducirlo
+# convertiría «borré un archivo» en «degradé de fuente validada a fuente única
+# sin que nadie avise».
+catalog:
+  kind: reference
+  files:
+    - "data/health/cie10/co/cie10-co.csv"
+
+# Cotejo contra el catálogo de códigos. En datos porque es calibración: el
+# umbral depende de qué palabras se descartan, y ambas cosas se ajustan juntas
+# midiendo, no adivinando.
+threshold: 0.50
+# Seis y no cinco: con el léxico, los términos clínicos añadidos empujan, y con
+# cinco desaparecían dos de los cinco enlaces correctos. Medido: con seis salen
+# los cinco y todavía no entra ruido; con ocho entran tres códigos sin relación.
+top_n: 6
+
+# Lo que el catálogo niega no es una palabra del diagnóstico. «SIN ESOFAGITIS» y
+# «SIN MENCION DE COMPLICACION» describen la variante sencilla, pero con «sin»
+# entre las palabras vacías el cotejo leía «esofagitis» y «complicacion» como
+# presentes: «diabetes mellitus» proponía E140 (CON COMA) y el reflujo, K210 (CON
+# ESOFAGITIS). Desde el marcador hasta la siguiente coma, el tramo no cuenta al
+# indexar el catálogo. Solo el catálogo: lo que niega quien habla lo resuelve la
+# negación (`extraction.yaml`), en otra puerta.
+absence_markers:
+  - "sin"
+
+# Palabras que no distinguen un diagnóstico de otro. Sin quitarlas, «dolor en
+# la rodilla» empataba con «cuerpo flotante en la rodilla» porque compartían
+# «en» y «la» (I-125).
+stopwords:
+  - "a"
+  - "al"
+  - "cada"
+  - "con"
+  - "de"
+  - "del"
+  - "desde"
+  - "dos"
+  - "el"
+  - "en"
+  - "es"
+  - "especificada"
+  - "especificado"
+  - "hace"
+  - "hoy"
+  - "la"
+  - "las"
+  - "le"
+  - "lo"
+  - "los"
+  - "mas"
+  - "más"
+  - "muy"
+  - "no"
+  - "o"
+  - "otra"
+  - "otras"
+  - "otro"
+  - "otros"
+  - "para"
+  - "por"
+  - "que"
+  - "se"
+  - "sin"
+  - "sobre"
+  - "su"
+  - "sus"
+  - "tiene"
+  - "tres"
+  - "un"
+  - "una"
+  - "unas"
+  - "unos"
+  - "y"

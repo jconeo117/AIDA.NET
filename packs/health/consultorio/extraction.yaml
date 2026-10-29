@@ -1,0 +1,66 @@
+laterality:
+  bilateral: ["bilateral", "ambos", "ambos lados", "los dos", "las dos"]
+  derecho: ["derecho", "derecha"]
+  izquierdo: ["izquierdo", "izquierda"]
+
+# Qué abre una negación y qué la cierra. En datos porque cambia con el país y
+# con la especialidad, y porque el motor no sabe en qué dominio corre. Los
+# cortadores se prueban ANTES que las señales: sin esa precedencia, «sin
+# embargo» abriría un ámbito por su primera palabra en vez de cerrar el que
+# estuviera abierto.
+negation:
+  cues:
+    - "ausencia de"
+    - "descarta"
+    - "descartamos"
+    - "niega"
+    - "no"
+    - "nunca"
+    - "sin"
+    - "tampoco"
+  stoppers:
+    - "aunque"
+    - "excepto"
+    - "pero"
+    - "salvo"
+    - "sin embargo"
+
+# Cuándo una frase borra lo que dijo la anterior. Una respuesta corta y
+# enteramente negada («No, eso no.») contesta a lo de antes; una frase larga que
+# empieza negando («No, no me da vuelta, es más como que me voy a caer como
+# flojera.») habla por sí misma y no retracta nada.
+#
+# 24 sale de medir una consulta real: cubre «No, eso no.» (11) y «No, borrosa
+# no.» (15), y deja fuera la de 64 caracteres. Se recalibra con el simulacro,
+# no adivinando.
+retraction:
+  max_chars: 24
+
+# Señales de que la frase habla de otra persona, no del paciente. Sin esto, «mi
+# padre murió de un infarto» produjo I214 (infarto subendocárdico agudo) como
+# código del paciente: el léxico traduce «infarto» a su término clínico y el
+# cotejo no sabe de quién se hablaba.
+#
+# Mismo problema que el plan 64 resolvió para la historia impresa declarando qué
+# encabezados son codificables —«Madre con hipertensión esencial» atribuía la
+# hipertensión al paciente—, ahora para lo que se dice en voz alta.
+#
+# Estas frases SÍ entran en la nota: un padre con infarto a los 60 cambia el riesgo
+# del paciente y tiene que constar. Lo que no hacen es producir códigos suyos.
+third_party:
+  cues:
+    - "mi padre"
+    - "mi madre"
+    - "mi hermano"
+    - "mi hermana"
+    - "mi abuelo"
+    - "mi abuela"
+    - "mi hijo"
+    - "mi hija"
+    - "mi esposa"
+    - "mi esposo"
+    - "su padre"
+    - "su madre"
+    - "en la familia"
+    - "antecedentes familiares"
+    - "un vecino"

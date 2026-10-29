@@ -1,0 +1,36 @@
+# Criterios globales de 00-task.md (G1–G7). Todos bloquean. Solo Windows (ADR 0014).
+name: ci
+on:
+  push:
+    branches: [master]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+env:
+  DOTNET_NOLOGO: "1"
+  DOTNET_CLI_TELEMETRY_OPTOUT: "1"
+  CI: "true"
+
+jobs:
+  build-test:
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+      - name: Herramientas locales
+        run: dotnet tool restore
+      - name: G1 · Compila sin avisos (y D2/D3 · lock y auditoría al restaurar)
+        run: dotnet build Aida.slnx -c Release
+      - name: G2/G3 · Batería y arquitectura
+        run: dotnet test Aida.slnx -c Release --no-build
+      - name: G7 · Ninguna dependencia vulnerable
+        shell: pwsh
+        run: |
+          $out = dotnet list Aida.slnx package --vulnerable --include-transitive 2>&1 | Out-String
+          $out
+          if ($out -match "has the following vulnerable packages") { throw "dependencias vulnerables" }
+      # G4 (logs dorados), G5 (DocFX) y G6 (Stryker) se activan en la unidad que los construye
+      # (ver 01-plan.md del proceso). Hasta entonces no hay nada que comprobar.

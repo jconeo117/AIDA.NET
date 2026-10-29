@@ -1,0 +1,9 @@
+# El brazo de salud, descrito para la plataforma (plan 100). Lo lee `aida.platform.arms`.
+id: "health"
+name: "Consultorio"
+description: "Graba o sube la consulta, revisa la nota y los códigos, y cópialos a la historia."
+version: "1"
+# Quién construye el brazo: la CLI, que lo monta con sus piezas (101b).
+arm: "aida.run:health_arm"
+# El símbolo que lo representa en el lanzador.
+icon: "stetho"

@@ -1,0 +1,16 @@
+# El proceso vive en su propio repositorio (privado): ver .claude/
+.claude/
+
+bin/
+obj/
+*.user
+*.suo
+.vs/
+.vscode/
+.idea/
+TestResults/
+StrykerOutput/
+docs/api/
+docs/_site/
+artifacts/
+*.log

@@ -1,0 +1,58 @@
+{
+  "version": 1,
+  "dependencies": {
+    "net10.0": {
+      "Microsoft.AspNetCore.App.Internal.Assets": {
+        "type": "Direct",
+        "requested": "[10.0.13, )",
+        "resolved": "10.0.13",
+        "contentHash": "Y2cXnMnqht5fvja2H8kkr5WA2fYItIPwXiBVo83+/9oySuKZCrz4T+yyZRFtLpxxDScvtYDt7e+J0eNElJ+AiA=="
+      },
+      "StyleCop.Analyzers": {
+        "type": "Direct",
+        "requested": "[1.3.151-beta, )",
+        "resolved": "1.3.151-beta",
+        "contentHash": "AGruKOaxfcJ/QFaJ5Um3SqHgenUFxNu2Gbksuq2piz6uwFwS/xWgwXQXrHJeLmOLG/W9BZ90v7by+SnwoUlEpg=="
+      },
+      "aida.arms.agenda": {
+        "type": "Project",
+        "dependencies": {
+          "Aida.Platform": "[1.0.0, )"
+        }
+      },
+      "aida.arms.health": {
+        "type": "Project",
+        "dependencies": {
+          "Aida.Platform": "[1.0.0, )"
+        }
+      },
+      "aida.capture": {
+        "type": "Project",
+        "dependencies": {
+          "Aida.Platform": "[1.0.0, )"
+        }
+      },
+      "aida.channel": {
+        "type": "Project",
+        "dependencies": {
+          "Aida.Platform": "[1.0.0, )"
+        }
+      },
+      "aida.cognition": {
+        "type": "Project",
+        "dependencies": {
+          "Aida.Platform": "[1.0.0, )"
+        }
+      },
+      "aida.engine": {
+        "type": "Project"
+      },
+      "aida.platform": {
+        "type": "Project",
+        "dependencies": {
+          "Aida.Engine": "[1.0.0, )"
+        }
+      }
+    }
+  }
+}

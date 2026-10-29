@@ -1,0 +1,25 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Aida.Arms.Agenda/Aida.Arms.Agenda.csproj" />
+    <Project Path="src/Aida.Arms.Health/Aida.Arms.Health.csproj" />
+    <Project Path="src/Aida.Capture/Aida.Capture.csproj" />
+    <Project Path="src/Aida.Channel/Aida.Channel.csproj" />
+    <Project Path="src/Aida.Cli/Aida.Cli.csproj" />
+    <Project Path="src/Aida.Cognition/Aida.Cognition.csproj" />
+    <Project Path="src/Aida.Engine/Aida.Engine.csproj" />
+    <Project Path="src/Aida.Platform/Aida.Platform.csproj" />
+    <Project Path="src/Aida.Web/Aida.Web.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Aida.ArchitectureTests/Aida.ArchitectureTests.csproj" />
+    <Project Path="tests/Aida.Arms.Agenda.Tests/Aida.Arms.Agenda.Tests.csproj" />
+    <Project Path="tests/Aida.Arms.Health.Tests/Aida.Arms.Health.Tests.csproj" />
+    <Project Path="tests/Aida.Capture.Tests/Aida.Capture.Tests.csproj" />
+    <Project Path="tests/Aida.Channel.Tests/Aida.Channel.Tests.csproj" />
+    <Project Path="tests/Aida.Cli.Tests/Aida.Cli.Tests.csproj" />
+    <Project Path="tests/Aida.Cognition.Tests/Aida.Cognition.Tests.csproj" />
+    <Project Path="tests/Aida.Engine.Tests/Aida.Engine.Tests.csproj" />
+    <Project Path="tests/Aida.Platform.Tests/Aida.Platform.Tests.csproj" />
+    <Project Path="tests/Aida.Web.Tests/Aida.Web.Tests.csproj" />
+  </Folder>
+</Solution>

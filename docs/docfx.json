@@ -1,0 +1,17 @@
+{
+  "metadata": [
+    {
+      "src": [ { "src": "../src", "files": [ "**/*.csproj" ] } ],
+      "dest": "api"
+    }
+  ],
+  "build": {
+    "content": [
+      { "files": [ "api/**.yml", "api/index.md" ] },
+      { "files": [ "index.md", "toc.yml", "adr/**.md", "architecture/**.md" ] }
+    ],
+    "output": "_site",
+    "template": [ "default", "modern" ],
+    "globalMetadata": { "_appTitle": "AIDA" }
+  }
+}
