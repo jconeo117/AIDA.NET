@@ -32,5 +32,17 @@ jobs:
           $out = dotnet list Aida.slnx package --vulnerable --include-transitive 2>&1 | Out-String
           $out
           if ($out -match "has the following vulnerable packages") { throw "dependencias vulnerables" }
-      # G4 (logs dorados), G5 (DocFX) y G6 (Stryker) se activan en la unidad que los construye
-      # (ver 01-plan.md del proceso). Hasta entonces no hay nada que comprobar.
+      - name: G5 · La documentación de la API se genera sin avisos
+        run: dotnet docfx docs/docfx.json --warningsAsErrors
+      - name: G6 · La mutación supera el umbral de cada proyecto
+        shell: pwsh
+        run: |
+          $configs = Get-ChildItem tests -Recurse -Filter stryker-config.json | Sort-Object FullName
+          foreach ($c in $configs) {
+            Push-Location $c.DirectoryName
+            dotnet stryker --config-file $c.FullName
+            $code = $LASTEXITCODE
+            Pop-Location
+            if ($code -ne 0) { throw "Stryker por debajo del umbral en $($c.DirectoryName)" }
+          }
+      # G4 (logs dorados) se activa en N002.

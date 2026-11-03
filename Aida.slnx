@@ -7,6 +7,7 @@
     <Project Path="src/Aida.Cli/Aida.Cli.csproj" />
     <Project Path="src/Aida.Cognition/Aida.Cognition.csproj" />
     <Project Path="src/Aida.Engine/Aida.Engine.csproj" />
+    <Project Path="src/Aida.Guards/Aida.Guards.csproj" />
     <Project Path="src/Aida.Platform/Aida.Platform.csproj" />
     <Project Path="src/Aida.Web/Aida.Web.csproj" />
   </Folder>
