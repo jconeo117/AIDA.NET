@@ -20,6 +20,7 @@
     <Project Path="tests/Aida.Cli.Tests/Aida.Cli.Tests.csproj" />
     <Project Path="tests/Aida.Cognition.Tests/Aida.Cognition.Tests.csproj" />
     <Project Path="tests/Aida.Engine.Tests/Aida.Engine.Tests.csproj" />
+    <Project Path="tests/Aida.Guards.Tests/Aida.Guards.Tests.csproj" />
     <Project Path="tests/Aida.Platform.Tests/Aida.Platform.Tests.csproj" />
     <Project Path="tests/Aida.Web.Tests/Aida.Web.Tests.csproj" />
   </Folder>

@@ -1,0 +1,6 @@
+{
+  "stryker-config": {
+    "project": "Aida.Guards.csproj",
+    "thresholds": { "high": 80, "low": 60, "break": 60 }
+  }
+}
