@@ -7,7 +7,7 @@ cumpliendo**.
 ## Reglas
 
 1. **Un ADR aceptado no se edita.** Si la decisión cambia, se escribe uno nuevo que lo sustituye, y
-   el viejo pasa a «Sustituido por [NNNN](NNNN-...md)». Lo único que se toca en uno aceptado es esa
+   el viejo pasa a `Sustituido por [NNNN](NNNN-...md)`. Lo único que se toca en uno aceptado es esa
    línea de estado.
 2. **Toda dependencia externa nueva tiene su ADR** ([0017](0017-cadena-de-suministro.md)).
 3. **Un ADR sin «Cómo se hace cumplir» no se acepta.** Una decisión que nada vigila se olvida.
@@ -35,7 +35,8 @@ cumpliendo**.
 | [0015](0015-forma-del-codigo.md) | Forma del código: 300 líneas, un tipo público, SOLID, dependencias en una dirección | Aceptado |
 | [0016](0016-documentacion-de-la-api.md) | Documentación de la API viva y obligatoria | Aceptado |
 | [0017](0017-cadena-de-suministro.md) | Cadena de suministro: cada dependencia con su ADR, versiones con lock, auditoría | Aceptado |
-| [0018](0018-herramientas-de-construccion.md) | Herramientas de construcción y prueba: xUnit, ArchUnitNET, analizadores, Stryker.NET, DocFX | Aceptado |
+| [0018](0018-herramientas-de-construccion.md) | Herramientas de construcción y prueba: xUnit, ArchUnitNET, analizadores, Stryker.NET, DocFX | Sustituido por [0019](0019-guardianes-propios.md) |
+| [0019](0019-guardianes-propios.md) | Herramientas de construcción y prueba, con guardianes propios: xUnit, Roslyn, analizadores, Stryker.NET, DocFX | Aceptado |
 
 ## Plantilla
 

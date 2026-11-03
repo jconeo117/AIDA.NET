@@ -1,6 +1,6 @@
 # 0018 — Herramientas de construcción y prueba
 
-- **Estado:** Aceptado
+- **Estado:** Sustituido por [0019](0019-guardianes-propios.md)
 - **Fecha:** 2026-10-28
 - **Relacionados:** [0003](0003-determinismo.md), [0015](0015-forma-del-codigo.md), [0016](0016-documentacion-de-la-api.md), [0017](0017-cadena-de-suministro.md)
 
