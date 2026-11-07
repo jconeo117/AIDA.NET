@@ -20,4 +20,9 @@
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'Aida.Engine' Or '$(MSBuildProjectName)' == 'Aida.Platform'">
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" />
   </ItemGroup>
+
+  <!-- StyleCop: la configuración de todos los proyectos vive en un solo stylecop.json. -->
+  <ItemGroup>
+    <AdditionalFiles Include="$(MSBuildThisFileDirectory)stylecop.json" />
+  </ItemGroup>
 </Project>

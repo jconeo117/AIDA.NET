@@ -7,6 +7,7 @@
     <Project Path="src/Aida.Cli/Aida.Cli.csproj" />
     <Project Path="src/Aida.Cognition/Aida.Cognition.csproj" />
     <Project Path="src/Aida.Engine/Aida.Engine.csproj" />
+    <Project Path="src/Aida.Guards/Aida.Guards.csproj" />
     <Project Path="src/Aida.Platform/Aida.Platform.csproj" />
     <Project Path="src/Aida.Web/Aida.Web.csproj" />
   </Folder>
@@ -19,6 +20,7 @@
     <Project Path="tests/Aida.Cli.Tests/Aida.Cli.Tests.csproj" />
     <Project Path="tests/Aida.Cognition.Tests/Aida.Cognition.Tests.csproj" />
     <Project Path="tests/Aida.Engine.Tests/Aida.Engine.Tests.csproj" />
+    <Project Path="tests/Aida.Guards.Tests/Aida.Guards.Tests.csproj" />
     <Project Path="tests/Aida.Platform.Tests/Aida.Platform.Tests.csproj" />
     <Project Path="tests/Aida.Web.Tests/Aida.Web.Tests.csproj" />
   </Folder>

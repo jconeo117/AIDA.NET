@@ -1,7 +1,7 @@
 {
   "metadata": [
     {
-      "src": [ { "src": "../src", "files": [ "**/*.csproj" ] } ],
+      "src": [ { "src": "../src", "files": [ "**/*.csproj" ], "exclude": [ "Aida.Web/**" ] } ],
       "dest": "api"
     }
   ],

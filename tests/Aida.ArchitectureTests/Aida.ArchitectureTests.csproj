@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -10,7 +10,6 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="TngTech.ArchUnitNET.xUnit" />
     <PackageReference Include="xunit" />
     <PackageReference Include="xunit.runner.visualstudio" />
   </ItemGroup>
@@ -21,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Aida.Engine\Aida.Engine.csproj" />
+    <ProjectReference Include="..\..\src\Aida.Guards\Aida.Guards.csproj" />
     <ProjectReference Include="..\..\src\Aida.Platform\Aida.Platform.csproj" />
     <ProjectReference Include="..\..\src\Aida.Capture\Aida.Capture.csproj" />
     <ProjectReference Include="..\..\src\Aida.Cognition\Aida.Cognition.csproj" />
