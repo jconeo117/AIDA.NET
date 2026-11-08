@@ -1,7 +1,7 @@
 # Aida.Cognition
 
 - **Estado:** creado vacío en N000; se llena en M4 (redacción de la nota) y M6 (voz).
-- **ADR:** [0001](../adr/0001-el-motor-decide.md), [0008](../adr/0008-local-primero.md)
+- **ADR:** [0001](../adr/0001-el-motor-decide.md), [0021](../adr/0021-local-primero-y-salidas-autorizadas.md)
 
 ## Responsabilidad
 La voz y la intención:

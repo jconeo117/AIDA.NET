@@ -1,6 +1,6 @@
 # 0008 — Local primero; la nube con autorización aparte; lo clínico, siempre local
 
-- **Estado:** Aceptado
+- **Estado:** Sustituido por [0021](0021-local-primero-y-salidas-autorizadas.md)
 - **Fecha:** 2026-10-28
 - **Relacionados:** [0009](0009-datos-sellados.md), [0010](0010-licencia-firmada.md)
 

@@ -1,7 +1,7 @@
 # Aida.Channel
 
 - **Estado:** creado vacío en N000; se llena en M7.
-- **ADR:** [0008](../adr/0008-local-primero.md), [0009](../adr/0009-datos-sellados.md)
+- **ADR:** [0021](../adr/0021-local-primero-y-salidas-autorizadas.md), [0009](../adr/0009-datos-sellados.md)
 
 ## Responsabilidad
 Implementa el puerto de mensajería: configuración del canal, recogida de mensajes del relé, envío con la ventana de 24 h, almacenamiento sellado de conversaciones.

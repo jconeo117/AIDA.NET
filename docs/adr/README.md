@@ -25,18 +25,21 @@ cumpliendo**.
 | [0005](0005-eventos-y-journal.md) | Ningún cambio de estado sin evento; journal de entradas | Aceptado |
 | [0006](0006-owner-y-autoria.md) | `Owner` obligatorio; todo registro tiene autor | Aceptado |
 | [0007](0007-autoridad-y-puerta-de-herramientas.md) | Ninguna acción irreversible sin autoridad; una sola puerta de acciones | Aceptado |
-| [0008](0008-local-primero.md) | Local primero; la nube con autorización aparte; lo clínico, siempre local | Aceptado |
+| [0008](0008-local-primero.md) | Local primero; la nube con autorización aparte; lo clínico, siempre local | Sustituido por [0021](0021-local-primero-y-salidas-autorizadas.md) |
 | [0009](0009-datos-sellados.md) | Datos sellados en reposo con AES-GCM y la clave del equipo protegida con DPAPI | Aceptado |
 | [0010](0010-licencia-firmada.md) | Licencia firmada con Ed25519 y comprobada sin conexión | Aceptado |
 | [0011](0011-brazos-y-comunicacion.md) | Brazos descritos por datos; se comunican por el motor, nunca entre sí | Aceptado |
 | [0012](0012-packs-yaml.md) | Packs en YAML, con el formato de la versión 0.1 | Aceptado |
 | [0013](0013-python-como-oraculo.md) | La versión 0.1 de Python es el oráculo: logs dorados byte a byte | Aceptado |
-| [0014](0014-windows-y-blazor-server.md) | Solo Windows; .NET 10 y Blazor Server sobre web local | Aceptado |
+| [0014](0014-windows-y-blazor-server.md) | Solo Windows; .NET 10 y Blazor Server sobre web local | Sustituido por [0020](0020-servidor-en-red-local.md) |
 | [0015](0015-forma-del-codigo.md) | Forma del código: 300 líneas, un tipo público, SOLID, dependencias en una dirección | Aceptado |
 | [0016](0016-documentacion-de-la-api.md) | Documentación de la API viva y obligatoria | Aceptado |
 | [0017](0017-cadena-de-suministro.md) | Cadena de suministro: cada dependencia con su ADR, versiones con lock, auditoría | Aceptado |
 | [0018](0018-herramientas-de-construccion.md) | Herramientas de construcción y prueba: xUnit, ArchUnitNET, analizadores, Stryker.NET, DocFX | Sustituido por [0019](0019-guardianes-propios.md) |
 | [0019](0019-guardianes-propios.md) | Herramientas de construcción y prueba, con guardianes propios: xUnit, Roslyn, analizadores, Stryker.NET, DocFX | Aceptado |
+| [0020](0020-servidor-en-red-local.md) | Solo Windows; .NET 10 y Blazor Server, servido desde un equipo a los puestos de la red local | Aceptado |
+| [0021](0021-local-primero-y-salidas-autorizadas.md) | Local primero; AIDA es el sistema de registro; lo que sale, sale autorizado | Aceptado |
+| [0022](0022-facturacion-con-emisor-externo.md) | Facturación: AIDA arma la factura y un proveedor tecnológico la emite | Aceptado |
 
 ## Plantilla
 
