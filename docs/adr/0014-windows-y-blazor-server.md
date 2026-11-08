@@ -1,6 +1,6 @@
 # 0014 — Solo Windows; .NET 10 y Blazor Server sobre web local
 
-- **Estado:** Aceptado
+- **Estado:** Sustituido por [0020](0020-servidor-en-red-local.md)
 - **Fecha:** 2026-10-28
 - **Relacionados:** [0004](0004-reloj-hibrido.md), [0009](0009-datos-sellados.md)
 

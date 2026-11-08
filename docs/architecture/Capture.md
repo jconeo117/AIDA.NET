@@ -1,7 +1,7 @@
 # Aida.Capture
 
 - **Estado:** creado vacío en N000; se llena en M5.
-- **ADR:** [0008](../adr/0008-local-primero.md), [0013](../adr/0013-python-como-oraculo.md), [0017](../adr/0017-cadena-de-suministro.md)
+- **ADR:** [0021](../adr/0021-local-primero-y-salidas-autorizadas.md), [0013](../adr/0013-python-como-oraculo.md), [0017](../adr/0017-cadena-de-suministro.md)
 
 ## Responsabilidad
 Implementa los puertos de captura de `Aida.Platform`: micrófono y corte por silencio, transcripción local y en la nube, OCR, PDF, conversión de audio. Es el único proyecto con dependencias nativas pesadas.
