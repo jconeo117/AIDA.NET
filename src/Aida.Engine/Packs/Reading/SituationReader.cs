@@ -57,17 +57,17 @@ internal static class SituationReader
         var name = PythonText.Repr(id.Value);
         if (every != 0 && lasts == 0)
         {
-            return "situación " + name + ": vuelve cada " + Text(every) + " ticks pero dura 0, así que no llega a ocurrir nunca";
+            return $"situación {name}: vuelve cada {Text(every)} ticks pero dura 0, así que no llega a ocurrir nunca";
         }
 
         if (every != 0 && lasts >= every)
         {
-            return "situación " + name + ": dura " + Text(lasts) + " y vuelve cada " + Text(every) + ", así que no se apaga jamás; déjala eventual si es permanente";
+            return $"situación {name}: dura {Text(lasts)} y vuelve cada {Text(every)}, así que no se apaga jamás; déjala eventual si es permanente";
         }
 
         if (lasts != 0 && every == 0)
         {
-            return "situación " + name + ": declara `lasts` sin `every`. Una situación eventual dura lo que se le diga al encenderla";
+            return $"situación {name}: declara `lasts` sin `every`. Una situación eventual dura lo que se le diga al encenderla";
         }
 
         return null;

@@ -82,7 +82,7 @@ internal static class ActionReader
         {
             if (!(pair.Value >= -1.0 && pair.Value <= 1.0))
             {
-                problems.Add(path, "acción " + name + ".requires_traits[" + PythonText.Repr(pair.Key.Value) + "] = " + PythonText.Float(pair.Value) + ", fuera de [-1, 1]", fromAida: true);
+                problems.Add(path, $"acción {name}.requires_traits[{PythonText.Repr(pair.Key.Value)}] = {PythonText.Float(pair.Value)}, fuera de [-1, 1]", fromAida: true);
                 return false;
             }
         }
@@ -92,7 +92,7 @@ internal static class ActionReader
             var found = effects.TryGetValue(need, out var effect);
             if (!found || effect <= 0.0)
             {
-                problems.Add(path, "acción " + name + ": la clave " + PythonText.Repr(need.Value) + " de `satisfies` debe aparecer en `effects` con signo positivo (> 0.0), pero vale " + Describe(found, effect), fromAida: true);
+                problems.Add(path, $"acción {name}: la clave {PythonText.Repr(need.Value)} de `satisfies` debe aparecer en `effects` con signo positivo (> 0.0), pero vale {Describe(found, effect)}", fromAida: true);
                 return false;
             }
         }
@@ -102,7 +102,7 @@ internal static class ActionReader
             var found = effects.TryGetValue(need, out var effect);
             if (!found || effect >= 0.0)
             {
-                problems.Add(path, "acción " + name + ": la clave " + PythonText.Repr(need.Value) + " de `costs` debe aparecer en `effects` con signo negativo (< 0.0), pero vale " + Describe(found, effect), fromAida: true);
+                problems.Add(path, $"acción {name}: la clave {PythonText.Repr(need.Value)} de `costs` debe aparecer en `effects` con signo negativo (< 0.0), pero vale {Describe(found, effect)}", fromAida: true);
                 return false;
             }
         }

@@ -21,7 +21,7 @@ internal static class IdentityChecks
         problems.AddRange(Duplicates("intenciones", pack.Intents.Select(intent => intent.Id.Value)));
         foreach (var agent in pack.Agents)
         {
-            problems.AddRange(Duplicates("metas de " + PythonText.Repr(agent.Id.Value), agent.Goals.Select(goal => goal.Id.Value)));
+            problems.AddRange(Duplicates($"metas de {PythonText.Repr(agent.Id.Value)}", agent.Goals.Select(goal => goal.Id.Value)));
         }
 
         return problems;
@@ -36,7 +36,7 @@ internal static class IdentityChecks
         var agentIds = pack.Agents.Select(agent => agent.Id.Value).ToHashSet(StringComparer.Ordinal);
         return actionIds.Intersect(agentIds, StringComparer.Ordinal)
             .OrderBy(clash => clash, CodePointComparer.Instance)
-            .Select(clash => "id " + PythonText.Repr(clash) + " usado a la vez por un/a acción y un/a agente: los gustos no podrían distinguirlos")
+            .Select(clash => $"id {PythonText.Repr(clash)} usado a la vez por un/a acción y un/a agente: los gustos no podrían distinguirlos")
             .ToList();
     }
 
@@ -45,5 +45,5 @@ internal static class IdentityChecks
         ids.GroupBy(id => id, StringComparer.Ordinal)
             .Where(group => group.Count() > 1)
             .OrderBy(group => group.Key, CodePointComparer.Instance)
-            .Select(group => kind + ": id duplicado " + PythonText.Repr(group.Key) + " (aparece " + group.Count().ToString(System.Globalization.CultureInfo.InvariantCulture) + " veces)");
+            .Select(group => $"{kind}: id duplicado {PythonText.Repr(group.Key)} (aparece {group.Count().ToString(System.Globalization.CultureInfo.InvariantCulture)} veces)");
 }

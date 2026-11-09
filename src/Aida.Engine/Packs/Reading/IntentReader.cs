@@ -40,7 +40,7 @@ internal static class IntentReader
         {
             if (IsBlank(examples[index]))
             {
-                problems.Add(path, "intención " + PythonText.Repr(id.Value) + ": examples[" + index.ToString(CultureInfo.InvariantCulture) + "] está en blanco", fromAida: true);
+                problems.Add(path, $"intención {PythonText.Repr(id.Value)}: examples[{index.ToString(CultureInfo.InvariantCulture)}] está en blanco", fromAida: true);
                 return false;
             }
         }

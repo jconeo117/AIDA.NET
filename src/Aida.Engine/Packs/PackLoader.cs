@@ -28,7 +28,7 @@ public static class PackLoader
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
-            throw new PackException([new PackProblem(string.Empty, "no se pudo leer el archivo: " + exception.Message, false)]);
+            throw new PackException([new PackProblem(string.Empty, $"no se pudo leer el archivo: {exception.Message}", false)]);
         }
 
         return Parse(text);

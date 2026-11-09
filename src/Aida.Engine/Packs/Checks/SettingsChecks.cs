@@ -15,7 +15,7 @@ internal static class SettingsChecks
             .Select(action => action.Value)
             .OrderBy(id => id, CodePointComparer.Instance)
             .Where(id => !known.Contains(id))
-            .Select(id => "health.may_go_unused: acción desconocida " + PythonText.Repr(id))
+            .Select(id => $"health.may_go_unused: acción desconocida {PythonText.Repr(id)}")
             .ToList();
     }
 
@@ -31,8 +31,7 @@ internal static class SettingsChecks
             {
                 if (!(pair.Value >= 0.0 && pair.Value <= 1.0))
                 {
-                    problems.Add("agente " + PythonText.Repr(agent.Id.Value) + ".initial_needs[" + PythonText.Repr(pair.Key.Value) + "] = "
-                        + PythonText.Float(pair.Value) + ", fuera de [0.0, 1.0]");
+                    problems.Add($"agente {PythonText.Repr(agent.Id.Value)}.initial_needs[{PythonText.Repr(pair.Key.Value)}] = {PythonText.Float(pair.Value)}, fuera de [0.0, 1.0]");
                 }
             }
 
@@ -42,8 +41,7 @@ internal static class SettingsChecks
                 {
                     if (!(pair.Value >= -2.0 && pair.Value <= 2.0))
                     {
-                        problems.Add("agente " + PythonText.Repr(agent.Id.Value) + ", meta " + PythonText.Repr(goal.Id.Value) + ".at_traits["
-                            + PythonText.Repr(pair.Key.Value) + "] = " + PythonText.Float(pair.Value) + ", fuera de [-2.0, 2.0]");
+                        problems.Add($"agente {PythonText.Repr(agent.Id.Value)}, meta {PythonText.Repr(goal.Id.Value)}.at_traits[{PythonText.Repr(pair.Key.Value)}] = {PythonText.Float(pair.Value)}, fuera de [-2.0, 2.0]");
                     }
                 }
             }
@@ -55,8 +53,7 @@ internal static class SettingsChecks
             {
                 if (!(pair.Value >= -2.0 && pair.Value <= 2.0))
                 {
-                    problems.Add("meta " + PythonText.Repr(goal.Id.Value) + ".at_traits[" + PythonText.Repr(pair.Key.Value) + "] = "
-                        + PythonText.Float(pair.Value) + ", fuera de [-2.0, 2.0]");
+                    problems.Add($"meta {PythonText.Repr(goal.Id.Value)}.at_traits[{PythonText.Repr(pair.Key.Value)}] = {PythonText.Float(pair.Value)}, fuera de [-2.0, 2.0]");
                 }
             }
         }

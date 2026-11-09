@@ -13,32 +13,32 @@ internal static class ReferenceChecks
         var problems = new List<string>();
         foreach (var trait in pack.Traits)
         {
-            var name = "rasgo " + PythonText.Repr(trait.Id.Value);
+            var name = $"rasgo {PythonText.Repr(trait.Id.Value)}";
             problems.AddRange(UnknownKeys(name, "necesidad", trait.NeedWeightMultipliers.Keys.Select(key => key.Value), known));
-            problems.AddRange(UnknownKeys(name + ".gain_multipliers", "necesidad", trait.GainMultipliers.Keys.Select(key => key.Value), known));
-            problems.AddRange(UnknownKeys(name + ".cost_multipliers", "necesidad", trait.CostMultipliers.Keys.Select(key => key.Value), known));
-            problems.AddRange(UnknownKeys(name + ".cap_multipliers", "necesidad", trait.CapMultipliers.Keys.Select(key => key.Value), known));
+            problems.AddRange(UnknownKeys($"{name}.gain_multipliers", "necesidad", trait.GainMultipliers.Keys.Select(key => key.Value), known));
+            problems.AddRange(UnknownKeys($"{name}.cost_multipliers", "necesidad", trait.CostMultipliers.Keys.Select(key => key.Value), known));
+            problems.AddRange(UnknownKeys($"{name}.cap_multipliers", "necesidad", trait.CapMultipliers.Keys.Select(key => key.Value), known));
         }
 
         foreach (var action in pack.Actions)
         {
-            var name = "acción " + PythonText.Repr(action.Id.Value);
-            problems.AddRange(UnknownKeys(name + ".satisfies", "necesidad", action.Satisfies.Keys.Select(key => key.Value), known));
-            problems.AddRange(UnknownKeys(name + ".costs", "necesidad", action.Costs.Keys.Select(key => key.Value), known));
-            problems.AddRange(UnknownKeys(name + ".requires", "necesidad", action.Requires.Keys.Select(key => key.Value), known));
-            problems.AddRange(UnknownKeys(name + ".effects", "necesidad", action.Effects.Keys.Select(key => key.Value), known));
+            var name = $"acción {PythonText.Repr(action.Id.Value)}";
+            problems.AddRange(UnknownKeys($"{name}.satisfies", "necesidad", action.Satisfies.Keys.Select(key => key.Value), known));
+            problems.AddRange(UnknownKeys($"{name}.costs", "necesidad", action.Costs.Keys.Select(key => key.Value), known));
+            problems.AddRange(UnknownKeys($"{name}.requires", "necesidad", action.Requires.Keys.Select(key => key.Value), known));
+            problems.AddRange(UnknownKeys($"{name}.effects", "necesidad", action.Effects.Keys.Select(key => key.Value), known));
         }
 
         foreach (var situation in pack.Situations)
         {
-            var name = "situación " + PythonText.Repr(situation.Id.Value);
-            problems.AddRange(UnknownKeys(name + ".gain_multipliers", "necesidad", situation.GainMultipliers.Keys.Select(key => key.Value), known));
-            problems.AddRange(UnknownKeys(name + ".effects", "necesidad", situation.Effects.Keys.Select(key => key.Value), known));
+            var name = $"situación {PythonText.Repr(situation.Id.Value)}";
+            problems.AddRange(UnknownKeys($"{name}.gain_multipliers", "necesidad", situation.GainMultipliers.Keys.Select(key => key.Value), known));
+            problems.AddRange(UnknownKeys($"{name}.effects", "necesidad", situation.Effects.Keys.Select(key => key.Value), known));
         }
 
         foreach (var agent in pack.Agents)
         {
-            problems.AddRange(UnknownKeys("agente " + PythonText.Repr(agent.Id.Value) + ".initial_needs", "necesidad",
+            problems.AddRange(UnknownKeys($"agente {PythonText.Repr(agent.Id.Value)}.initial_needs", "necesidad",
                 agent.InitialNeeds.Keys.Select(key => key.Value), known));
         }
 
@@ -46,7 +46,7 @@ internal static class ReferenceChecks
         {
             if (!known.Contains(intent.Need.Value))
             {
-                problems.Add("intención " + PythonText.Repr(intent.Id.Value) + ": necesidad desconocida " + PythonText.Repr(intent.Need.Value));
+                problems.Add($"intención {PythonText.Repr(intent.Id.Value)}: necesidad desconocida {PythonText.Repr(intent.Need.Value)}");
             }
         }
 
@@ -60,12 +60,12 @@ internal static class ReferenceChecks
         var problems = new List<string>();
         foreach (var agent in pack.Agents)
         {
-            problems.AddRange(UnknownKeys("agente " + PythonText.Repr(agent.Id.Value), "rasgo", agent.Traits.Keys.Select(key => key.Value), known));
+            problems.AddRange(UnknownKeys($"agente {PythonText.Repr(agent.Id.Value)}", "rasgo", agent.Traits.Keys.Select(key => key.Value), known));
         }
 
         foreach (var action in pack.Actions)
         {
-            problems.AddRange(UnknownKeys("acción " + PythonText.Repr(action.Id.Value) + ".requires_traits", "rasgo",
+            problems.AddRange(UnknownKeys($"acción {PythonText.Repr(action.Id.Value)}.requires_traits", "rasgo",
                 action.RequiresTraits.Keys.Select(key => key.Value), known));
         }
 
@@ -79,7 +79,7 @@ internal static class ReferenceChecks
         var problems = new List<string>();
         foreach (var action in pack.Actions)
         {
-            problems.AddRange(UnknownKeys("acción " + PythonText.Repr(action.Id.Value), "franja",
+            problems.AddRange(UnknownKeys($"acción {PythonText.Repr(action.Id.Value)}", "franja",
                 action.PhaseMultipliers.Keys.Select(key => key.Value), known));
         }
 
@@ -87,8 +87,7 @@ internal static class ReferenceChecks
         {
             if (trait.PhaseShift != 0 && known.Count == 0)
             {
-                problems.Add("rasgo " + PythonText.Repr(trait.Id.Value) + ": declara `phase_shift` pero el pack no "
-                    + "tiene franjas, así que el desfase no puede hacer nada");
+                problems.Add($"rasgo {PythonText.Repr(trait.Id.Value)}: declara `phase_shift` pero el pack no tiene franjas, así que el desfase no puede hacer nada");
             }
         }
 
@@ -102,7 +101,7 @@ internal static class ReferenceChecks
         var problems = new List<string>();
         foreach (var action in pack.Actions)
         {
-            problems.AddRange(UnknownKeys("acción " + PythonText.Repr(action.Id.Value), "situación",
+            problems.AddRange(UnknownKeys($"acción {PythonText.Repr(action.Id.Value)}", "situación",
                 action.SituationMultipliers.Keys.Select(key => key.Value), known));
         }
 
@@ -122,8 +121,7 @@ internal static class ReferenceChecks
             {
                 if (!known.Contains(taste.Target))
                 {
-                    problems.Add("agente " + PythonText.Repr(agent.Id.Value) + ": gusto hacia " + PythonText.Repr(taste.Target)
-                        + ", que no es ninguna acción ni agente");
+                    problems.Add($"agente {PythonText.Repr(agent.Id.Value)}: gusto hacia {PythonText.Repr(taste.Target)}, que no es ninguna acción ni agente");
                 }
             }
         }
@@ -141,6 +139,6 @@ internal static class ReferenceChecks
         keys.Distinct(StringComparer.Ordinal)
             .Where(key => !known.Contains(key))
             .OrderBy(key => key, CodePointComparer.Instance)
-            .Select(key => context + ": " + kind + " desconocida/o " + PythonText.Repr(key))
+            .Select(key => $"{context}: {kind} desconocida/o {PythonText.Repr(key)}")
             .ToList();
 }

@@ -59,13 +59,13 @@ internal static class GoalReader
         var count = (atLeast is null ? 0 : 1) + (atTraits.Count > 0 ? 1 : 0);
         if (count != 1)
         {
-            problems.Add(path, "meta " + PythonText.Repr(id.Value) + ": hace falta EXACTAMENTE una condición de `at_least` (el valor del eje) o `at_traits` (ser quien hay que ser), y hay " + count.ToString(System.Globalization.CultureInfo.InvariantCulture), fromAida: true);
+            problems.Add(path, $"meta {PythonText.Repr(id.Value)}: hace falta EXACTAMENTE una condición de `at_least` (el valor del eje) o `at_traits` (ser quien hay que ser), y hay {count}", fromAida: true);
             return false;
         }
 
         if (requiresGoal == id)
         {
-            problems.Add(path, "meta " + PythonText.Repr(id.Value) + ": se abre a sí misma", fromAida: true);
+            problems.Add(path, $"meta {PythonText.Repr(id.Value)}: se abre a sí misma", fromAida: true);
             return false;
         }
 
@@ -82,8 +82,7 @@ internal static class GoalReader
             {
                 if (!(pair.Value >= -2.0 && pair.Value <= 2.0))
                 {
-                    problems.Add(path, "meta " + PythonText.Repr(id.Value) + "." + field + "[" + PythonText.Repr(pair.Key.Value) + "] = "
-                        + PythonText.Float(pair.Value) + ", fuera de [-2, 2]; los rasgos viven en [-1, 1] y un 2 ya cruza el rango entero", fromAida: true);
+                    problems.Add(path, $"meta {PythonText.Repr(id.Value)}.{field}[{PythonText.Repr(pair.Key.Value)}] = {PythonText.Float(pair.Value)}, fuera de [-2, 2]; los rasgos viven en [-1, 1] y un 2 ya cruza el rango entero", fromAida: true);
                     return false;
                 }
             }

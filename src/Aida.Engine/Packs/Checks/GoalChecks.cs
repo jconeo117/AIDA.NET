@@ -23,13 +23,13 @@ internal static class GoalChecks
         foreach (var agent in pack.Agents)
         {
             var owned = OrderedLast(agent.Goals).ToDictionary(goal => goal.Id.Value, StringComparer.Ordinal);
-            var prefix = "agente " + PythonText.Repr(agent.Id.Value) + ", meta ";
+            var agentName = PythonText.Repr(agent.Id.Value);
             foreach (var goal in agent.Goals)
             {
-                var name = prefix + PythonText.Repr(goal.Id.Value);
+                var name = $"agente {agentName}, meta {PythonText.Repr(goal.Id.Value)}";
                 if (!needs.Contains(goal.Need.Value))
                 {
-                    problems.Add(name + ": necesidad desconocida " + PythonText.Repr(goal.Need.Value));
+                    problems.Add($"{name}: necesidad desconocida {PythonText.Repr(goal.Need.Value)}");
                 }
 
                 problems.AddRange(GoalTraitRefs(name, goal, traits));
@@ -37,11 +37,11 @@ internal static class GoalChecks
                 {
                     if (!owned.ContainsKey(required.Value))
                     {
-                        problems.Add(name + ": espera a " + PythonText.Repr(required.Value) + ", que no es una meta suya");
+                        problems.Add($"{name}: espera a {PythonText.Repr(required.Value)}, que no es una meta suya");
                     }
                     else
                     {
-                        AddCycle(owned, goal.Id, "agente " + PythonText.Repr(agent.Id.Value) + ": ciclo de metas ", problems);
+                        AddCycle(owned, goal.Id, $"agente {agentName}: ciclo de metas ", problems);
                     }
                 }
             }
@@ -50,10 +50,10 @@ internal static class GoalChecks
         var byId = OrderedLast(pack.Goals).ToDictionary(goal => goal.Id.Value, StringComparer.Ordinal);
         foreach (var goal in pack.Goals)
         {
-            var name = "meta " + PythonText.Repr(goal.Id.Value);
+            var name = $"meta {PythonText.Repr(goal.Id.Value)}";
             if (!needs.Contains(goal.Need.Value))
             {
-                problems.Add(name + ": necesidad desconocida " + PythonText.Repr(goal.Need.Value));
+                problems.Add($"{name}: necesidad desconocida {PythonText.Repr(goal.Need.Value)}");
             }
 
             problems.AddRange(GoalTraitRefs(name, goal, traits));
@@ -61,7 +61,7 @@ internal static class GoalChecks
             {
                 if (!byId.ContainsKey(required.Value))
                 {
-                    problems.Add(name + ": espera a " + PythonText.Repr(required.Value) + ", que no existe");
+                    problems.Add($"{name}: espera a {PythonText.Repr(required.Value)}, que no existe");
                 }
                 else
                 {
@@ -93,10 +93,10 @@ internal static class GoalChecks
 
             foreach (var goal in agent.Goals)
             {
-                var name = "agente " + PythonText.Repr(agent.Id.Value) + ", meta " + PythonText.Repr(goal.Id.Value);
+                var name = $"agente {PythonText.Repr(agent.Id.Value)}, meta {PythonText.Repr(goal.Id.Value)}";
                 if (!moved.Contains(goal.Need.Value))
                 {
-                    problems.Add(name + ": ninguna acción sube " + PythonText.Repr(goal.Need.Value) + ", así que nunca podrá cumplirse");
+                    problems.Add($"{name}: ninguna acción sube {PythonText.Repr(goal.Need.Value)}, así que nunca podrá cumplirse");
                 }
 
                 foreach (var pair in goal.AtTraits.OrderBy(entry => entry.Key.Value, CodePointComparer.Instance))
@@ -105,8 +105,7 @@ internal static class GoalChecks
                     var reachable = has + Conceded(concede, pair.Key.Value);
                     if (reachable < pair.Value)
                     {
-                        problems.Add(name + ": pide " + PythonText.Repr(pair.Key.Value) + " a " + PythonText.Float(pair.Value) + ", tiene "
-                            + PythonText.Float(has) + " y ninguna de sus metas se lo sube — solo las derivas mueven un rasgo");
+                        problems.Add($"{name}: pide {PythonText.Repr(pair.Key.Value)} a {PythonText.Float(pair.Value)}, tiene {PythonText.Float(has)} y ninguna de sus metas se lo sube — solo las derivas mueven un rasgo");
                     }
                 }
             }
@@ -120,17 +119,17 @@ internal static class GoalChecks
 
         foreach (var goal in pack.Goals)
         {
-            var name = "meta " + PythonText.Repr(goal.Id.Value);
+            var name = $"meta {PythonText.Repr(goal.Id.Value)}";
             if (!moved.Contains(goal.Need.Value))
             {
-                problems.Add(name + ": ninguna acción sube " + PythonText.Repr(goal.Need.Value) + ", así que nunca podrá cumplirse");
+                problems.Add($"{name}: ninguna acción sube {PythonText.Repr(goal.Need.Value)}, así que nunca podrá cumplirse");
             }
 
             foreach (var pair in goal.AtTraits.OrderBy(entry => entry.Key.Value, CodePointComparer.Instance))
             {
                 if (Conceded(concedePack, pair.Key.Value) < pair.Value)
                 {
-                    problems.Add(name + ": pide " + PythonText.Repr(pair.Key.Value) + " a " + PythonText.Float(pair.Value) + " y ninguna meta se lo sube");
+                    problems.Add($"{name}: pide {PythonText.Repr(pair.Key.Value)} a {PythonText.Float(pair.Value)} y ninguna meta se lo sube");
                 }
             }
         }
@@ -162,9 +161,9 @@ internal static class GoalChecks
     private static List<string> GoalTraitRefs(string name, GoalSpec goal, HashSet<string> traits)
     {
         var problems = new List<string>();
-        problems.AddRange(ReferenceChecks.UnknownKeys(name + ".at_traits", "rasgo", goal.AtTraits.Keys.Select(key => key.Value), traits));
-        problems.AddRange(ReferenceChecks.UnknownKeys(name + ".on_success", "rasgo", goal.OnSuccess.Keys.Select(key => key.Value), traits));
-        problems.AddRange(ReferenceChecks.UnknownKeys(name + ".on_failure", "rasgo", goal.OnFailure.Keys.Select(key => key.Value), traits));
+        problems.AddRange(ReferenceChecks.UnknownKeys($"{name}.at_traits", "rasgo", goal.AtTraits.Keys.Select(key => key.Value), traits));
+        problems.AddRange(ReferenceChecks.UnknownKeys($"{name}.on_success", "rasgo", goal.OnSuccess.Keys.Select(key => key.Value), traits));
+        problems.AddRange(ReferenceChecks.UnknownKeys($"{name}.on_failure", "rasgo", goal.OnFailure.Keys.Select(key => key.Value), traits));
         return problems;
     }
 
@@ -178,7 +177,7 @@ internal static class GoalChecks
             if (seen.Contains(actual))
             {
                 var chain = string.Join(" -> ", seen.Append(actual));
-                problems.Add(prefix + chain + ". Ninguna se abriría jamás");
+                problems.Add($"{prefix}{chain}. Ninguna se abriría jamás");
                 return;
             }
 

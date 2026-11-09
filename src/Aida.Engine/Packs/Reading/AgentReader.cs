@@ -83,7 +83,7 @@ internal static class AgentReader
         {
             if (!(pair.Value >= -1.0 && pair.Value <= 1.0))
             {
-                problems.Add(path, "rasgo " + PythonText.Repr(pair.Key.Value) + " = " + PythonText.Float(pair.Value) + ", fuera de [-1, 1]", fromAida: true);
+                problems.Add(path, $"rasgo {PythonText.Repr(pair.Key.Value)} = {PythonText.Float(pair.Value)}, fuera de [-1, 1]", fromAida: true);
                 return false;
             }
         }

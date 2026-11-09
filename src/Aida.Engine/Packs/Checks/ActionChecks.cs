@@ -14,8 +14,7 @@ internal static class ActionChecks
         var moved = MovedBy(pack, action => action.Satisfies);
         return pack.Intents
             .Where(intent => !moved.Contains(intent.Need.Value))
-            .Select(intent => "intención " + PythonText.Repr(intent.Id.Value) + ": ninguna acción sube " + PythonText.Repr(intent.Need.Value)
-                + ", así que reconocerla nunca llevaría a nada")
+            .Select(intent => $"intención {PythonText.Repr(intent.Id.Value)}: ninguna acción sube {PythonText.Repr(intent.Need.Value)}, así que reconocerla nunca llevaría a nada")
             .ToList();
     }
 
@@ -31,9 +30,7 @@ internal static class ActionChecks
             {
                 if (pair.Value < 0.0 && !action.Costs.ContainsKey(pair.Key))
                 {
-                    problems.Add("acción " + PythonText.Repr(action.Id.Value) + ": el efecto sobre " + PythonText.Repr(pair.Key.Value)
-                        + " es negativo (" + PythonText.Float(pair.Value) + ") pero no declara coste. Añádelo a `costs`, o pon "
-                        + pair.Key.Value + ": 0.0 si el agente debe ignorarlo a propósito");
+                    problems.Add($"acción {PythonText.Repr(action.Id.Value)}: el efecto sobre {PythonText.Repr(pair.Key.Value)} es negativo ({PythonText.Float(pair.Value)}) pero no declara coste. Añádelo a `costs`, o pon {pair.Key.Value}: 0.0 si el agente debe ignorarlo a propósito");
                 }
             }
         }
@@ -54,9 +51,7 @@ internal static class ActionChecks
                 var spend = -EffectOf(action, pair.Key);
                 if (spend > 0.0 && pair.Value < spend)
                 {
-                    problems.Add("acción " + PythonText.Repr(action.Id.Value) + ": exige " + PythonText.Float(pair.Value) + " de "
-                        + PythonText.Repr(pair.Key.Value) + " pero puede consumir hasta " + PythonText.Float(PythonText.Round4(spend))
-                        + ". Un agente justo por encima del mínimo seguiría truncando el efecto; sube el requisito o quítalo");
+                    problems.Add($"acción {PythonText.Repr(action.Id.Value)}: exige {PythonText.Float(pair.Value)} de {PythonText.Repr(pair.Key.Value)} pero puede consumir hasta {PythonText.Float(PythonText.Round4(spend))}. Un agente justo por encima del mínimo seguiría truncando el efecto; sube el requisito o quítalo");
                 }
             }
         }
@@ -79,20 +74,19 @@ internal static class ActionChecks
         var problems = new List<string>();
         foreach (var action in pack.Actions)
         {
-            var name = "acción " + PythonText.Repr(action.Id.Value);
+            var name = $"acción {PythonText.Repr(action.Id.Value)}";
             foreach (var pair in action.Requires.OrderBy(entry => entry.Key.Value, CodePointComparer.Instance))
             {
-                var needName = PythonText.Repr(pair.Key.Value);
+                var need = PythonText.Repr(pair.Key.Value);
+                var amount = PythonText.Float(pair.Value);
                 if (pair.Value > 1.0)
                 {
-                    problems.Add(name + ": exige " + PythonText.Float(pair.Value) + " de " + needName
-                        + ", pero el valor máximo de una necesidad es 1.0; jamás será ejecutable");
+                    problems.Add($"{name}: exige {amount} de {need}, pero el valor máximo de una necesidad es 1.0; jamás será ejecutable");
                 }
                 else if (!moved.Contains(pair.Key.Value) && pack.Agents.Length > 0
                     && !StartsWithEnough(pack, needDefaults, pair.Key, pair.Value))
                 {
-                    problems.Add(name + ": exige " + PythonText.Float(pair.Value) + " de " + needName
-                        + ", pero ningún agente empieza con ese nivel y ninguna acción lo sube; jamás será ejecutable");
+                    problems.Add($"{name}: exige {amount} de {need}, pero ningún agente empieza con ese nivel y ninguna acción lo sube; jamás será ejecutable");
                 }
             }
 
@@ -100,8 +94,7 @@ internal static class ActionChecks
             {
                 if (pack.Agents.Length > 0 && !SomeAgentReaches(pack, pair.Key, pair.Value))
                 {
-                    problems.Add(name + ": exige rasgo " + PythonText.Repr(pair.Key.Value) + " a " + PythonText.Float(pair.Value)
-                        + ", pero ningún agente lo alcanza ni tiene metas que lo suban; jamás será ejecutable");
+                    problems.Add($"{name}: exige rasgo {PythonText.Repr(pair.Key.Value)} a {PythonText.Float(pair.Value)}, pero ningún agente lo alcanza ni tiene metas que lo suban; jamás será ejecutable");
                 }
             }
         }
