@@ -1,6 +1,6 @@
 # 0003 — Determinismo: aleatoriedad por clave, orden explícito, desempate por entero
 
-- **Estado:** Aceptado
+- **Estado:** Sustituido por [0023](0023-determinismo-y-blake2b-propio.md)
 - **Fecha:** 2026-10-28
 - **Relacionados:** [0004](0004-reloj-hibrido.md), [0005](0005-eventos-y-journal.md), [0013](0013-python-como-oraculo.md)
 
