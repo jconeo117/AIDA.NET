@@ -1,0 +1,14 @@
+{
+ "files": {
+  "events/cases.jsonl": "7adc33d6cf716fb632eff023a9b79695eed596373b01fca03ea5dbc43b0c7dbb",
+  "hashing/blake2b.txt": "8ac564af4daea6708568fd8073a2a9227324e0a90085fd2d40216e2dd4d74de3",
+  "journals/plantilla-1312-300.jsonl": "f52f67c6d793ffba8af43a5a1d773a9e1f744e371ede41e8fdbbf759d2ab991c",
+  "serialization/floats.txt": "8ddb20724069a03dfe14a424aa53d46c767df5118423bef98999310554e05666"
+ },
+ "generator": "tests/golden/generator/generate.py",
+ "python": "3.12.14",
+ "source": {
+  "commit": "9a96fb0fbfc882bd8b3062b1abad12b345ab9879",
+  "tag": "v0.1.0"
+ }
+}
