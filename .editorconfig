@@ -43,3 +43,10 @@ dotnet_naming_style.underscore_camel.capitalization = camel_case
 csharp_style_namespace_declarations = file_scoped:warning
 csharp_using_directive_placement = outside_namespace:warning
 dotnet_sort_system_directives_first = true
+
+# Dorados (tests/golden): bytes exactos, sin que el editor toque nada. Ver .gitattributes.
+[tests/golden/**]
+charset = unset
+end_of_line = unset
+insert_final_newline = unset
+trim_trailing_whitespace = unset

@@ -45,4 +45,5 @@ jobs:
             Pop-Location
             if ($code -ne 0) { throw "Stryker por debajo del umbral en $($c.DirectoryName)" }
           }
-      # G4 (logs dorados) se activa en N002.
+      - name: G4 · Lo que decide coincide con Python (logs dorados)
+        run: dotnet test tests/Aida.Engine.Tests -c Release --no-build --filter Category=Golden -- RunConfiguration.TreatNoTestsAsError=true
