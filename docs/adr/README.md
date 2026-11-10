@@ -20,7 +20,7 @@ cumpliendo**.
 |---|---|---|
 | [0001](0001-el-motor-decide.md) | El motor decide; el modelo de lenguaje lee y redacta | Aceptado |
 | [0002](0002-agnosticismo-de-dominio.md) | El núcleo no sabe de dominio: el mundo va en packs | Aceptado |
-| [0003](0003-determinismo.md) | Determinismo: aleatoriedad por clave, orden explícito, desempate por entero | Aceptado |
+| [0003](0003-determinismo.md) | Determinismo: aleatoriedad por clave, orden explícito, desempate por entero | Sustituido por [0023](0023-determinismo-y-blake2b-propio.md) |
 | [0004](0004-reloj-hibrido.md) | Reloj híbrido y motor síncrono | Aceptado |
 | [0005](0005-eventos-y-journal.md) | Ningún cambio de estado sin evento; journal de entradas | Aceptado |
 | [0006](0006-owner-y-autoria.md) | `Owner` obligatorio; todo registro tiene autor | Aceptado |
@@ -40,6 +40,7 @@ cumpliendo**.
 | [0020](0020-servidor-en-red-local.md) | Solo Windows; .NET 10 y Blazor Server, servido desde un equipo a los puestos de la red local | Aceptado |
 | [0021](0021-local-primero-y-salidas-autorizadas.md) | Local primero; AIDA es el sistema de registro; lo que sale, sale autorizado | Aceptado |
 | [0022](0022-facturacion-con-emisor-externo.md) | Facturación: AIDA arma la factura y un proveedor tecnológico la emite | Aceptado |
+| [0023](0023-determinismo-y-blake2b-propio.md) | Determinismo: aleatoriedad por clave, orden explícito, serialización canónica igual a la de Python y BLAKE2b propio | Aceptado |
 
 ## Plantilla
 
