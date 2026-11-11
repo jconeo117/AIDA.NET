@@ -1,1 +1,4 @@
+# El código fuente se saca siempre con LF: un literal en bruto toma los saltos de línea del archivo,
+# y lo que decide el motor no puede depender del sistema que hizo el checkout.
+*.cs text eol=lf
 tests/golden/** -text
