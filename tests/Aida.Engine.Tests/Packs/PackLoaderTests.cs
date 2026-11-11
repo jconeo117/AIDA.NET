@@ -5,7 +5,7 @@ namespace Aida.Engine.Tests.Packs;
 
 public sealed class PackLoaderTests
 {
-    private const string BaseYaml = """
+    private static readonly string BaseYaml = """
         id: base
         label: Base
         needs:
@@ -30,7 +30,13 @@ public sealed class PackLoaderTests
         agents:
           - id: g
             label: G
-        """;
+        """.ReplaceLineEndings("\n");
+
+    [Fact]
+    public void La_base_de_los_tests_no_depende_del_checkout()
+    {
+        Assert.DoesNotContain('\r', BaseYaml);
+    }
 
     [Fact]
     public void Clave_repetida_falla_con_su_ruta()

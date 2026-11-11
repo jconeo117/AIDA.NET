@@ -4,7 +4,7 @@ namespace Aida.Engine.Tests.Packs.Checks;
 
 public sealed class PackChecksUnitTests
 {
-    private const string BaseYaml = """
+    private static readonly string BaseYaml = """
         id: base
         label: Base
         needs:
@@ -29,7 +29,13 @@ public sealed class PackChecksUnitTests
         agents:
           - id: g
             label: G
-        """;
+        """.ReplaceLineEndings("\n");
+
+    [Fact]
+    public void La_base_de_los_tests_no_depende_del_checkout()
+    {
+        Assert.DoesNotContain('\r', BaseYaml);
+    }
 
     [Fact]
     public void IdentityChecks_detecta_duplicados_en_todas_las_colecciones_y_mantiene_orden()
@@ -112,7 +118,7 @@ public sealed class PackChecksUnitTests
                 label: G1
               - id: g2
                 label: G2
-            """;
+            """.ReplaceLineEndings("\n");
         var exCol = Assert.Throws<PackException>(() => PackLoader.Parse(yamlCol));
         var pCol = exCol.Problems.Where(p => p.Message.Contains("usado a la vez por un/a acción y un/a agente")).ToList();
         Assert.Equal(2, pCol.Count);
