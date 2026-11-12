@@ -1,0 +1,139 @@
+id: sintetico-01
+label: Sintético 01
+needs:
+  - id: n1
+    label: Necesidad 1
+    initial: 0.5
+    decay_per_tick: 0.1
+    max_debt: 0.5
+    escalates_after: 3
+    strain_weight: 1.0
+    urgency_exponent: 1.0
+    cap: 0.9
+  - id: n2
+    label: Necesidad 2
+    initial: 0.7
+    decay_per_tick: 0.08
+    max_debt: 0.3
+    escalates_after: 2
+    strain_weight: 0.5
+    urgency_exponent: 2.0
+    cap: 0.8
+traits:
+  - id: t1
+    label: Rasgo 1
+    need_weight_multipliers:
+      n1: 1.5
+    gain_multipliers:
+      n1: 1.2
+    cost_multipliers:
+      n2: 0.8
+    cap_multipliers:
+      n1: 1.5
+    temperament_multipliers:
+      temperature: 1.2
+      loss_aversion: 1.1
+situations:
+  - id: s1
+    label: Situación 1
+    temperament_multipliers:
+      switch_cost: 1.3
+goals:
+  - id: g_cadena_1
+    label: Meta Cadena 1
+    need: n1
+    at_least: 0.8
+    weight_multiplier: 1.5
+  - id: g_cadena_2
+    label: Meta Cadena 2
+    need: n1
+    at_least: 0.85
+    requires_goal: g_cadena_1
+    weight_multiplier: 2.0
+actions:
+  - id: a1
+    label: Acción 1
+    reversibility: reversible
+    duration_ticks: 2
+    saturation_gain: 0.2
+    satisfies:
+      n1: 0.5
+    costs:
+      n2: 0.2
+    effects:
+      n1: 0.4
+      n2: -0.2
+  - id: a2
+    label: Acción 2
+    reversibility: reversible
+    duration_ticks: 1
+    saturation_gain: 0.1
+    satisfies:
+      n2: 0.5
+    effects:
+      n2: 0.5
+tuning:
+  learning_rate: 0.05
+  strain_multipliers:
+    temperature: 1.5
+    loss_aversion: 1.3
+    switch_cost: 1.2
+agents:
+  - id: ag1
+    label: Agente 1
+    traits:
+      t1: 1.0
+    initial_needs:
+      n1: 0.2
+      n2: 0.1
+    tastes:
+      - target: a1
+        multiplier: 1.2
+      - target: a1
+        multiplier: 0.9
+    goals:
+      - id: g_cadena_1
+        label: Meta Propia G1
+        need: n2
+        at_least: 0.6
+        weight_multiplier: 2.5
+  - id: ag2
+    label: Agente 2
+    traits:
+      t1: -1.0
+    initial_needs:
+      n1: 0.0
+      n2: 0.5
+    goals:
+      - id: g_extra
+        label: Meta No Pack
+        need: n1
+        at_least: 0.7
+  - id: ag3
+    label: Agente 3
+    traits:
+      t1: 0.0
+    initial_needs:
+      n1: 0.8
+    goals:
+      - id: g_sub1
+        label: Meta Sub 1
+        need: n1
+        at_least: 0.6
+      - id: g_sub2
+        label: Meta Sub 2 Bloqueada
+        need: n2
+        at_least: 0.7
+        requires_goal: g_sub1
+  - id: ag4
+    label: Agente 4
+    traits:
+      t1: 0.5
+  - id: ag5
+    label: Agente 5
+    traits:
+      t1: -0.5
+  - id: ag6
+    label: Agente 6
+    traits:
+      t1: 0.2

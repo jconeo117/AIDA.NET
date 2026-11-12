@@ -14,6 +14,8 @@ import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from packs_section import generate_packs
+from pow_section import check_pow_sentinel, generate_pow
+from state_section import generate_state
 
 EXPECTED_COMMIT = "9a96fb0fbfc882bd8b3062b1abad12b345ab9879"
 
@@ -22,6 +24,11 @@ def validate_environment(aida_dir: Path) -> str:
     if sys.version_info[:2] != (3, 12):
         print(f"ERROR: Se requiere Python 3.12, detectado {sys.version}", file=sys.stderr)
         sys.exit(2)
+    libc = " ".join(platform.libc_ver())
+    if libc != "glibc 2.44":
+        print(f"ERROR: libc esperada 'glibc 2.44', detectada {libc!r}", file=sys.stderr)
+        sys.exit(2)
+    check_pow_sentinel()
     try:
         rev = subprocess.run(
             ["git", "-C", str(aida_dir), "rev-parse", "HEAD"],
@@ -167,13 +174,19 @@ def generate_manifest(out_dir: Path, commit: str) -> None:
     rel_files = [
         "events/cases.jsonl", "hashing/blake2b.txt",
         "journals/plantilla-1312-300.jsonl",
+        "numerics/pow.txt",
         "packs/cases.jsonl", "packs/consultorio.json", "packs/plantilla.json",
         "serialization/floats.txt",
+        "state/cases.jsonl",
+        "state/packs/sintetico-01.yaml",
+        "state/packs/sintetico-02.yaml",
+        "state/packs/sintetico-03.yaml",
     ]
     files_map = {r: hashlib.sha256((out_dir / r).read_bytes()).hexdigest() for r in sorted(rel_files)}
     manifest = {
         "files": files_map,
         "generator": "tests/golden/generator/generate.py",
+        "libc": "glibc 2.44",
         "python": platform.python_version(),
         "source": {"commit": commit, "tag": "v0.1.0"},
     }
@@ -196,6 +209,8 @@ def main() -> None:
     generate_cases(out_dir / "events" / "cases.jsonl")
     generate_journal(aida_dir, out_dir / "journals" / "plantilla-1312-300.jsonl")
     generate_packs(aida_dir, out_dir)
+    generate_pow(out_dir / "numerics" / "pow.txt")
+    generate_state(aida_dir, out_dir)
     generate_manifest(out_dir, commit)
 
 
