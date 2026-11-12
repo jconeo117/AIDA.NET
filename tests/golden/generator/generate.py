@@ -12,6 +12,9 @@ import struct
 import subprocess
 import sys
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from packs_section import generate_packs
+
 EXPECTED_COMMIT = "9a96fb0fbfc882bd8b3062b1abad12b345ab9879"
 
 
@@ -163,7 +166,9 @@ def generate_journal(aida_dir: Path, out_file: Path) -> None:
 def generate_manifest(out_dir: Path, commit: str) -> None:
     rel_files = [
         "events/cases.jsonl", "hashing/blake2b.txt",
-        "journals/plantilla-1312-300.jsonl", "serialization/floats.txt",
+        "journals/plantilla-1312-300.jsonl",
+        "packs/cases.jsonl", "packs/consultorio.json", "packs/plantilla.json",
+        "serialization/floats.txt",
     ]
     files_map = {r: hashlib.sha256((out_dir / r).read_bytes()).hexdigest() for r in sorted(rel_files)}
     manifest = {
@@ -190,6 +195,7 @@ def main() -> None:
     generate_floats(out_dir / "serialization" / "floats.txt")
     generate_cases(out_dir / "events" / "cases.jsonl")
     generate_journal(aida_dir, out_dir / "journals" / "plantilla-1312-300.jsonl")
+    generate_packs(aida_dir, out_dir)
     generate_manifest(out_dir, commit)
 
 

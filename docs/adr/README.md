@@ -41,6 +41,7 @@ cumpliendo**.
 | [0021](0021-local-primero-y-salidas-autorizadas.md) | Local primero; AIDA es el sistema de registro; lo que sale, sale autorizado | Aceptado |
 | [0022](0022-facturacion-con-emisor-externo.md) | Facturación: AIDA arma la factura y un proveedor tecnológico la emite | Aceptado |
 | [0023](0023-determinismo-y-blake2b-propio.md) | Determinismo: aleatoriedad por clave, orden explícito, serialización canónica igual a la de Python y BLAKE2b propio | Aceptado |
+| [0024](0024-yaml-con-yamldotnet.md) | YAML con YamlDotNet, leído como lo lee la 0.1 (reglas de PyYAML y conversiones de pydantic) | Aceptado |
 
 ## Plantilla
 
