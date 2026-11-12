@@ -71,4 +71,36 @@ internal static class OntologyNames
         value = default;
         return false;
     }
+
+    /// <summary>El nombre de un estado de meta en el volcado de los dorados y en la persistencia.</summary>
+    /// <param name="value">El estado.</param>
+    /// <returns>El nombre en minúsculas.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Si <paramref name="value"/> no es un estado de <see cref="GoalStatus"/>.</exception>
+    internal static string ToWire(GoalStatus value) => value switch
+    {
+        GoalStatus.Locked => "locked",
+        GoalStatus.Active => "active",
+        GoalStatus.Achieved => "achieved",
+        GoalStatus.Failed => "failed",
+        _ => throw new ArgumentOutOfRangeException(nameof(value), value, "Estado de meta desconocido."),
+    };
+
+    /// <summary>Busca un estado de meta por su nombre.</summary>
+    /// <param name="wire">El texto.</param>
+    /// <param name="value">El estado, si el nombre existe.</param>
+    /// <returns><see langword="true"/> si el nombre existe.</returns>
+    internal static bool TryParse(string wire, out GoalStatus value)
+    {
+        foreach (var candidate in Enum.GetValues<GoalStatus>())
+        {
+            if (ToWire(candidate) == wire)
+            {
+                value = candidate;
+                return true;
+            }
+        }
+
+        value = default;
+        return false;
+    }
 }
