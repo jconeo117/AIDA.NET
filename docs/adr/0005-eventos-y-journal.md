@@ -1,6 +1,6 @@
 # 0005 — Ningún cambio de estado sin evento; journal de entradas
 
-- **Estado:** Aceptado
+- **Estado:** Sustituido por [0025](0025-eventos-y-lo-derivado.md)
 - **Fecha:** 2026-10-28
 - **Relacionados:** [0003](0003-determinismo.md), [0006](0006-owner-y-autoria.md), [0013](0013-python-como-oraculo.md)
 

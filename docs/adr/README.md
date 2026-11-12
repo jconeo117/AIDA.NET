@@ -22,7 +22,7 @@ cumpliendo**.
 | [0002](0002-agnosticismo-de-dominio.md) | El núcleo no sabe de dominio: el mundo va en packs | Aceptado |
 | [0003](0003-determinismo.md) | Determinismo: aleatoriedad por clave, orden explícito, desempate por entero | Sustituido por [0023](0023-determinismo-y-blake2b-propio.md) |
 | [0004](0004-reloj-hibrido.md) | Reloj híbrido y motor síncrono | Aceptado |
-| [0005](0005-eventos-y-journal.md) | Ningún cambio de estado sin evento; journal de entradas | Aceptado |
+| [0005](0005-eventos-y-journal.md) | Ningún cambio de estado sin evento; journal de entradas | Sustituido por [0025](0025-eventos-y-lo-derivado.md) |
 | [0006](0006-owner-y-autoria.md) | `Owner` obligatorio; todo registro tiene autor | Aceptado |
 | [0007](0007-autoridad-y-puerta-de-herramientas.md) | Ninguna acción irreversible sin autoridad; una sola puerta de acciones | Aceptado |
 | [0008](0008-local-primero.md) | Local primero; la nube con autorización aparte; lo clínico, siempre local | Sustituido por [0021](0021-local-primero-y-salidas-autorizadas.md) |
@@ -42,6 +42,8 @@ cumpliendo**.
 | [0022](0022-facturacion-con-emisor-externo.md) | Facturación: AIDA arma la factura y un proveedor tecnológico la emite | Aceptado |
 | [0023](0023-determinismo-y-blake2b-propio.md) | Determinismo: aleatoriedad por clave, orden explícito, serialización canónica igual a la de Python y BLAKE2b propio | Aceptado |
 | [0024](0024-yaml-con-yamldotnet.md) | YAML con YamlDotNet, leído como lo lee la 0.1 (reglas de PyYAML y conversiones de pydantic) | Aceptado |
+| [0025](0025-eventos-y-lo-derivado.md) | Eventos: se registra lo que no se puede deducir; la evolución derivada se reproduce. Journal de entradas | Aceptado |
+| [0026](0026-pow-propio.md) | Funciones trascendentes propias: el `pow` de ARM optimized-routines, bit a bit igual que la 0.1 | Aceptado |
 
 ## Plantilla
 
