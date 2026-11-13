@@ -3,12 +3,18 @@
   "events/cases.jsonl": "7adc33d6cf716fb632eff023a9b79695eed596373b01fca03ea5dbc43b0c7dbb",
   "hashing/blake2b.txt": "8ac564af4daea6708568fd8073a2a9227324e0a90085fd2d40216e2dd4d74de3",
   "journals/plantilla-1312-300.jsonl": "f52f67c6d793ffba8af43a5a1d773a9e1f744e371ede41e8fdbbf759d2ab991c",
+  "numerics/pow.txt": "f2d9a68de0da88bcc5eb03a9085241fe340dd7456d199a2220275c47d1b70d18",
   "packs/cases.jsonl": "4d78f4c3a36c314059e3cbe23fcd07237f5c5aad9d21d206f72ba164e2abd1a6",
   "packs/consultorio.json": "ffd0c1bf984c8c8e620537c3410bae3dc9e085b10bd4d568fd45aef3ad8612c9",
   "packs/plantilla.json": "a7a804bca1c5eadadc80e6ab3365932bbfaad4b9764552ba3e33583203e3d981",
-  "serialization/floats.txt": "8ddb20724069a03dfe14a424aa53d46c767df5118423bef98999310554e05666"
+  "serialization/floats.txt": "8ddb20724069a03dfe14a424aa53d46c767df5118423bef98999310554e05666",
+  "state/cases.jsonl": "452fdd2d531189c2026184df8979e24b01f96fadd82322fc677ec2e3d9341e81",
+  "state/packs/sintetico-01.yaml": "cdafdb69539a02c3be769781165f5129723d0a48cbeaf46ca716f81ab9a8bba5",
+  "state/packs/sintetico-02.yaml": "e4279a42ac50eaeef7a32eef8e49516ae2b1a65870df12a1d767b7217516a234",
+  "state/packs/sintetico-03.yaml": "bb90d1aa72f4a18565d706d636537ec833dbcaa31764b118b33979ca681b0b7a"
  },
  "generator": "tests/golden/generator/generate.py",
+ "libc": "glibc 2.44",
  "python": "3.12.14",
  "source": {
   "commit": "9a96fb0fbfc882bd8b3062b1abad12b345ab9879",
