@@ -96,6 +96,27 @@ internal static class PyFloat
         return negate ? -result : result;
     }
 
+    /// <summary><c>math.exp(x)</c> de Python.</summary>
+    /// <param name="x">El exponente.</param>
+    /// <returns>e elevado a <paramref name="x"/>, bit a bit igual que en la 0.1.</returns>
+    /// <exception cref="OverflowException">Si el resultado desborda con <paramref name="x"/> finito
+    /// (<c>OverflowError: math range error</c> en Python).</exception>
+    /// <remarks>
+    /// <c>math_1</c> de CPython 3.12 llama a la <c>exp</c> de libm y convierte en error un infinito que sale de un
+    /// argumento finito. El subdesbordamiento no es error: devuelve 0 o un subnormal. La <c>exp</c> de libm es la de
+    /// ARM con FMA, la misma que porta <see cref="AorExp"/> (ADR 0026).
+    /// </remarks>
+    internal static double Exp(double x)
+    {
+        var result = AorExp.Core(x);
+        if (double.IsInfinity(result) && double.IsFinite(x))
+        {
+            throw new OverflowException("math range error");
+        }
+
+        return result;
+    }
+
     /// <summary><c>min(a, b)</c> de Python.</summary>
     /// <param name="a">El primero.</param>
     /// <param name="b">El segundo.</param>

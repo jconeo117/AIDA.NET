@@ -31,6 +31,7 @@ public sealed class ContentPack
         TraitById = contents.Traits.ToFrozenDictionary(trait => trait.Id, trait => trait);
         SituationById = contents.Situations.ToFrozenDictionary(situation => situation.Id, situation => situation);
         GoalById = contents.Goals.ToFrozenDictionary(goal => goal.Id, goal => goal);
+        ActionById = contents.Actions.ToFrozenDictionary(action => action.Id, action => action);
     }
 
     /// <summary>El identificador del pack.</summary>
@@ -83,4 +84,9 @@ public sealed class ContentPack
 
     /// <summary>Las metas del pack por identificador.</summary>
     public FrozenDictionary<GoalId, GoalSpec> GoalById { get; }
+
+    /// <summary>Las acciones del pack por identificador.</summary>
+    /// <remarks>Es <c>action_by_id</c> de la 0.1 (<c>pack.py:94</c>). La deliberación recorre sus claves en orden de
+    /// punto de código y busca la acción en curso; el pack ya garantiza que los ids no se repiten.</remarks>
+    public FrozenDictionary<ActionId, ActionSpec> ActionById { get; }
 }
