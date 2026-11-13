@@ -101,6 +101,7 @@ public sealed class PackLoaderTests
         Assert.Equal(pack.Traits.Length, pack.TraitById.Count);
         Assert.Equal(pack.Situations.Length, pack.SituationById.Count);
         Assert.Equal(pack.Goals.Length, pack.GoalById.Count);
+        Assert.Equal(pack.Actions.Length, pack.ActionById.Count);
 
         foreach (var need in pack.Needs)
         {
@@ -124,6 +125,12 @@ public sealed class PackLoaderTests
         {
             Assert.True(pack.GoalById.ContainsKey(goal.Id));
             Assert.Same(goal, pack.GoalById[goal.Id]);
+        }
+
+        foreach (var action in pack.Actions)
+        {
+            Assert.True(pack.ActionById.ContainsKey(action.Id));
+            Assert.Same(action, pack.ActionById[action.Id]);
         }
     }
 }
