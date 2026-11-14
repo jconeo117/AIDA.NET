@@ -5,14 +5,15 @@
 - **Origen:** https://github.com/ARM-software/optimized-routines
 - **Commit:** `20859d3fd9e797dde592c489c8ef7d383f778620`
 - **Licencia:** `MIT OR Apache-2.0 WITH LLVM-exception`. El repositorio usa la opción MIT, que es la que aplica aquí.
-- **Decisión:** [ADR 0026](docs/adr/0026-pow-propio.md). Se portan las funciones de `pow` y sus tablas para que el
-  motor calcule las potencias igual que la 0.1 en cualquier sistema operativo.
+- **Decisión:** [ADR 0026](docs/adr/0026-pow-propio.md). Se portan las funciones de `pow` y `exp` y sus tablas para que el
+  motor calcule las potencias y exponenciales igual que la 0.1 en cualquier sistema operativo.
 
 ### Archivos portados
 
 | Archivo de origen | Dónde vive en este repositorio | Copyright |
 |---|---|---|
 | `math/pow.c` | `src/Aida.Engine/Numerics/AorPow.cs` | `Copyright (c) 2018-2026, Arm Limited.` |
+| `math/exp.c` | `src/Aida.Engine/Numerics/AorExp.cs` | `Copyright (c) 2018-2026, Arm Limited.` |
 | `math/pow_log_data.c` | `src/Aida.Engine/Numerics/AorPowLogTable.cs` | `Copyright (c) 2018, Arm Limited.` |
 | `math/exp_data.c` | `src/Aida.Engine/Numerics/AorExpTable.cs` | `Copyright (c) 2018-2023, Arm Limited.` |
 

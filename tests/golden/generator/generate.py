@@ -13,8 +13,11 @@ import subprocess
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from decide_section import generate_deliberation
+from exp_section import check_exp_sentinel, generate_exp
 from packs_section import generate_packs
 from pow_section import check_pow_sentinel, generate_pow
+from rng_section import generate_randomness
 from state_section import generate_state
 
 EXPECTED_COMMIT = "9a96fb0fbfc882bd8b3062b1abad12b345ab9879"
@@ -29,6 +32,7 @@ def validate_environment(aida_dir: Path) -> str:
         print(f"ERROR: libc esperada 'glibc 2.44', detectada {libc!r}", file=sys.stderr)
         sys.exit(2)
     check_pow_sentinel()
+    check_exp_sentinel()
     try:
         rev = subprocess.run(
             ["git", "-C", str(aida_dir), "rev-parse", "HEAD"],
@@ -172,10 +176,18 @@ def generate_journal(aida_dir: Path, out_file: Path) -> None:
 
 def generate_manifest(out_dir: Path, commit: str) -> None:
     rel_files = [
-        "events/cases.jsonl", "hashing/blake2b.txt",
+        "deliberation/cases.jsonl",
+        "events/cases.jsonl",
+        "hashing/blake2b.txt",
         "journals/plantilla-1312-300.jsonl",
+        "numerics/exp.txt",
         "numerics/pow.txt",
-        "packs/cases.jsonl", "packs/consultorio.json", "packs/plantilla.json",
+        "packs/cases.jsonl",
+        "packs/consultorio.json",
+        "packs/plantilla.json",
+        "randomness/choices.jsonl",
+        "randomness/mt.jsonl",
+        "randomness/streams.jsonl",
         "serialization/floats.txt",
         "state/cases.jsonl",
         "state/packs/sintetico-01.yaml",
@@ -211,6 +223,9 @@ def main() -> None:
     generate_packs(aida_dir, out_dir)
     generate_pow(out_dir / "numerics" / "pow.txt")
     generate_state(aida_dir, out_dir)
+    generate_exp(out_dir / "numerics" / "exp.txt")
+    generate_randomness(out_dir / "randomness")
+    generate_deliberation(aida_dir, out_dir)
     generate_manifest(out_dir, commit)
 
 

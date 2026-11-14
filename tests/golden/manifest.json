@@ -1,12 +1,17 @@
 {
  "files": {
+  "deliberation/cases.jsonl": "c682f41ec0a75ba9e315dcd760eee16b83f9038aaab4d3bff7b541f7906f745f",
   "events/cases.jsonl": "7adc33d6cf716fb632eff023a9b79695eed596373b01fca03ea5dbc43b0c7dbb",
   "hashing/blake2b.txt": "8ac564af4daea6708568fd8073a2a9227324e0a90085fd2d40216e2dd4d74de3",
   "journals/plantilla-1312-300.jsonl": "f52f67c6d793ffba8af43a5a1d773a9e1f744e371ede41e8fdbbf759d2ab991c",
+  "numerics/exp.txt": "73b55445ffbc92b7f67489aff09f0a48e358e9b87e1881c47a49eddd71a514aa",
   "numerics/pow.txt": "f2d9a68de0da88bcc5eb03a9085241fe340dd7456d199a2220275c47d1b70d18",
   "packs/cases.jsonl": "4d78f4c3a36c314059e3cbe23fcd07237f5c5aad9d21d206f72ba164e2abd1a6",
   "packs/consultorio.json": "ffd0c1bf984c8c8e620537c3410bae3dc9e085b10bd4d568fd45aef3ad8612c9",
   "packs/plantilla.json": "a7a804bca1c5eadadc80e6ab3365932bbfaad4b9764552ba3e33583203e3d981",
+  "randomness/choices.jsonl": "87530f769b9a92890c69515d979708c345b8c0507375d80fad4c6caceb159d5c",
+  "randomness/mt.jsonl": "d2fda011c41f38af659b47e697b7a2fe5e7eb09ccbaa2e2b42235ce4e9bd4ef4",
+  "randomness/streams.jsonl": "984c5e70db10fb5499975ee7435229d6ad1d42d13276f06801c37a9b79ff07ee",
   "serialization/floats.txt": "8ddb20724069a03dfe14a424aa53d46c767df5118423bef98999310554e05666",
   "state/cases.jsonl": "452fdd2d531189c2026184df8979e24b01f96fadd82322fc677ec2e3d9341e81",
   "state/packs/sintetico-01.yaml": "cdafdb69539a02c3be769781165f5129723d0a48cbeaf46ca716f81ab9a8bba5",
