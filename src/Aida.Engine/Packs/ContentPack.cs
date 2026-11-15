@@ -32,6 +32,7 @@ public sealed class ContentPack
         SituationById = contents.Situations.ToFrozenDictionary(situation => situation.Id, situation => situation);
         GoalById = contents.Goals.ToFrozenDictionary(goal => goal.Id, goal => goal);
         ActionById = contents.Actions.ToFrozenDictionary(action => action.Id, action => action);
+        IntentById = contents.Intents.ToFrozenDictionary(intent => intent.Id, intent => intent);
     }
 
     /// <summary>El identificador del pack.</summary>
@@ -89,4 +90,9 @@ public sealed class ContentPack
     /// <remarks>Es <c>action_by_id</c> de la 0.1 (<c>pack.py:94</c>). La deliberación recorre sus claves en orden de
     /// punto de código y busca la acción en curso; el pack ya garantiza que los ids no se repiten.</remarks>
     public FrozenDictionary<ActionId, ActionSpec> ActionById { get; }
+
+    /// <summary>Las intenciones del pack por identificador.</summary>
+    /// <remarks>Es <c>intent_by_id</c> de la 0.1 (<c>pack.py:114</c>). El bucle busca aquí lo que devuelve el clasificador: un
+    /// identificador que no está en el pack se registra como no reconocido.</remarks>
+    public FrozenDictionary<IntentId, IntentSpec> IntentById { get; }
 }

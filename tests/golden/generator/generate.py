@@ -15,6 +15,7 @@ import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 from decide_section import generate_deliberation
 from exp_section import check_exp_sentinel, generate_exp
+from journal_section import generate_journals
 from packs_section import generate_packs
 from pow_section import check_pow_sentinel, generate_pow
 from rng_section import generate_randomness
@@ -147,39 +148,20 @@ def generate_cases(out_file: Path) -> None:
         f.writelines(lines)
 
 
-def generate_journal(aida_dir: Path, out_file: Path) -> None:
-    from aida.engine.loop import Loop
-    from aida.engine.pack import load_pack
-    from aida.intent.classify import build_classifier
-
-    pack = load_pack(aida_dir / "packs" / "_plantilla" / "pack.yaml")
-    loop = Loop.start(pack, pack.agents[0], seed=1312, inbox_capacity=64, intent=build_classifier(pack))
-    owner = pack.agents[0].id
-    for t, text in [
-        (5, "libera espacio en disco"), (40, "renueva los certificados"),
-        (90, "hola, ¿qué tal?"), (150, "escala el servicio"),
-    ]:
-        loop.inbox.push(tick=t, owner=owner, content=text)
-    for _ in range(300):
-        loop.step()
-        for action_id in sorted(loop.authority.pending):
-            m = loop.execution.tick % 3
-            if m == 0:
-                loop.deny(action_id)
-            elif m == 1:
-                loop.approve(action_id)
-
-    out_file.parent.mkdir(parents=True, exist_ok=True)
-    with open(out_file, "w", encoding="utf-8", newline="\n") as f:
-        f.write("\n".join(loop.log.to_jsonl()) + "\n")
-
-
 def generate_manifest(out_dir: Path, commit: str) -> None:
     rel_files = [
         "deliberation/cases.jsonl",
         "events/cases.jsonl",
         "hashing/blake2b.txt",
+        "journals/consultorio-sin-clasificador.jsonl",
         "journals/plantilla-1312-300.jsonl",
+        "journals/plantilla-peticiones.jsonl",
+        "journals/plantilla-sin-respuesta.jsonl",
+        "journals/scripts.json",
+        "journals/sintetico01-ag1.jsonl",
+        "journals/sintetico02-agente01.jsonl",
+        "journals/sintetico02-agente04.jsonl",
+        "journals/sintetico03-robot01.jsonl",
         "numerics/exp.txt",
         "numerics/pow.txt",
         "packs/cases.jsonl",
@@ -213,19 +195,20 @@ def main() -> None:
     args = parser.parse_args()
 
     aida_dir, out_dir = args.aida.resolve(), args.out.resolve()
+    repo_dir = out_dir.parent.parent
     commit = validate_environment(aida_dir)
     sys.path.insert(0, str(aida_dir / "src"))
 
     generate_blake2b(out_dir / "hashing" / "blake2b.txt")
     generate_floats(out_dir / "serialization" / "floats.txt")
     generate_cases(out_dir / "events" / "cases.jsonl")
-    generate_journal(aida_dir, out_dir / "journals" / "plantilla-1312-300.jsonl")
     generate_packs(aida_dir, out_dir)
     generate_pow(out_dir / "numerics" / "pow.txt")
     generate_state(aida_dir, out_dir)
     generate_exp(out_dir / "numerics" / "exp.txt")
     generate_randomness(out_dir / "randomness")
     generate_deliberation(aida_dir, out_dir)
+    generate_journals(aida_dir, repo_dir, out_dir)
     generate_manifest(out_dir, commit)
 
 

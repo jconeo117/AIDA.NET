@@ -1,6 +1,6 @@
 # 0023 — Determinismo: aleatoriedad por clave, orden explícito, serialización canónica y BLAKE2b propio
 
-- **Estado:** Aceptado
+- **Estado:** Sustituido por [0027](0027-determinismo-y-registros-dorados.md)
 - **Fecha:** 2026-11-08
 - **Relacionados:** sustituye a [0003](0003-determinismo.md); [0005](0005-eventos-y-journal.md), [0013](0013-python-como-oraculo.md), [0017](0017-cadena-de-suministro.md)
 

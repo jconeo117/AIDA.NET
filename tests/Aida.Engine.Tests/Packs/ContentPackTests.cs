@@ -18,4 +18,18 @@ public sealed class ContentPackTests
             Assert.Same(action, pack.ActionById[action.Id]);
         }
     }
+
+    [Fact]
+    public void IntentById_indexa_todas_las_intenciones()
+    {
+        var packPath = Path.Combine(GoldenFiles.RepoRoot, "packs", "_plantilla", "pack.yaml");
+        var pack = PackLoader.Load(packPath);
+
+        Assert.Equal(pack.Intents.Length, pack.IntentById.Count);
+        foreach (var intent in pack.Intents)
+        {
+            Assert.True(pack.IntentById.ContainsKey(intent.Id));
+            Assert.Same(intent, pack.IntentById[intent.Id]);
+        }
+    }
 }
