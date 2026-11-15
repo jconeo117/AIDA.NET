@@ -1,6 +1,6 @@
 # 0017 — Cadena de suministro: cada dependencia con su ADR, versiones con lock, auditoría
 
-- **Estado:** Aceptado
+- **Estado:** Aceptado; precisado por [0028](0028-sqlite-como-almacen-del-servidor.md)
 - **Fecha:** 2026-10-28
 - **Relacionados:** [0003](0003-determinismo.md), [0009](0009-datos-sellados.md), [0010](0010-licencia-firmada.md), [0012](0012-packs-yaml.md)
 

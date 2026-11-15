@@ -1,6 +1,6 @@
 # 0009 — Datos sellados en reposo con AES-GCM y la clave del equipo protegida con DPAPI
 
-- **Estado:** Aceptado
+- **Estado:** Aceptado; precisado por [0029](0029-que-se-sella.md)
 - **Fecha:** 2026-10-28
 - **Relacionados:** [0008](0008-local-primero.md), [0014](0014-windows-y-blazor-server.md), [0017](0017-cadena-de-suministro.md)
 

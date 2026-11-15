@@ -26,7 +26,7 @@ cumpliendo**.
 | [0006](0006-owner-y-autoria.md) | `Owner` obligatorio; todo registro tiene autor | Aceptado |
 | [0007](0007-autoridad-y-puerta-de-herramientas.md) | Ninguna acción irreversible sin autoridad; una sola puerta de acciones | Aceptado |
 | [0008](0008-local-primero.md) | Local primero; la nube con autorización aparte; lo clínico, siempre local | Sustituido por [0021](0021-local-primero-y-salidas-autorizadas.md) |
-| [0009](0009-datos-sellados.md) | Datos sellados en reposo con AES-GCM y la clave del equipo protegida con DPAPI | Aceptado |
+| [0009](0009-datos-sellados.md) | Datos sellados en reposo con AES-GCM y la clave del equipo protegida con DPAPI | Aceptado; precisado por [0029](0029-que-se-sella.md) |
 | [0010](0010-licencia-firmada.md) | Licencia firmada con Ed25519 y comprobada sin conexión | Aceptado |
 | [0011](0011-brazos-y-comunicacion.md) | Brazos descritos por datos; se comunican por el motor, nunca entre sí | Aceptado |
 | [0012](0012-packs-yaml.md) | Packs en YAML, con el formato de la versión 0.1 | Aceptado |
@@ -34,17 +34,21 @@ cumpliendo**.
 | [0014](0014-windows-y-blazor-server.md) | Solo Windows; .NET 10 y Blazor Server sobre web local | Sustituido por [0020](0020-servidor-en-red-local.md) |
 | [0015](0015-forma-del-codigo.md) | Forma del código: 300 líneas, un tipo público, SOLID, dependencias en una dirección | Aceptado |
 | [0016](0016-documentacion-de-la-api.md) | Documentación de la API viva y obligatoria | Aceptado |
-| [0017](0017-cadena-de-suministro.md) | Cadena de suministro: cada dependencia con su ADR, versiones con lock, auditoría | Aceptado |
+| [0017](0017-cadena-de-suministro.md) | Cadena de suministro: cada dependencia con su ADR, versiones con lock, auditoría | Aceptado; precisado por [0028](0028-sqlite-como-almacen-del-servidor.md) |
 | [0018](0018-herramientas-de-construccion.md) | Herramientas de construcción y prueba: xUnit, ArchUnitNET, analizadores, Stryker.NET, DocFX | Sustituido por [0019](0019-guardianes-propios.md) |
 | [0019](0019-guardianes-propios.md) | Herramientas de construcción y prueba, con guardianes propios: xUnit, Roslyn, analizadores, Stryker.NET, DocFX | Aceptado |
 | [0020](0020-servidor-en-red-local.md) | Solo Windows; .NET 10 y Blazor Server, servido desde un equipo a los puestos de la red local | Aceptado |
 | [0021](0021-local-primero-y-salidas-autorizadas.md) | Local primero; AIDA es el sistema de registro; lo que sale, sale autorizado | Aceptado |
 | [0022](0022-facturacion-con-emisor-externo.md) | Facturación: AIDA arma la factura y un proveedor tecnológico la emite | Aceptado |
 | [0023](0023-determinismo-y-blake2b-propio.md) | Determinismo: aleatoriedad por clave, orden explícito, serialización canónica igual a la de Python y BLAKE2b propio | Sustituido por [0027](0027-determinismo-y-registros-dorados.md) |
-| [0024](0024-yaml-con-yamldotnet.md) | YAML con YamlDotNet, leído como lo lee la 0.1 (reglas de PyYAML y conversiones de pydantic) | Aceptado |
+| [0024](0024-yaml-con-yamldotnet.md) | YAML con YamlDotNet, leído como lo lee la 0.1 (reglas de PyYAML y conversiones de pydantic) | Aceptado; ampliado por [0031](0031-yaml-en-la-plataforma.md) |
 | [0025](0025-eventos-y-lo-derivado.md) | Eventos: se registra lo que no se puede deducir; la evolución derivada se reproduce. Journal de entradas | Aceptado |
 | [0026](0026-pow-propio.md) | Funciones trascendentes propias: el `pow` de ARM optimized-routines, bit a bit igual que la 0.1 | Aceptado |
 | [0027](0027-determinismo-y-registros-dorados.md) | Determinismo, con semilla de 64 bits; la reproducibilidad entre procesos la prueban los registros del bucle de la 0.1 | Aceptado |
+| [0028](0028-sqlite-como-almacen-del-servidor.md) | SQLite como almacén del servidor, con Microsoft.Data.Sqlite y sin ORM | Aceptado |
+| [0029](0029-que-se-sella.md) | Qué se sella: los datos de los pacientes y los secretos, no las cuentas del personal | Aceptado |
+| [0030](0030-identidad-del-personal.md) | Identidad del personal: usuario y contraseña, PBKDF2, espera tras cinco fallos y primer administrador solo desde el servidor | Aceptado |
+| [0031](0031-yaml-en-la-plataforma.md) | YamlDotNet también en la plataforma, para los archivos de `packs/platform` | Aceptado |
 
 ## Plantilla
 

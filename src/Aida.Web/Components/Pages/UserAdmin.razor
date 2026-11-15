@@ -1,0 +1,110 @@
+@page "/usuarios"
+@attribute [Authorize(Policy = PlatformPermission.ManageUsers)]
+@inject UserStore Store
+@inject RoleCatalog Roles
+@inject ShellWording Text
+
+<PageTitle>@Text["users_title"]</PageTitle>
+<h1>@Text["users_title"]</h1>
+<p>@Text["users_text"]</p>
+@if (_message is not null)
+{
+    <p role="status">@_message</p>
+}
+<table>
+    @foreach (var user in Store.List())
+    {
+        <tr>
+            <td>@user.DisplayName</td>
+            <td>@user.UserName</td>
+            <td>@(Roles.Roles.FirstOrDefault(r => r.Id == user.RoleId)?.Label ?? user.RoleId)</td>
+            <td>@(user.Active ? string.Empty : Text["users_inactive"])</td>
+        </tr>
+    }
+</table>
+<EditForm Model="NewUser" FormName="create" method="post" OnSubmit="Create">
+    <label>@Text["user_name_label"] <InputText @bind-Value="NewUser.UserName" /></label>
+    <label>@Text["first_display_name"] <InputText @bind-Value="NewUser.DisplayName" /></label>
+    <label>@Text["users_role"]
+        <InputSelect @bind-Value="NewUser.RoleId">
+            @foreach (var role in Roles.Roles)
+            {
+                <option value="@role.Id">@role.Label</option>
+            }
+        </InputSelect>
+    </label>
+    <label>@Text["password_label"] <InputText type="password" @bind-Value="NewUser.Password" autocomplete="new-password" /></label>
+    <button type="submit">@Text["users_add"]</button>
+</EditForm>
+<EditForm Model="Target" FormName="manage" method="post" OnSubmit="Manage">
+    <InputNumber @bind-Value="Target.UserId" />
+    <InputText type="password" @bind-Value="Target.Password" autocomplete="new-password" />
+    <button type="submit" name="Target.Action" value="reset">@Text["reset_button"]</button>
+    <button type="submit" name="Target.Action" value="disable">@Text["users_disable"]</button>
+</EditForm>
+
+@code {
+    private string? _message;
+
+    [CascadingParameter]
+    private HttpContext Http { get; set; } = default!;
+
+    [SupplyParameterFromForm(FormName = "create", Name = "NewUser")]
+    private NewUserForm? PostedNewUser { get; set; }
+
+    private NewUserForm NewUser => PostedNewUser ??= new();
+
+    [SupplyParameterFromForm(FormName = "manage", Name = "Target")]
+    private ManageForm? PostedTarget { get; set; }
+
+    private ManageForm Target => PostedTarget ??= new();
+
+    private long ActorId => SessionGate.CurrentUser(Http)!.Id;
+
+    private void Create() => Run(() => Store.Create(ActorId, AidaWebApp.Workstation(Http), NewUser.UserName ?? string.Empty, NewUser.DisplayName ?? string.Empty, NewUser.RoleId ?? string.Empty, NewUser.Password ?? string.Empty), "users_added");
+
+    private void Manage()
+    {
+        if (Target.Action == "disable")
+        {
+            Run(() => Store.Disable(ActorId, AidaWebApp.Workstation(Http), Target.UserId), "users_disabled");
+        }
+        else
+        {
+            Run(() => Store.ResetPassword(ActorId, AidaWebApp.Workstation(Http), Target.UserId, Target.Password ?? string.Empty), "reset_done");
+        }
+    }
+
+    private void Run(Action action, string done)
+    {
+        try
+        {
+            action();
+            _message = Text[done];
+        }
+        catch (IdentityException exception)
+        {
+            _message = IdentityMessages.For(Text, exception, 0);
+        }
+    }
+
+    private sealed class NewUserForm
+    {
+        public string? UserName { get; set; }
+
+        public string? DisplayName { get; set; }
+
+        public string? RoleId { get; set; }
+
+        public string? Password { get; set; }
+    }
+
+    private sealed class ManageForm
+    {
+        public long UserId { get; set; }
+
+        public string? Password { get; set; }
+
+        public string? Action { get; set; }
+    }
+}

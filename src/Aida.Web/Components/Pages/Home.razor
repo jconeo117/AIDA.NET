@@ -1,7 +1,21 @@
 ﻿@page "/"
+@inject ShellWording Text
+@inject RoleCatalog Roles
 
-<PageTitle>Home</PageTitle>
+<PageTitle>@Text["brand"]</PageTitle>
+<h1>@Text["brand"]</h1>
+<p>@_user?.DisplayName</p>
+@if (_user is not null && Roles.Allows(_user.RoleId, PlatformPermission.ManageUsers))
+{
+    <a href="/usuarios">@Text["users_title"]</a>
+}
+<form method="post" action="/salir"><AntiforgeryToken /><button type="submit">@Text["exit_label"]</button></form>
 
-<h1>Hello, world!</h1>
+@code {
+    private UserAccount? _user;
 
-Welcome to your new app.
+    [CascadingParameter]
+    private HttpContext Http { get; set; } = default!;
+
+    protected override void OnInitialized() => _user = SessionGate.CurrentUser(Http);
+}

@@ -1,0 +1,52 @@
+@page "/entrar"
+@attribute [AllowAnonymous]
+@inject UserStore Users
+@inject SessionTracker Sessions
+@inject ShellWording Text
+@inject NavigationManager Navigation
+
+<PageTitle>@Text["login_title"]</PageTitle>
+<h1>@Text["login_title"]</h1>
+<p>@Text["login_lead"]</p>
+@if (_error is not null)
+{
+    <p role="alert">@_error</p>
+}
+<EditForm Model="Form" FormName="login" method="post" OnSubmit="SignInAsync">
+    <label>@Text["user_name_label"] <InputText @bind-Value="Form.UserName" autocomplete="username" /></label>
+    <label>@Text["password_label"] <InputText type="password" @bind-Value="Form.Password" autocomplete="current-password" /></label>
+    <button type="submit">@Text["enter_button"]</button>
+</EditForm>
+
+@code {
+    private string? _error;
+
+    [CascadingParameter]
+    private HttpContext Http { get; set; } = default!;
+
+    [SupplyParameterFromForm(Name = "Form")]
+    private LoginForm? PostedForm { get; set; }
+
+    private LoginForm Form => PostedForm ??= new();
+
+    private async Task SignInAsync()
+    {
+        try
+        {
+            var user = Users.Verify(Form.UserName ?? string.Empty, Form.Password ?? string.Empty);
+            await SignIn.StartAsync(Http, Sessions, user);
+            Navigation.NavigateTo("/");
+        }
+        catch (IdentityException exception)
+        {
+            _error = IdentityMessages.For(Text, exception, Users.AttemptsLeft(Form.UserName ?? string.Empty));
+        }
+    }
+
+    private sealed class LoginForm
+    {
+        public string? UserName { get; set; }
+
+        public string? Password { get; set; }
+    }
+}

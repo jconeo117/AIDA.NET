@@ -1,0 +1,6 @@
+{
+  "stryker-config": {
+    "project": "Aida.Platform.csproj",
+    "thresholds": { "high": 90, "low": 80, "break": 80 }
+  }
+}

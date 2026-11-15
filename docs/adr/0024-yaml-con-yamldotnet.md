@@ -1,6 +1,6 @@
 # 0024 — YAML con YamlDotNet, leído como lo lee la 0.1
 
-- **Estado:** Aceptado
+- **Estado:** Aceptado; ampliado por [0031](0031-yaml-en-la-plataforma.md)
 - **Fecha:** 2026-11-09
 - **Relacionados:** [0012](0012-packs-yaml.md), [0013](0013-python-como-oraculo.md), [0017](0017-cadena-de-suministro.md), [0023](0023-determinismo-y-blake2b-propio.md)
 
