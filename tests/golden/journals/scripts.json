@@ -1,0 +1,699 @@
+[
+ {
+  "name": "plantilla-1312-300",
+  "pack": "packs/_plantilla/pack.yaml",
+  "agent": "centinela_01",
+  "seed": 1312,
+  "ticks": 300,
+  "capacity": 64,
+  "policy": "mod3",
+  "classifier": {
+   "libera espacio en disco": "pedir_liberar_espacio",
+   "renueva los certificados": "pedir_renovar_certificados",
+   "hola, ¿qué tal?": null,
+   "escala el servicio": "pedir_escalar_replicas"
+  },
+  "inbox": [
+   [
+    5,
+    "libera espacio en disco"
+   ],
+   [
+    40,
+    "renueva los certificados"
+   ],
+   [
+    90,
+    "hola, ¿qué tal?"
+   ],
+   [
+    150,
+    "escala el servicio"
+   ]
+  ]
+ },
+ {
+  "name": "plantilla-sin-respuesta",
+  "pack": "packs/_plantilla/pack.yaml",
+  "agent": "centinela_01",
+  "seed": 7,
+  "ticks": 400,
+  "capacity": 8,
+  "policy": "none",
+  "classifier": {
+   "disco": "pedir_liberar_espacio",
+   "certificados": "pedir_renovar_certificados",
+   "réplicas": "pedir_escalar_replicas",
+   "??": "intencion_que_no_existe"
+  },
+  "inbox": [
+   [
+    3,
+    "disco"
+   ],
+   [
+    3,
+    "certificados"
+   ],
+   [
+    60,
+    "??"
+   ],
+   [
+    61,
+    "nada"
+   ],
+   [
+    120,
+    "réplicas"
+   ],
+   [
+    200,
+    "certificados"
+   ],
+   [
+    399,
+    "disco"
+   ]
+  ]
+ },
+ {
+  "name": "consultorio-sin-clasificador",
+  "pack": "packs/health/consultorio/pack.yaml",
+  "agent": "asistente_01",
+  "seed": 42,
+  "ticks": 300,
+  "capacity": 4,
+  "policy": "none",
+  "classifier": null,
+  "inbox": [
+   [
+    1,
+    "buenos días"
+   ],
+   [
+    10,
+    "¿hay cita mañana?"
+   ],
+   [
+    10,
+    "gracias"
+   ]
+  ]
+ },
+ {
+  "name": "sintetico01-ag1",
+  "pack": "tests/golden/state/packs/sintetico-01.yaml",
+  "agent": "ag1",
+  "seed": 0,
+  "ticks": 600,
+  "capacity": 4,
+  "policy": "none",
+  "classifier": {},
+  "inbox": [
+   [
+    30,
+    "hola"
+   ]
+  ]
+ },
+ {
+  "name": "sintetico02-agente01",
+  "pack": "tests/golden/state/packs/sintetico-02.yaml",
+  "agent": "agente_01",
+  "seed": 9223372036854775807,
+  "ticks": 600,
+  "capacity": 4,
+  "policy": "none",
+  "classifier": null,
+  "inbox": []
+ },
+ {
+  "name": "sintetico02-agente04",
+  "pack": "tests/golden/state/packs/sintetico-02.yaml",
+  "agent": "agente_04",
+  "seed": 123456789012345,
+  "ticks": 600,
+  "capacity": 4,
+  "policy": "none",
+  "classifier": null,
+  "inbox": []
+ },
+ {
+  "name": "plantilla-peticiones",
+  "pack": "packs/_plantilla/pack.yaml",
+  "agent": "centinela_01",
+  "seed": 0,
+  "ticks": 400,
+  "capacity": 400,
+  "policy": "none",
+  "classifier": {
+   "disco": "pedir_liberar_espacio"
+  },
+  "inbox": [
+   [
+    1,
+    "disco"
+   ],
+   [
+    4,
+    "disco"
+   ],
+   [
+    7,
+    "disco"
+   ],
+   [
+    10,
+    "disco"
+   ],
+   [
+    13,
+    "disco"
+   ],
+   [
+    16,
+    "disco"
+   ],
+   [
+    19,
+    "disco"
+   ],
+   [
+    22,
+    "disco"
+   ],
+   [
+    25,
+    "disco"
+   ],
+   [
+    28,
+    "disco"
+   ],
+   [
+    31,
+    "disco"
+   ],
+   [
+    34,
+    "disco"
+   ],
+   [
+    37,
+    "disco"
+   ],
+   [
+    40,
+    "disco"
+   ],
+   [
+    43,
+    "disco"
+   ],
+   [
+    46,
+    "disco"
+   ],
+   [
+    49,
+    "disco"
+   ],
+   [
+    52,
+    "disco"
+   ],
+   [
+    55,
+    "disco"
+   ],
+   [
+    58,
+    "disco"
+   ],
+   [
+    61,
+    "disco"
+   ],
+   [
+    64,
+    "disco"
+   ],
+   [
+    67,
+    "disco"
+   ],
+   [
+    70,
+    "disco"
+   ],
+   [
+    73,
+    "disco"
+   ],
+   [
+    76,
+    "disco"
+   ],
+   [
+    79,
+    "disco"
+   ],
+   [
+    82,
+    "disco"
+   ],
+   [
+    85,
+    "disco"
+   ],
+   [
+    88,
+    "disco"
+   ],
+   [
+    91,
+    "disco"
+   ],
+   [
+    94,
+    "disco"
+   ],
+   [
+    97,
+    "disco"
+   ],
+   [
+    100,
+    "disco"
+   ],
+   [
+    103,
+    "disco"
+   ],
+   [
+    106,
+    "disco"
+   ],
+   [
+    109,
+    "disco"
+   ],
+   [
+    112,
+    "disco"
+   ],
+   [
+    115,
+    "disco"
+   ],
+   [
+    118,
+    "disco"
+   ],
+   [
+    121,
+    "disco"
+   ],
+   [
+    124,
+    "disco"
+   ],
+   [
+    127,
+    "disco"
+   ],
+   [
+    130,
+    "disco"
+   ],
+   [
+    133,
+    "disco"
+   ],
+   [
+    136,
+    "disco"
+   ],
+   [
+    139,
+    "disco"
+   ],
+   [
+    142,
+    "disco"
+   ],
+   [
+    145,
+    "disco"
+   ],
+   [
+    148,
+    "disco"
+   ],
+   [
+    151,
+    "disco"
+   ],
+   [
+    154,
+    "disco"
+   ],
+   [
+    157,
+    "disco"
+   ],
+   [
+    160,
+    "disco"
+   ],
+   [
+    163,
+    "disco"
+   ],
+   [
+    166,
+    "disco"
+   ],
+   [
+    169,
+    "disco"
+   ],
+   [
+    172,
+    "disco"
+   ],
+   [
+    175,
+    "disco"
+   ],
+   [
+    178,
+    "disco"
+   ],
+   [
+    181,
+    "disco"
+   ],
+   [
+    184,
+    "disco"
+   ],
+   [
+    187,
+    "disco"
+   ],
+   [
+    190,
+    "disco"
+   ],
+   [
+    193,
+    "disco"
+   ],
+   [
+    196,
+    "disco"
+   ],
+   [
+    199,
+    "disco"
+   ],
+   [
+    202,
+    "disco"
+   ],
+   [
+    205,
+    "disco"
+   ],
+   [
+    208,
+    "disco"
+   ],
+   [
+    211,
+    "disco"
+   ],
+   [
+    214,
+    "disco"
+   ],
+   [
+    217,
+    "disco"
+   ],
+   [
+    220,
+    "disco"
+   ],
+   [
+    223,
+    "disco"
+   ],
+   [
+    226,
+    "disco"
+   ],
+   [
+    229,
+    "disco"
+   ],
+   [
+    232,
+    "disco"
+   ],
+   [
+    235,
+    "disco"
+   ],
+   [
+    238,
+    "disco"
+   ],
+   [
+    241,
+    "disco"
+   ],
+   [
+    244,
+    "disco"
+   ],
+   [
+    247,
+    "disco"
+   ],
+   [
+    250,
+    "disco"
+   ],
+   [
+    253,
+    "disco"
+   ],
+   [
+    256,
+    "disco"
+   ],
+   [
+    259,
+    "disco"
+   ],
+   [
+    262,
+    "disco"
+   ],
+   [
+    265,
+    "disco"
+   ],
+   [
+    268,
+    "disco"
+   ],
+   [
+    271,
+    "disco"
+   ],
+   [
+    274,
+    "disco"
+   ],
+   [
+    277,
+    "disco"
+   ],
+   [
+    280,
+    "disco"
+   ],
+   [
+    283,
+    "disco"
+   ],
+   [
+    286,
+    "disco"
+   ],
+   [
+    289,
+    "disco"
+   ],
+   [
+    292,
+    "disco"
+   ],
+   [
+    295,
+    "disco"
+   ],
+   [
+    298,
+    "disco"
+   ],
+   [
+    301,
+    "disco"
+   ],
+   [
+    304,
+    "disco"
+   ],
+   [
+    307,
+    "disco"
+   ],
+   [
+    310,
+    "disco"
+   ],
+   [
+    313,
+    "disco"
+   ],
+   [
+    316,
+    "disco"
+   ],
+   [
+    319,
+    "disco"
+   ],
+   [
+    322,
+    "disco"
+   ],
+   [
+    325,
+    "disco"
+   ],
+   [
+    328,
+    "disco"
+   ],
+   [
+    331,
+    "disco"
+   ],
+   [
+    334,
+    "disco"
+   ],
+   [
+    337,
+    "disco"
+   ],
+   [
+    340,
+    "disco"
+   ],
+   [
+    343,
+    "disco"
+   ],
+   [
+    346,
+    "disco"
+   ],
+   [
+    349,
+    "disco"
+   ],
+   [
+    352,
+    "disco"
+   ],
+   [
+    355,
+    "disco"
+   ],
+   [
+    358,
+    "disco"
+   ],
+   [
+    361,
+    "disco"
+   ],
+   [
+    364,
+    "disco"
+   ],
+   [
+    367,
+    "disco"
+   ],
+   [
+    370,
+    "disco"
+   ],
+   [
+    373,
+    "disco"
+   ],
+   [
+    376,
+    "disco"
+   ],
+   [
+    379,
+    "disco"
+   ],
+   [
+    382,
+    "disco"
+   ],
+   [
+    385,
+    "disco"
+   ],
+   [
+    388,
+    "disco"
+   ],
+   [
+    391,
+    "disco"
+   ],
+   [
+    394,
+    "disco"
+   ],
+   [
+    397,
+    "disco"
+   ]
+  ]
+ },
+ {
+  "name": "sintetico03-robot01",
+  "pack": "tests/golden/state/packs/sintetico-03.yaml",
+  "agent": "robot_01",
+  "seed": 1,
+  "ticks": 400,
+  "capacity": 4,
+  "policy": "none",
+  "classifier": null,
+  "inbox": []
+ }
+]
