@@ -1,0 +1,11 @@
+# Los roles del personal (ADR 0020). Lo que permite cada rol lo declara este archivo, no el código.
+roles:
+  - id: administracion
+    label: "Administración"
+    permissions: [users.manage]
+  - id: recepcion
+    label: "Recepción"
+  - id: profesional
+    label: "Profesional"
+  - id: caja
+    label: "Caja"

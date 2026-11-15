@@ -1,0 +1,86 @@
+@page "/primer-usuario"
+@attribute [AllowAnonymous]
+@inject UserStore Users
+@inject SessionTracker Sessions
+@inject ShellWording Text
+@inject NavigationManager Navigation
+
+<PageTitle>@Text["first_title"]</PageTitle>
+<h1>@Text["first_title"]</h1>
+@if (!FromServer)
+{
+    <p role="alert">@Text["first_remote_only"]</p>
+}
+else
+{
+    <p>@Text["first_lead"]</p>
+    @if (_error is not null)
+    {
+        <p role="alert">@_error</p>
+    }
+    <EditForm Model="Form" FormName="first" method="post" OnSubmit="CreateAsync">
+        <label>@Text["user_name_label"] <InputText @bind-Value="Form.UserName" autocomplete="username" /></label>
+        <label>@Text["first_display_name"] <InputText @bind-Value="Form.DisplayName" /></label>
+        <label>@Text["password_label"] <InputText type="password" @bind-Value="Form.Password" autocomplete="new-password" /></label>
+        <label>@Text["first_password2"] <InputText type="password" @bind-Value="Form.Password2" autocomplete="new-password" /></label>
+        <button type="submit">@Text["first_button"]</button>
+    </EditForm>
+}
+
+@code {
+    private string? _error;
+
+    [CascadingParameter]
+    private HttpContext Http { get; set; } = default!;
+
+    [SupplyParameterFromForm(Name = "Form")]
+    private FirstForm? PostedForm { get; set; }
+
+    private FirstForm Form => PostedForm ??= new();
+
+    private bool FromServer => ServerOrigin.IsServerItself(Http);
+
+    protected override void OnInitialized()
+    {
+        if (Users.HasUsers())
+        {
+            Navigation.NavigateTo("/entrar");
+        }
+    }
+
+    private async Task CreateAsync()
+    {
+        if (!FromServer)
+        {
+            return;
+        }
+
+        if (Form.Password != Form.Password2)
+        {
+            _error = Text["first_password_mismatch"];
+            return;
+        }
+
+        try
+        {
+            var user = Users.CreateFirstAdministrator(Form.UserName ?? string.Empty, Form.DisplayName ?? string.Empty, Form.Password ?? string.Empty, AidaWebApp.Workstation(Http));
+            await SignIn.StartAsync(Http, Sessions, user);
+            Navigation.NavigateTo("/");
+        }
+        catch (IdentityException exception)
+        {
+            _error = IdentityMessages.For(Text, exception, 0);
+        }
+    }
+
+    private sealed class FirstForm
+    {
+        public string? UserName { get; set; }
+
+        public string? DisplayName { get; set; }
+
+        public string? Password { get; set; }
+
+        public string? Password2 { get; set; }
+    }
+}

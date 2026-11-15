@@ -1,0 +1,53 @@
+@page "/bloqueado"
+@inject SessionTracker Sessions
+@inject UserStore Users
+@inject ShellWording Text
+@inject NavigationManager Navigation
+
+<PageTitle>@Text["locked_title"]</PageTitle>
+<h1>@Text["locked_title"]</h1>
+<p>@string.Format(System.Globalization.CultureInfo.CurrentCulture, Text["locked_lead"], Text.IdleLock.TotalMinutes, _view?.User?.DisplayName)</p>
+@if (_error is not null)
+{
+    <p role="alert">@_error</p>
+}
+<EditForm Model="Form" FormName="unlock" method="post" OnSubmit="Unlock">
+    <label>@Text["password_label"] <InputText type="password" @bind-Value="Form.Password" autocomplete="current-password" /></label>
+    <button type="submit">@Text["unlock_button"]</button>
+</EditForm>
+<form method="post" action="/salir"><AntiforgeryToken /><button type="submit">@Text["other_user"]</button></form>
+
+@code {
+    private string? _error;
+    private SessionView? _view;
+
+    [CascadingParameter]
+    private HttpContext Http { get; set; } = default!;
+
+    [SupplyParameterFromForm(Name = "Form")]
+    private UnlockForm? PostedForm { get; set; }
+
+    private UnlockForm Form => PostedForm ??= new();
+
+    private string Session => Http.User.FindFirstValue(AidaWebApp.SessionClaim) ?? string.Empty;
+
+    protected override void OnInitialized() => _view = Sessions.Check(Session);
+
+    private void Unlock()
+    {
+        try
+        {
+            Sessions.Unlock(Session, Form.Password ?? string.Empty);
+            Navigation.NavigateTo("/");
+        }
+        catch (IdentityException exception)
+        {
+            _error = IdentityMessages.For(Text, exception, Users.AttemptsLeft(_view?.User?.UserName ?? string.Empty));
+        }
+    }
+
+    private sealed class UnlockForm
+    {
+        public string? Password { get; set; }
+    }
+}
