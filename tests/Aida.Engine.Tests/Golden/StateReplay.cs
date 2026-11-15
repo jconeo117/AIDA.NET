@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Text.Json;
 using Aida.Engine.Events;
 using Aida.Engine.Ontology;
@@ -8,25 +9,21 @@ namespace Aida.Engine.Tests.Golden;
 
 internal static class StateReplay
 {
-    private static readonly Dictionary<string, ContentPack> PackCache = new(StringComparer.Ordinal);
+    private static readonly ConcurrentDictionary<string, ContentPack> PackCache = new(StringComparer.Ordinal);
 
     internal static ContentPack GetPack(string packName)
     {
-        if (PackCache.TryGetValue(packName, out var pack))
+        return PackCache.GetOrAdd(packName, static name =>
         {
-            return pack;
-        }
+            var path = name switch
+            {
+                "plantilla" => Path.Combine(GoldenFiles.RepoRoot, "packs", "_plantilla", "pack.yaml"),
+                "consultorio" => Path.Combine(GoldenFiles.RepoRoot, "packs", "health", "consultorio", "pack.yaml"),
+                _ => Path.Combine(GoldenFiles.GoldenDir, "state", "packs", $"{name}.yaml"),
+            };
 
-        var path = packName switch
-        {
-            "plantilla" => Path.Combine(GoldenFiles.RepoRoot, "packs", "_plantilla", "pack.yaml"),
-            "consultorio" => Path.Combine(GoldenFiles.RepoRoot, "packs", "health", "consultorio", "pack.yaml"),
-            _ => Path.Combine(GoldenFiles.GoldenDir, "state", "packs", $"{packName}.yaml"),
-        };
-
-        pack = PackLoader.Load(path);
-        PackCache[packName] = pack;
-        return pack;
+            return PackLoader.Load(path);
+        });
     }
 
     internal static void ExecuteOp(AgentState agent, ContentPack pack, EventLog log, JsonElement op, string opType)
