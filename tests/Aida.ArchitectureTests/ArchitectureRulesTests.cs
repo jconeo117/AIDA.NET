@@ -157,4 +157,24 @@ public sealed class ArchitectureRulesTests
 
         Assert.True(violations.Count == 0, "\n" + string.Join("\n", violations.Select(v => v.ToString())));
     }
+
+    [Fact]
+    public void Regla_ADR0028_solo_la_plataforma_usa_sqlite()
+    {
+        var files = _sourceTree.ListFiles("src", [".cs", ".razor", ".csproj"])
+            .Where(file => !file.Replace('\\', '/').StartsWith("src/Aida.Platform/"))
+            .ToList();
+
+        var violations = new List<string>();
+        foreach (var file in files)
+        {
+            var content = _sourceTree.ReadAllText(file);
+            if (content.Contains("Microsoft.Data.Sqlite", StringComparison.Ordinal))
+            {
+                violations.Add($"El archivo «{file}» usa Microsoft.Data.Sqlite fuera de src/Aida.Platform.");
+            }
+        }
+
+        Assert.True(violations.Count == 0, "\n" + string.Join("\n", violations));
+    }
 }

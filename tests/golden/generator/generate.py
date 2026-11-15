@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from decide_section import generate_deliberation
 from exp_section import check_exp_sentinel, generate_exp
 from journal_section import generate_journals
+from ledger_section import generate_ledger
 from packs_section import generate_packs
 from pow_section import check_pow_sentinel, generate_pow
 from rng_section import generate_randomness
@@ -162,6 +163,7 @@ def generate_manifest(out_dir: Path, commit: str) -> None:
         "journals/sintetico02-agente01.jsonl",
         "journals/sintetico02-agente04.jsonl",
         "journals/sintetico03-robot01.jsonl",
+        "ledger/chain.tsv",
         "numerics/exp.txt",
         "numerics/pow.txt",
         "packs/cases.jsonl",
@@ -209,6 +211,7 @@ def main() -> None:
     generate_randomness(out_dir / "randomness")
     generate_deliberation(aida_dir, out_dir)
     generate_journals(aida_dir, repo_dir, out_dir)
+    generate_ledger(out_dir / "ledger" / "chain.tsv")
     generate_manifest(out_dir, commit)
 
 
