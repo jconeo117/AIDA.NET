@@ -1,6 +1,6 @@
 # 0028 — SQLite como almacén del servidor, con Microsoft.Data.Sqlite y sin ORM
 
-- **Estado:** Aceptado
+- **Estado:** Aceptado; precisado por [0032](0032-sql-de-cada-brazo.md)
 - **Fecha:** 2026-11-15
 - **Relacionados:** [0017](0017-cadena-de-suministro.md), [0020](0020-servidor-en-red-local.md), [0006](0006-owner-y-autoria.md), [0009](0009-datos-sellados.md)
 

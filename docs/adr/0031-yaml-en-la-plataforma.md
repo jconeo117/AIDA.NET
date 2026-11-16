@@ -1,6 +1,6 @@
 # 0031 — YamlDotNet también en la plataforma, para los archivos de packs/platform
 
-- **Estado:** Aceptado
+- **Estado:** Aceptado; ampliado por [0033](0033-packs-de-los-brazos.md)
 - **Fecha:** 2026-11-15
 - **Relacionados:** amplía el [0024](0024-yaml-con-yamldotnet.md); [0002](0002-agnosticismo-de-dominio.md), [0012](0012-packs-yaml.md), [0017](0017-cadena-de-suministro.md), [0020](0020-servidor-en-red-local.md)
 

@@ -1,6 +1,6 @@
 # 0007 — Ninguna acción irreversible sin autoridad; una sola puerta de acciones
 
-- **Estado:** Aceptado
+- **Estado:** Aceptado; precisado por [0035](0035-lo-que-declara-un-brazo.md)
 - **Fecha:** 2026-10-28
 - **Relacionados:** [0001](0001-el-motor-decide.md), [0006](0006-owner-y-autoria.md), [0011](0011-brazos-y-comunicacion.md)
 
