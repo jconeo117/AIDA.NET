@@ -17,9 +17,11 @@ public sealed partial class RoleCatalog
 
     /// <summary>Crea el catálogo.</summary>
     /// <param name="roles">Los roles, en orden.</param>
+    /// <param name="armPermissions">Los permisos que declaran los brazos; <c>users.manage</c> se conoce siempre (ADR 0035).</param>
     /// <exception cref="InvalidDataException">Si no cumple las reglas del catálogo.</exception>
-    public RoleCatalog(IReadOnlyList<RoleSpec> roles)
+    public RoleCatalog(IReadOnlyList<RoleSpec> roles, IEnumerable<string>? armPermissions = null)
     {
+        var known = new HashSet<string>(armPermissions ?? [], StringComparer.Ordinal) { PlatformPermission.ManageUsers };
         var problems = new List<string>();
         if (roles.Count == 0)
         {
@@ -38,7 +40,7 @@ public sealed partial class RoleCatalog
                 problems.Add($"el rol «{role.Id}» no tiene etiqueta");
             }
 
-            problems.AddRange(role.Permissions.Where(p => p != PlatformPermission.ManageUsers).Order(StringComparer.Ordinal)
+            problems.AddRange(role.Permissions.Where(p => !known.Contains(p)).Order(StringComparer.Ordinal)
                 .Select(p => $"el rol «{role.Id}» declara un permiso desconocido: «{p}»"));
         }
 
@@ -65,9 +67,10 @@ public sealed partial class RoleCatalog
 
     /// <summary>Lee el catálogo de <c>roles.yaml</c>.</summary>
     /// <param name="path">La ruta del archivo.</param>
+    /// <param name="armPermissions">Los permisos que declaran los brazos.</param>
     /// <returns>El catálogo.</returns>
     /// <exception cref="InvalidDataException">Si no se puede leer o no es válido.</exception>
-    public static RoleCatalog Load(string path)
+    public static RoleCatalog Load(string path, IEnumerable<string>? armPermissions = null)
     {
         var root = PlatformYaml.ReadRoot(path);
         if (PlatformYaml.Child(root, "roles") is not YamlSequenceNode list)
@@ -89,7 +92,7 @@ public sealed partial class RoleCatalog
             roles.Add(new RoleSpec(PlatformYaml.Text(PlatformYaml.Child(map, "id")) ?? string.Empty, PlatformYaml.Text(PlatformYaml.Child(map, "label")) ?? string.Empty, permissions));
         }
 
-        return new RoleCatalog(roles);
+        return new RoleCatalog(roles, armPermissions);
     }
 
     /// <summary>Si un rol tiene un permiso. Un rol que no está declarado no tiene ninguno.</summary>

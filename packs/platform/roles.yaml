@@ -2,10 +2,12 @@
 roles:
   - id: administracion
     label: "Administración"
-    permissions: [users.manage]
+    permissions: [users.manage, agenda.manage]
   - id: recepcion
     label: "Recepción"
+    permissions: [agenda.manage]
   - id: profesional
     label: "Profesional"
+    permissions: [agenda.manage]
   - id: caja
     label: "Caja"

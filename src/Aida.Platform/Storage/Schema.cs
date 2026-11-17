@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using Microsoft.Data.Sqlite;
 
 namespace Aida.Platform.Storage;
@@ -7,7 +8,7 @@ namespace Aida.Platform.Storage;
 /// mal leído es peor que no leerlo (<c>persistence.py:33-35</c> de la 0.1 lo dice del guardado).</remarks>
 internal static class Schema
 {
-    internal const int Version = 1;
+    internal const int Version = 2;
 
     private const string _version1 = """
         CREATE TABLE users (
@@ -25,6 +26,15 @@ internal static class Schema
         ) STRICT;
         """;
 
+    private const string _version2 = """
+        CREATE TABLE arm_schema (
+            arm TEXT PRIMARY KEY,
+            version INTEGER NOT NULL
+        ) STRICT;
+        """;
+
+    private static readonly ImmutableArray<string> _steps = [_version1, _version2];
+
     internal static void Apply(SqliteConnection connection)
     {
         using (var wal = connection.CreateCommand())
@@ -40,11 +50,11 @@ internal static class Schema
             throw new InvalidOperationException($"la base de datos es de la versión {current} y este AIDA solo conoce hasta la {Version}");
         }
 
-        if (current == 0)
+        if (current < Version)
         {
             using var create = connection.CreateCommand();
             create.Transaction = transaction;
-            create.CommandText = _version1 + $"PRAGMA user_version = {Version};";
+            create.CommandText = string.Concat(_steps.Skip((int)current)) + $"PRAGMA user_version = {Version};";
             create.ExecuteNonQuery();
         }
 

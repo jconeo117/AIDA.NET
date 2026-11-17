@@ -6,6 +6,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Data.Sqlite" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" />
     <PackageReference Include="YamlDotNet" />
     <InternalsVisibleTo Include="Aida.Platform.Tests" />
   </ItemGroup>

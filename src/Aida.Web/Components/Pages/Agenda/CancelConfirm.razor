@@ -1,0 +1,22 @@
+@using System.Globalization
+@using Aida.Arms.Agenda.Desk
+@using Aida.Arms.Agenda.Wording
+@inject AgendaWording Text
+
+<div class="panel-card">
+    <h3>@Text["cancel_button"]</h3>
+    <p>@string.Format(CultureInfo.CurrentCulture, Text["cancel_confirm"], View.ClientName, View.Appointment.Start.ToString("d MMMM", CultureInfo.CurrentCulture), View.Appointment.Start.ToString("HH:mm", CultureInfo.InvariantCulture))</p>
+    <input type="hidden" name="Command.Appointment" value="@View.Appointment.Id.ToString(CultureInfo.InvariantCulture)" />
+    <div class="side-actions">
+        <a href="@AgendaLinks.Panel(Day, "cita", View.Appointment.Id.ToString(CultureInfo.InvariantCulture))">@Text["cancel_back"]</a>
+        <button type="submit" name="Command.Action" value="cancelar">@Text["cancel_yes"]</button>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public AppointmentView View { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public DateOnly Day { get; set; }
+}
