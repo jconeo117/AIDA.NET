@@ -175,6 +175,7 @@
         "dependencies": {
           "Aida.Engine": "[1.0.0, )",
           "Microsoft.Data.Sqlite": "[10.0.15, )",
+          "System.Security.Cryptography.ProtectedData": "[10.0.15, )",
           "YamlDotNet": "[18.1.0, )"
         }
       },
@@ -200,6 +201,12 @@
           "SQLitePCLRaw.bundle_e_sqlite3": "2.1.13",
           "SQLitePCLRaw.core": "2.1.13"
         }
+      },
+      "System.Security.Cryptography.ProtectedData": {
+        "type": "CentralTransitive",
+        "requested": "[10.0.15, )",
+        "resolved": "10.0.15",
+        "contentHash": "AG49oTxB0R4YQJzeIIHRgqyaI3SOT8Q8vEfGUcju2WxOvsBkDJU4FKTQ8gYQAYCxmHOHqyJL0UDGcCf8nzRoiw=="
       },
       "YamlDotNet": {
         "type": "CentralTransitive",
