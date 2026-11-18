@@ -4,6 +4,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text.RegularExpressions;
 using Aida.Platform.Audit;
 using Aida.Platform.Identity;
+using Aida.Platform.Keys;
 using Aida.Platform.Storage;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -32,7 +33,9 @@ internal sealed class ServerHarness : IAsyncDisposable
         Time = time;
     }
 
-    public static async Task<ServerHarness> CreateAsync(Action<WebApplicationBuilder>? configure = null)
+    public static async Task<ServerHarness> CreateAsync(
+        Action<WebApplicationBuilder>? configure = null,
+        bool withDevelopmentKeyProtector = true)
     {
         var tempDir = Path.Combine(Path.GetTempPath(), "aida-web-test-" + Guid.NewGuid().ToString("n"));
         var dataDir = Path.Combine(tempDir, "data");
@@ -56,6 +59,11 @@ internal sealed class ServerHarness : IAsyncDisposable
                 builder.WebHost.ConfigureKestrel(k => k.ConfigureHttpsDefaults(h => h.ServerCertificate = cert));
                 builder.Services.AddSingleton<TimeProvider>(time);
                 builder.Services.AddSingleton(new PasswordHasher(10));
+                if (withDevelopmentKeyProtector)
+                {
+                    builder.Services.AddSingleton<IKeyProtector>(new DevelopmentKeyProtector());
+                }
+
                 configure?.Invoke(builder);
             });
 

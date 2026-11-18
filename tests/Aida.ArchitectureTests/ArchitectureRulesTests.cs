@@ -159,19 +159,97 @@ public sealed class ArchitectureRulesTests
     }
 
     [Fact]
-    public void Regla_ADR0028_solo_la_plataforma_usa_sqlite()
+    public void Regla_ADR0032_sqlite_solo_en_la_plataforma_y_los_brazos()
     {
-        var files = _sourceTree.ListFiles("src", [".cs", ".razor", ".csproj"])
-            .Where(file => !file.Replace('\\', '/').StartsWith("src/Aida.Platform/"))
+        var codeFiles = _sourceTree.ListFiles("src", [".cs", ".razor"])
+            .Where(file =>
+            {
+                var norm = file.Replace('\\', '/');
+                return !norm.StartsWith("src/Aida.Platform/") && !norm.StartsWith("src/Aida.Arms.");
+            })
             .ToList();
 
         var violations = new List<string>();
-        foreach (var file in files)
+        foreach (var file in codeFiles)
         {
             var content = _sourceTree.ReadAllText(file);
             if (content.Contains("Microsoft.Data.Sqlite", StringComparison.Ordinal))
             {
-                violations.Add($"El archivo «{file}» usa Microsoft.Data.Sqlite fuera de src/Aida.Platform.");
+                violations.Add($"El archivo «{file}» usa Microsoft.Data.Sqlite fuera de la plataforma y los brazos.");
+            }
+        }
+
+        var csprojFiles = _sourceTree.ListFiles("src", [".csproj"])
+            .Where(file => !file.Replace('\\', '/').Equals("src/Aida.Platform/Aida.Platform.csproj", StringComparison.Ordinal))
+            .ToList();
+
+        foreach (var file in csprojFiles)
+        {
+            var content = _sourceTree.ReadAllText(file);
+            if (content.Contains("Microsoft.Data.Sqlite", StringComparison.Ordinal))
+            {
+                violations.Add($"El proyecto «{file}» referencia Microsoft.Data.Sqlite pero no es Aida.Platform.");
+            }
+        }
+
+        Assert.True(violations.Count == 0, "\n" + string.Join("\n", violations));
+    }
+
+    [Fact]
+    public void Regla_ADR0034_dpapi_y_aesgcm_solo_en_la_plataforma()
+    {
+        var csFiles = _sourceTree.ListFiles("src", [".cs"])
+            .Where(file => !file.Replace('\\', '/').StartsWith("src/Aida.Platform/"))
+            .ToList();
+
+        var violations = new List<string>();
+        foreach (var file in csFiles)
+        {
+            var content = _sourceTree.ReadAllText(file);
+            if (content.Contains("ProtectedData", StringComparison.Ordinal))
+            {
+                violations.Add($"El archivo «{file}» nombra ProtectedData fuera de src/Aida.Platform.");
+            }
+
+            if (content.Contains("AesGcm", StringComparison.Ordinal))
+            {
+                violations.Add($"El archivo «{file}» nombra AesGcm fuera de src/Aida.Platform.");
+            }
+        }
+
+        Assert.True(violations.Count == 0, "\n" + string.Join("\n", violations));
+    }
+
+    [Fact]
+    public void Regla_ADR0033_yamldotnet_solo_en_motor_y_plataforma()
+    {
+        var allowedProjects = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "src/Aida.Engine/Aida.Engine.csproj",
+            "src/Aida.Platform/Aida.Platform.csproj",
+        };
+
+        var csprojFiles = _sourceTree.ListFiles("src", [".csproj"])
+            .Where(file => !allowedProjects.Contains(file.Replace('\\', '/')))
+            .ToList();
+
+        var violations = new List<string>();
+        foreach (var file in csprojFiles)
+        {
+            var content = _sourceTree.ReadAllText(file);
+            if (content.Contains("YamlDotNet", StringComparison.OrdinalIgnoreCase))
+            {
+                violations.Add($"El proyecto «{file}» referencia YamlDotNet fuera de Aida.Engine y Aida.Platform.");
+            }
+        }
+
+        var csFiles = _sourceTree.ListFiles("src", [".cs"]);
+        foreach (var file in csFiles)
+        {
+            var content = _sourceTree.ReadAllText(file);
+            if (content.Contains("Deserializer", StringComparison.Ordinal))
+            {
+                violations.Add($"El archivo «{file}» contiene Deserializer.");
             }
         }
 
