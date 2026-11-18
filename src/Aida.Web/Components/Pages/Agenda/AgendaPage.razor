@@ -34,7 +34,7 @@
             }
             else if (_panel == "mover" && _appointment is not null)
             {
-                <SlotPicker View="_view" Day="_day" ServiceId="_appointment.Appointment.Service" AppointmentId="_appointment.Appointment.Id" Moving="true" />
+                <SlotPicker View="_view" Day="_day" ServiceId="@_appointment.Appointment.Service" AppointmentId="_appointment.Appointment.Id" Moving="true" />
             }
             else if (_panel == "cita" && _appointment is not null)
             {
@@ -42,7 +42,7 @@
             }
             else if (_panel == "nueva" && _canManage && _serviceId is not null)
             {
-                <SlotPicker View="_view" Day="_day" ServiceId="_serviceId" Moving="false" />
+                <SlotPicker View="_view" Day="_day" ServiceId="@_serviceId" Moving="false" />
             }
             else if (_canManage && _firstService is not null)
             {
