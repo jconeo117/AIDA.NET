@@ -1,6 +1,12 @@
 using System.Security.Claims;
+using Aida.Arms.Agenda;
+using Aida.Arms.Agenda.Desk;
+using Aida.Arms.Agenda.Setup;
+using Aida.Arms.Agenda.Wording;
+using Aida.Engine.Ontology;
 using Aida.Platform.Audit;
 using Aida.Platform.Identity;
+using Aida.Platform.Keys;
 using Aida.Platform.Paths;
 using Aida.Platform.Roles;
 using Aida.Platform.Sessions;
@@ -38,16 +44,35 @@ public static class AidaWebApp
         builder.Services.AddSingleton(paths);
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddSingleton(_ => new PlatformDatabase(paths.DatabaseFile));
-        builder.Services.AddSingleton(_ => RoleCatalog.Load(paths.PlatformPackFile("roles.yaml")));
+        builder.Services.AddSingleton(_ => RoleCatalog.Load(paths.PlatformPackFile("roles.yaml"), AgendaDeclarations.Permissions));
         builder.Services.AddSingleton(_ => ShellWording.Load(paths.PlatformPackFile("ui.yaml")));
         builder.Services.AddSingleton(_ => new PasswordHasher(PasswordHasher.ServerIterations));
-        builder.Services.AddSingleton<AuditLog>();
+        builder.Services.AddSingleton(provider => new AuditLog(provider.GetRequiredService<PlatformDatabase>(), provider.GetRequiredService<TimeProvider>(), AgendaDeclarations.AuditKinds));
         builder.Services.AddSingleton<UserStore>();
         builder.Services.AddSingleton(provider => new SessionTracker(
             provider.GetRequiredService<UserStore>(),
             provider.GetRequiredService<AuditLog>(),
             provider.GetRequiredService<TimeProvider>(),
             provider.GetRequiredService<ShellWording>().IdleLock));
+        var agendaPack = paths.ArmPackDirectory(AgendaDeclarations.ArmId);
+        builder.Services.AddSingleton(_ => KeyProtectors.ForHost(builder.Environment.IsDevelopment()));
+        builder.Services.AddSingleton(provider => MachineKey.OpenOrCreate(paths.MachineKeyFile, provider.GetRequiredService<IKeyProtector>()));
+        builder.Services.AddSingleton(_ => AgendaManifest.Load(Path.Combine(agendaPack, "arm.yaml")));
+        builder.Services.AddSingleton(_ => AgendaWording.Load(Path.Combine(agendaPack, "ui.yaml")));
+        builder.Services.AddSingleton(provider =>
+        {
+            var manifest = provider.GetRequiredService<AgendaManifest>();
+            return new AgendaDesk(
+                provider.GetRequiredService<PlatformDatabase>(),
+                provider.GetRequiredService<AuditLog>(),
+                provider.GetRequiredService<RoleCatalog>(),
+                provider.GetRequiredService<UserStore>(),
+                AgendaSetupLoader.Load(paths.ConfigFile("agenda.yaml"), agendaPack, manifest.DefaultSector),
+                manifest.Actions,
+                Reversibility.Reversible,
+                provider.GetRequiredService<MachineKey>(),
+                provider.GetRequiredService<TimeProvider>());
+        });
         builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme).AddCookie(cookie =>
         {
             cookie.Cookie.Name = CookieName;
@@ -67,6 +92,11 @@ public static class AidaWebApp
         configure?.Invoke(builder);
 
         var app = builder.Build();
+        if (!OperatingSystem.IsWindows() && app.Environment.IsDevelopment())
+        {
+            app.Logger.LogWarning("La clave del equipo se guarda sin proteger: solo vale para desarrollar fuera de Windows (ADR 0034).");
+        }
+
         app.UseExceptionHandler("/Error", createScopeForErrors: true);
         app.UseHsts();
         app.UseAuthentication();

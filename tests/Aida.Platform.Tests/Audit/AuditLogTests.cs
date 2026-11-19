@@ -52,7 +52,7 @@ public sealed class AuditLogTests
         var log = new AuditLog(db.Database, time);
         var actor = new Actor("u1", "Ana");
 
-        foreach (var kind in Enum.GetValues<AuditKind>())
+        foreach (var kind in AuditKind.Platform)
         {
             Assert.True(expectedWireNames.TryGetValue(kind, out var expectedName), $"Falta mapear AuditKind.{kind}");
             log.Record(kind, actor, "127.0.0.1", new Dictionary<string, string>());
@@ -62,12 +62,63 @@ public sealed class AuditLogTests
         Assert.Equal(expectedWireNames.Count, lines.Count);
 
         var index = 0;
-        foreach (var kind in Enum.GetValues<AuditKind>())
+        foreach (var kind in AuditKind.Platform)
         {
             var wire = expectedWireNames[kind];
             Assert.Contains($"\"kind\": \"{wire}\"", lines[index]);
             index++;
         }
+    }
+
+    [Fact]
+    public void Una_clase_de_brazo_declarada_se_escribe()
+    {
+        var armKind = AuditKind.Declare("agenda_changed");
+        using var db = new TestDatabase();
+        var time = new ManualTime();
+        var log = new AuditLog(db.Database, time, [armKind]);
+        var actor = new Actor("u1", "Ana");
+
+        var digest = log.Record(armKind, actor, "127.0.0.1", new Dictionary<string, string> { ["action"] = "agendar" });
+
+        var lines = log.Lines();
+        Assert.Single(lines);
+        Assert.Contains("\"kind\": \"agenda_changed\"", lines[0]);
+        Assert.Empty(log.Verify());
+    }
+
+    [Fact]
+    public void Una_clase_no_declarada_lanza_y_no_escribe()
+    {
+        var undeclaredKind = AuditKind.Declare("custom_unknown");
+        using var db = new TestDatabase();
+        var time = new ManualTime();
+        var log = new AuditLog(db.Database, time);
+        var actor = new Actor("u1", "Ana");
+
+        var ex = Assert.Throws<ArgumentException>(() =>
+            log.Record(undeclaredKind, actor, "127.0.0.1", new Dictionary<string, string>()));
+        Assert.Contains("clase de hecho de auditoría desconocida", ex.Message);
+        Assert.Empty(log.Lines());
+    }
+
+    [Fact]
+    public void En_la_transaccion_de_quien_llama_sin_commit_no_queda()
+    {
+        var armKind = AuditKind.Declare("agenda_changed");
+        using var db = new TestDatabase();
+        var time = new ManualTime();
+        var log = new AuditLog(db.Database, time, [armKind]);
+        var actor = new Actor("u1", "Ana");
+
+        using (var conn = db.Database.Open())
+        using (var tx = conn.BeginTransaction())
+        {
+            log.Record(conn, tx, armKind, actor, "127.0.0.1", new Dictionary<string, string>());
+            // No hacemos tx.Commit()
+        }
+
+        Assert.Empty(log.Lines());
     }
 
     [Fact]

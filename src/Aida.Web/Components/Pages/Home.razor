@@ -1,6 +1,8 @@
 ﻿@page "/"
+@using Aida.Arms.Agenda.Wording
 @inject ShellWording Text
 @inject RoleCatalog Roles
+@inject AgendaWording Agenda
 
 <PageTitle>@Text["brand"]</PageTitle>
 <h1>@Text["brand"]</h1>
@@ -8,6 +10,10 @@
 @if (_user is not null && Roles.Allows(_user.RoleId, PlatformPermission.ManageUsers))
 {
     <a href="/usuarios">@Text["users_title"]</a>
+}
+@if (_user is not null)
+{
+    <a href="/agenda">@Agenda["title"]</a>
 }
 <form method="post" action="/salir"><AntiforgeryToken /><button type="submit">@Text["exit_label"]</button></form>
 

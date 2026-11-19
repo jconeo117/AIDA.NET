@@ -1,0 +1,131 @@
+@page "/agenda"
+@using System.Globalization
+@using Aida.Arms.Agenda.Desk
+@using Aida.Arms.Agenda.Wording
+@using Aida.Engine.Actions
+@inject AgendaDesk Desk
+@inject AgendaWording Text
+@inject TimeProvider Time
+@inject NavigationManager Navigation
+
+<PageTitle>@Text["title"]</PageTitle>
+
+<EditForm Model="Command" FormName="agenda-action" method="post" OnSubmit="Submit">
+    <AntiforgeryToken />
+    <div class="agenda-head">
+        <h1>@Text["title"]</h1>
+        <nav class="day-nav">
+            <a href="@AgendaLinks.Day(_day.AddDays(-1))">‹</a>
+            <a href="@AgendaLinks.Day(_today)">@Text["today"]</a>
+            <a href="@AgendaLinks.Day(_day.AddDays(1))">›</a>
+        </nav>
+        <span>@_day.ToString("D", CultureInfo.CurrentCulture)</span>
+    </div>
+    @if (_message is not null)
+    {
+        <p role="status">@_message</p>
+    }
+    <div class="agenda">
+        <AgendaGrid View="_view" />
+        <aside class="side">
+            @if (_panel == "cancelar" && _appointment is not null)
+            {
+                <CancelConfirm View="_appointment" Day="_day" />
+            }
+            else if (_panel == "mover" && _appointment is not null)
+            {
+                <SlotPicker View="_view" Day="_day" ServiceId="@_appointment.Appointment.Service" AppointmentId="_appointment.Appointment.Id" Moving="true" />
+            }
+            else if (_panel == "cita" && _appointment is not null)
+            {
+                <AppointmentDetail View="_appointment" Setup="_view.Setup" CanManage="_canManage" Day="_day" />
+            }
+            else if (_panel == "nueva" && _canManage && _serviceId is not null)
+            {
+                <SlotPicker View="_view" Day="_day" ServiceId="@_serviceId" Moving="false" />
+            }
+            else if (_canManage && _firstService is not null)
+            {
+                <a href="@AgendaLinks.Panel(_day, "nueva", _firstService)">@Text["new_button"]</a>
+            }
+        </aside>
+    </div>
+</EditForm>
+
+@code {
+    private DateOnly _today;
+    private DateOnly _day;
+    private DayView _view = null!;
+    private bool _canManage;
+    private string? _message;
+    private string? _panel;
+    private string? _serviceId;
+    private string? _firstService;
+    private AppointmentView? _appointment;
+
+    [CascadingParameter]
+    private HttpContext Http { get; set; } = default!;
+
+    [SupplyParameterFromQuery(Name = "dia")]
+    public string? Dia { get; set; }
+
+    [SupplyParameterFromQuery(Name = "cita")]
+    public string? Cita { get; set; }
+
+    [SupplyParameterFromQuery(Name = "nueva")]
+    public string? Nueva { get; set; }
+
+    [SupplyParameterFromQuery(Name = "mover")]
+    public string? Mover { get; set; }
+
+    [SupplyParameterFromQuery(Name = "cancelar")]
+    public string? Cancelar { get; set; }
+
+    [SupplyParameterFromForm(FormName = "agenda-action", Name = "Command")]
+    private AgendaCommandForm? PostedCommand { get; set; }
+
+    private AgendaCommandForm Command => PostedCommand ??= new();
+
+    protected override void OnInitialized()
+    {
+        _today = DateOnly.FromDateTime(Time.GetLocalNow().DateTime);
+        _day = DateOnly.TryParseExact(Dia, AgendaLinks.DayFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed) ? parsed : _today;
+        var user = SessionGate.CurrentUser(Http);
+        _canManage = user is not null && Desk.CanManage(user);
+        _view = Desk.Day(_day);
+        _firstService = _view.Setup.Services.FirstOrDefault()?.Id;
+        _serviceId = Nueva is not null && _view.Setup.Service(Nueva) is not null ? Nueva : _firstService;
+        _panel = Cancelar is not null ? "cancelar" : Mover is not null ? "mover" : Cita is not null ? "cita" : Nueva is not null ? "nueva" : null;
+        var target = Cancelar ?? Mover ?? Cita;
+        _appointment = target is not null && long.TryParse(target, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)
+            ? _view.Appointments.FirstOrDefault(appointment => appointment.Appointment.Id == id)
+            : null;
+    }
+
+    private void Submit()
+    {
+        var user = SessionGate.CurrentUser(Http);
+        if (user is null)
+        {
+            return;
+        }
+
+        var arguments = AgendaArguments.From(Command);
+        var result = Desk.Submit(user, AidaWebApp.Workstation(Http), Command.Action ?? string.Empty, arguments);
+        if (result.Status == ToolStatus.Done)
+        {
+            var day = AgendaArguments.DayOf(arguments) ?? _day;
+            Navigation.NavigateTo($"{AgendaLinks.Day(day)}&cita={result.Data["appointment"]}");
+            return;
+        }
+
+        if (result.Reason == "forbidden")
+        {
+            Http.Response.StatusCode = StatusCodes.Status403Forbidden;
+            _message = Text["reason_forbidden"];
+            return;
+        }
+
+        _message = Text.Reason(result.Reason);
+    }
+}

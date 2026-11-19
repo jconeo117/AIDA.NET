@@ -1,0 +1,70 @@
+@using System.Globalization
+@using Aida.Arms.Agenda.Desk
+@using Aida.Arms.Agenda.Wording
+@inject AgendaWording Text
+
+<div class="panel-card">
+    <h3>@(Moving ? Text["move_title"] : Text["new_title"])</h3>
+    @if (Moving)
+    {
+        <input type="hidden" name="Command.Action" value="reprogramar" />
+        <input type="hidden" name="Command.Appointment" value="@AppointmentId?.ToString(CultureInfo.InvariantCulture)" />
+    }
+    else
+    {
+        <p>@Text["new_lead"]</p>
+        <p>
+            @Text["field_service"]:
+            @foreach (var service in View.Setup.Services)
+            {
+                <a href="@AgendaLinks.Panel(Day, "nueva", service.Id)">@service.Label</a>
+            }
+        </p>
+        <input type="hidden" name="Command.Action" value="agendar" />
+        <input type="hidden" name="Command.Service" value="@ServiceId" />
+        <label>@Text["field_name"] <input name="Command.Name" required /></label>
+        <label>@Text["field_phone"] <input name="Command.Phone" required /></label>
+    }
+
+    <h4>@string.Format(CultureInfo.CurrentCulture, Text["free_slots"], ServiceLabel)</h4>
+    @if (_slots.Count == 0)
+    {
+        <p>@Text["no_slots"]</p>
+    }
+    else
+    {
+        <div class="slots">
+            @foreach (var slot in _slots)
+            {
+                <button type="submit" name="Command.Slot" value="@AgendaLinks.Slot(slot.Resource, slot.Start)">
+                    @slot.Start.ToString("HH:mm", CultureInfo.InvariantCulture) · @(View.Setup.Resource(slot.Resource)?.Label ?? slot.Resource)
+                </button>
+            }
+        </div>
+    }
+    <a href="@AgendaLinks.Day(Day)">@Text["close_button"]</a>
+</div>
+
+@code {
+    private IReadOnlyList<FreeSlot> _slots = [];
+
+    [Parameter, EditorRequired]
+    public DayView View { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public DateOnly Day { get; set; }
+
+    [Parameter, EditorRequired]
+    public string ServiceId { get; set; } = string.Empty;
+
+    [Parameter]
+    public long? AppointmentId { get; set; }
+
+    [Parameter]
+    public bool Moving { get; set; }
+
+    private string ServiceLabel => View.Setup.Service(ServiceId)?.Label ?? ServiceId;
+
+    protected override void OnParametersSet() =>
+        _slots = View.Free.TryGetValue(ServiceId, out var slots) ? slots : [];
+}

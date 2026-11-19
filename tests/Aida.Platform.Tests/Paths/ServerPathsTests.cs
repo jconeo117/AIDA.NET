@@ -29,4 +29,16 @@ public sealed class ServerPathsTests
         Assert.Equal(Path.Combine(data, "aida.db"), paths.DatabaseFile);
         Assert.Equal(Path.Combine(packs, "platform", "ui.yaml"), paths.PlatformPackFile("ui.yaml"));
     }
+
+    [Fact]
+    public void Pack_de_brazo_configuracion_y_clave()
+    {
+        var packs = Path.GetFullPath("/var/aida/packs");
+        var data = Path.GetFullPath("/var/aida/data");
+        var paths = new ServerPaths(packs, data);
+
+        Assert.Equal(Path.Combine(packs, "agenda"), paths.ArmPackDirectory("agenda"));
+        Assert.Equal(Path.Combine(data, "config", "agenda.yaml"), paths.ConfigFile("agenda.yaml"));
+        Assert.Equal(Path.Combine(data, "keys", "machine.key"), paths.MachineKeyFile);
+    }
 }

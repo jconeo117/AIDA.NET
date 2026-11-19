@@ -5,3 +5,9 @@ version: "1"
 arm: "aida.arms.agenda.app:build_arm"
 icon: "calendar"
 default_sector: "consultorio"
+actions:
+  - {id: "agendar", reversibility: "reversible"}
+  - {id: "reprogramar", reversibility: "reversible"}
+  - {id: "cancelar", reversibility: "reversible"}
+  - {id: "atendida", reversibility: "reversible"}
+  - {id: "no_asistio", reversibility: "reversible"}

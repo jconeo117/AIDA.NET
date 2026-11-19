@@ -1,7 +1,7 @@
 # Aida.Engine
 
-- **Estado:** N002 trajo los eventos y su registro, la serialización canónica y BLAKE2b. N003 trajo la ontología y el pack: tipos, carga del YAML y validación. N004 trajo la disposición y el estado del agente, con su propio `pow`. N005 trajo la deliberación: el sorteo por clave con Mersenne Twister, la `exp` propia y las necesidades críticas. N006 trae el bucle: el agente corre tick a tick con su buzón, su clasificador de intención y su techo de autoridad. La explicación y la persistencia llegan en N007.
-- **ADR:** [0001](../adr/0001-el-motor-decide.md), [0002](../adr/0002-agnosticismo-de-dominio.md), [0004](../adr/0004-reloj-hibrido.md), [0025](../adr/0025-eventos-y-lo-derivado.md), [0006](../adr/0006-owner-y-autoria.md), [0007](../adr/0007-autoridad-y-puerta-de-herramientas.md), [0012](../adr/0012-packs-yaml.md), [0027](../adr/0027-determinismo-y-registros-dorados.md), [0024](../adr/0024-yaml-con-yamldotnet.md), [0026](../adr/0026-pow-propio.md)
+- **Estado:** N002 trajo los eventos y su registro, la serialización canónica y BLAKE2b. N003 trajo la ontología y el pack: tipos, carga del YAML y validación. N004 trajo la disposición y el estado del agente, con su propio `pow`. N005 trajo la deliberación: el sorteo por clave con Mersenne Twister, la `exp` propia y las necesidades críticas. N006 trajo el bucle: el agente corre tick a tick con su buzón, su clasificador de intención y su techo de autoridad. N008 trae la puerta de acciones, por la que pasa todo cambio de un brazo. La explicación y la persistencia llegan con su consumidor (el asistente y el servicio del bucle).
+- **ADR:** [0001](../adr/0001-el-motor-decide.md), [0002](../adr/0002-agnosticismo-de-dominio.md), [0004](../adr/0004-reloj-hibrido.md), [0025](../adr/0025-eventos-y-lo-derivado.md), [0006](../adr/0006-owner-y-autoria.md), [0007](../adr/0007-autoridad-y-puerta-de-herramientas.md), [0012](../adr/0012-packs-yaml.md), [0027](../adr/0027-determinismo-y-registros-dorados.md), [0024](../adr/0024-yaml-con-yamldotnet.md), [0026](../adr/0026-pow-propio.md), [0035](../adr/0035-lo-que-declara-un-brazo.md)
 
 ## Responsabilidad
 Decide. Ontología (necesidades, rasgos, metas, acciones, autoridad), estado, eventos y journal, aleatoriedad derivada por clave, disposición y urgencia, deliberación por utilidad, bucle y reloj, puerta de acciones, carga y validación de packs, explicación causal.
@@ -29,6 +29,7 @@ Nada de la solución. De fuera, solo YamlDotNet ([ADR 0024](../adr/0024-yaml-con
 | `Aida.Engine.Disposition` | `Temperament` | Los seis parámetros de decisión ya compuestos para un agente, que lee la deliberación |
 | `Aida.Engine.State` | `PerformingAction` | Lo que el agente está haciendo y cuánto le falta |
 | `Aida.Engine.State` | `AgentState` | Cómo está el agente y qué deriva de su personalidad. Lo construye solo `FromSpec`; su API pública es de solo lectura y lo muta el motor ([ADR 0025](../adr/0025-eventos-y-lo-derivado.md)) |
+| `Aida.Engine.Actions` | `ActionGate`, `ActionCatalog`, `ActionRequest`, `IToolPort`, `ToolResult`, `ToolStatus` | La puerta única de acciones ([ADR 0007](../adr/0007-autoridad-y-puerta-de-herramientas.md)): registra la petición, compara la reversibilidad con el techo, ejecuta la herramienta del brazo y emite un solo cierre |
 
 Son internos, visibles solo para `Aida.Engine.Tests`:
 - `Aida.Engine.Serialization`: `CanonicalJson` y `CodePointComparer`, para escribir igual que la 0.1;
@@ -45,6 +46,7 @@ Son internos, visibles solo para `Aida.Engine.Tests`:
 - `Aida.Engine.Deliberation`: `Decision`, `Availability` (las puertas duras), `Utility` (beneficio, coste y novedad), `Deliberator` (las candidatas, el desempate y el sorteo) y `CriticalNeeds` (las emergencias que interrumpen). Los lee el bucle;
 - `Aida.Engine.Loop`: `AgentLoop`, el bucle de un agente: `Start`, `Step`, `Approve` y `Deny`. Síncrono; lo mueve quien lo hospeda ([ADR 0004](../adr/0004-reloj-hibrido.md));
 - `Aida.Engine.Authorization`: `Authority`, el techo de reversibilidad, las propuestas que caducan y la autorización de un solo uso ([ADR 0007](../adr/0007-autoridad-y-puerta-de-herramientas.md));
+- `Aida.Engine.Authorization`: `ReversibilityRank`, el orden de la reversibilidad que comparten `Authority` y `ActionGate`;
 - `Aida.Engine.Inbox`: `EventQueue`, `IncomingEvent` y `QueueFullException`, el buzón FIFO con capacidad dura;
 - `Aida.Engine.Ports`: `IIntentClassifier`, la costura con el clasificador de intención, que vive fuera del núcleo.
 

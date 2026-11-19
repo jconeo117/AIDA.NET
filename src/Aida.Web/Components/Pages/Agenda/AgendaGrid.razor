@@ -1,0 +1,76 @@
+@using System.Globalization
+@using Aida.Arms.Agenda.Desk
+@using Aida.Arms.Agenda.Storage
+
+<table class="grid">
+    <thead>
+        <tr>
+            <th></th>
+            @foreach (var resource in View.Setup.Resources)
+            {
+                <th>@resource.Label<small>@resource.Place</small></th>
+            }
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var time in _times)
+        {
+            <tr>
+                <th>@time.ToString("HH:mm", CultureInfo.InvariantCulture)</th>
+                @foreach (var resource in View.Setup.Resources)
+                {
+                    <td>
+                        @foreach (var item in Cell(resource.Id, time))
+                        {
+                            <a class="appt @StateClass(item.Appointment.State)" href="@AgendaLinks.Panel(View.Day, "cita", item.Appointment.Id.ToString(CultureInfo.InvariantCulture))">
+                                <b>@item.ClientName</b>
+                                <span>@item.ServiceLabel</span>
+                            </a>
+                        }
+                    </td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private IReadOnlyList<TimeOnly> _times = [];
+
+    [Parameter, EditorRequired]
+    public DayView View { get; set; } = null!;
+
+    protected override void OnParametersSet()
+    {
+        var starts = new SortedSet<TimeOnly>();
+        foreach (var resource in View.Setup.Resources)
+        {
+            foreach (var range in resource.HoursOn(View.Day.DayOfWeek))
+            {
+                for (var minutes = range.Start.Hour * 60 + range.Start.Minute; minutes < range.End.Hour * 60 + range.End.Minute; minutes += View.Setup.SlotMinutes)
+                {
+                    starts.Add(new TimeOnly(minutes / 60, minutes % 60));
+                }
+            }
+        }
+
+        foreach (var appointment in View.Appointments)
+        {
+            starts.Add(TimeOnly.FromDateTime(appointment.Appointment.Start.DateTime));
+        }
+
+        _times = [.. starts];
+    }
+
+    private IEnumerable<AppointmentView> Cell(string resource, TimeOnly time) =>
+        View.Appointments.Where(item => item.Appointment.Resource == resource
+            && TimeOnly.FromDateTime(item.Appointment.Start.DateTime) == time);
+
+    private static string StateClass(AppointmentState state) => state switch
+    {
+        AppointmentState.Booked => "booked",
+        AppointmentState.Cancelled => "cancelled",
+        AppointmentState.Attended => "attended",
+        _ => "no-show",
+    };
+}

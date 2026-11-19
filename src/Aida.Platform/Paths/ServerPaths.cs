@@ -35,6 +35,19 @@ public sealed class ServerPaths
     /// <returns>La ruta completa.</returns>
     public string PlatformPackFile(string fileName) => Path.Combine(PacksDirectory, "platform", fileName);
 
+    /// <summary>La carpeta del pack de un brazo, de solo lectura.</summary>
+    /// <param name="armId">El identificador del brazo.</param>
+    /// <returns>La ruta completa.</returns>
+    public string ArmPackDirectory(string armId) => Path.Combine(PacksDirectory, armId);
+
+    /// <summary>La ruta de un archivo de configuración de esta instalación, que el servidor copia de una plantilla y se edita a mano.</summary>
+    /// <param name="fileName">El nombre del archivo.</param>
+    /// <returns>La ruta completa, dentro de <c>config/</c> de la carpeta de datos.</returns>
+    public string ConfigFile(string fileName) => Path.Combine(DataDirectory, "config", fileName);
+
+    /// <summary>La ruta del archivo de la clave del equipo.</summary>
+    public string MachineKeyFile => Path.Combine(DataDirectory, "keys", "machine.key");
+
     private static string Absolute(string path, string name)
     {
         if (string.IsNullOrWhiteSpace(path) || !Path.IsPathFullyQualified(path))

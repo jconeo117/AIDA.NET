@@ -98,5 +98,7 @@ agenda:
   reason_unknown_conversation: "Esa conversación no existe."
   reason_unknown_action: "Acción desconocida."
   reason_failed: "No se pudo guardar. Inténtelo de nuevo."
+  reason_forbidden: "Su rol no puede cambiar la agenda."
+  reason_needs_authorization: "Esta acción necesita la autorización de una persona."
   settings_card_info: "{0} · {1} · {2} recursos"
   readonly_view: "Ver la agenda"

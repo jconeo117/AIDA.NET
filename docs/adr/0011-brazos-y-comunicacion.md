@@ -1,6 +1,6 @@
 # 0011 — Brazos descritos por datos; se comunican por el motor, nunca entre sí
 
-- **Estado:** Aceptado
+- **Estado:** Aceptado; precisado por [0035](0035-lo-que-declara-un-brazo.md)
 - **Fecha:** 2026-10-28
 - **Relacionados:** [0002](0002-agnosticismo-de-dominio.md), [0007](0007-autoridad-y-puerta-de-herramientas.md), [0010](0010-licencia-firmada.md), [0015](0015-forma-del-codigo.md)
 

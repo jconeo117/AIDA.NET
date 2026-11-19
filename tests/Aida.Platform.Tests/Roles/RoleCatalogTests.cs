@@ -124,11 +124,29 @@ public sealed class RoleCatalogTests
     public void Lee_el_roles_yaml_del_repositorio()
     {
         var path = Path.Combine(FindRepoRoot(), "packs", "platform", "roles.yaml");
-        var catalog = RoleCatalog.Load(path);
+        var catalog = RoleCatalog.Load(path, ["agenda.manage"]);
 
         Assert.NotEmpty(catalog.Roles);
         Assert.Equal("administracion", catalog.FirstAdministratorRole.Id);
         Assert.True(catalog.Allows("administracion", PlatformPermission.ManageUsers));
         Assert.False(catalog.Allows("recepcion", PlatformPermission.ManageUsers));
+        Assert.True(catalog.Allows("recepcion", "agenda.manage"));
+        Assert.False(catalog.Allows("caja", "agenda.manage"));
+    }
+
+    [Fact]
+    public void Un_permiso_de_brazo_declarado_vale()
+    {
+        var roles = new List<RoleSpec>
+        {
+            new("admin", "Admin", new HashSet<string> { PlatformPermission.ManageUsers, "agenda.manage" }),
+            new("recep", "Recepción", new HashSet<string> { "agenda.manage" }),
+        };
+
+        var catalog = new RoleCatalog(roles, ["agenda.manage"]);
+        Assert.True(catalog.Allows("recep", "agenda.manage"));
+
+        var ex = Assert.Throws<InvalidDataException>(() => new RoleCatalog(roles));
+        Assert.Contains("declara un permiso desconocido: «agenda.manage»", ex.Message);
     }
 }

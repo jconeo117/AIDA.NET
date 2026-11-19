@@ -8,22 +8,26 @@ namespace Aida.Platform.Audit;
 /// <summary>Qué pasó, quién lo hizo y desde qué puesto, sobre la cadena común.</summary>
 /// <remarks>
 /// Es <c>platform/audit.py:73-101</c> de la 0.1 sin <c>owner</c> ni <c>blob</c>, que entran con el primer brazo que
-/// los use. Cada línea dice en claro cuándo, qué clase de hecho, quién, desde dónde y sus datos escalares; el
-/// personal no se sella (ADR 0029). Quien escribe un hecho junto con un cambio lo hace en la misma transacción: un
-/// usuario creado sin su línea, o una línea sin su usuario, no existen.
+/// los lea. Cada línea dice en claro cuándo, qué clase de hecho, quién, desde dónde y sus datos escalares; el
+/// personal no se sella (ADR 0029). Quien escribe un hecho junto con un cambio lo hace en la misma transacción, también
+/// un brazo (ADR 0032): un cambio sin su línea, o una línea sin su cambio, no existen. Solo se escriben las clases de la
+/// plataforma y las que declararon los brazos (ADR 0035).
 /// </remarks>
 public sealed class AuditLog
 {
     private readonly PlatformDatabase _database;
     private readonly TimeProvider _time;
+    private readonly HashSet<AuditKind> _known;
 
     /// <summary>Crea la auditoría.</summary>
     /// <param name="database">La base de datos.</param>
     /// <param name="time">El reloj; la hora va en la hora local del servidor, con su desfase.</param>
-    public AuditLog(PlatformDatabase database, TimeProvider time)
+    /// <param name="armKinds">Las clases de hecho que declaran los brazos; las de la plataforma se conocen siempre.</param>
+    public AuditLog(PlatformDatabase database, TimeProvider time, IEnumerable<AuditKind>? armKinds = null)
     {
         _database = database;
         _time = time;
+        _known = [.. AuditKind.Platform, .. armKinds ?? []];
     }
 
     /// <summary>Registra un hecho en su propia transacción.</summary>
@@ -57,7 +61,17 @@ public sealed class AuditLog
         return ChainedLog.Verify(connection);
     }
 
-    internal string Record(
+    /// <summary>Registra un hecho dentro de la transacción de quien llama, junto con el cambio que lo origina.</summary>
+    /// <param name="connection">La conexión de esa transacción.</param>
+    /// <param name="transaction">La transacción; la confirma quien llama.</param>
+    /// <param name="kind">La clase de hecho.</param>
+    /// <param name="actor">Quién lo hizo.</param>
+    /// <param name="workstation">Desde qué puesto.</param>
+    /// <param name="data">Los datos escalares del hecho; las claves son ASCII.</param>
+    /// <returns>La huella de la línea.</returns>
+    /// <exception cref="ArgumentNullException">Si no hay autor.</exception>
+    /// <exception cref="ArgumentException">Si la clase de hecho no la conoce nadie.</exception>
+    public string Record(
         SqliteConnection connection,
         SqliteTransaction transaction,
         AuditKind kind,
@@ -66,10 +80,16 @@ public sealed class AuditLog
         IReadOnlyDictionary<string, string> data)
     {
         ArgumentNullException.ThrowIfNull(actor);
+        ArgumentNullException.ThrowIfNull(kind);
+        if (!_known.Contains(kind))
+        {
+            throw new ArgumentException($"clase de hecho de auditoría desconocida: «{kind.Name}»", nameof(kind));
+        }
+
         var fields = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["at"] = _time.GetLocalNow().ToString("yyyy-MM-dd'T'HH:mm:sszzz", CultureInfo.InvariantCulture),
-            ["kind"] = WireName(kind),
+            ["kind"] = kind.Name,
             ["actor"] = actor.Id,
             ["actor_name"] = actor.Name,
             ["workstation"] = workstation,
@@ -77,16 +97,4 @@ public sealed class AuditLog
         };
         return ChainedLog.Append(connection, transaction, fields);
     }
-
-    private static string WireName(AuditKind kind) => kind switch
-    {
-        AuditKind.SessionOpened => "session_opened",
-        AuditKind.SessionClosed => "session_closed",
-        AuditKind.Locked => "locked",
-        AuditKind.Unlocked => "unlocked",
-        AuditKind.UserCreated => "user_created",
-        AuditKind.UserDisabled => "user_disabled",
-        AuditKind.PasswordReset => "password_reset",
-        _ => throw new ArgumentOutOfRangeException(nameof(kind), kind, "clase de hecho de auditoría desconocida"),
-    };
 }

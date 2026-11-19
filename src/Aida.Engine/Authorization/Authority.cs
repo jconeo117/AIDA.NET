@@ -34,7 +34,7 @@ internal sealed class Authority
     /// <summary>Si empezar la acción exige un permiso que el pack no concede de antemano.</summary>
     /// <param name="action">La acción.</param>
     /// <returns><c>true</c> si su reversibilidad está por encima del techo.</returns>
-    internal bool IsGated(ActionSpec action) => Rank(action.Reversibility) > Rank(Spec.AutonomousUpTo);
+    internal bool IsGated(ActionSpec action) => ReversibilityRank.Exceeds(action.Reversibility, Spec.AutonomousUpTo);
 
     /// <summary>Si la acción puede empezar ya. Consume la autorización si la había.</summary>
     /// <param name="action">La acción.</param>
@@ -105,14 +105,4 @@ internal sealed class Authority
 
         return expired;
     }
-
-    // _RANK de la 0.1 (authority.py:24-28): explícito, no el orden de declaración del enum, para que reordenar el enum no
-    // cambie quién necesita permiso.
-    private static int Rank(Reversibility reversibility) => reversibility switch
-    {
-        Reversibility.Reversible => 0,
-        Reversibility.ReversibleWithCost => 1,
-        Reversibility.Irreversible => 2,
-        _ => throw new ArgumentOutOfRangeException(nameof(reversibility), reversibility, "Reversibilidad desconocida."),
-    };
 }

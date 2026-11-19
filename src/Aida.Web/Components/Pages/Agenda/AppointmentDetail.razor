@@ -1,0 +1,57 @@
+@using System.Globalization
+@using Aida.Arms.Agenda.Desk
+@using Aida.Arms.Agenda.Setup
+@using Aida.Arms.Agenda.Storage
+@using Aida.Arms.Agenda.Wording
+@inject AgendaWording Text
+
+<div class="panel-card">
+    <h3>@View.ClientName</h3>
+    <p>@Range()</p>
+    <dl class="kv">
+        <dt>@Text["detail_service"]</dt>
+        <dd>@View.ServiceLabel</dd>
+        <dt>@Text["detail_resource"]</dt>
+        <dd>@(Setup.Resource(View.Appointment.Resource)?.Label ?? View.Appointment.Resource)</dd>
+        <dt>@Text["detail_phone"]</dt>
+        <dd>@View.ClientPhone</dd>
+        <dt>@Text["detail_state"]</dt>
+        <dd>@Text[StateKey]</dd>
+    </dl>
+    <p>@string.Format(CultureInfo.CurrentCulture, Text["created_line"], View.CreatedByName, View.UpdatedByName)</p>
+    @if (CanManage && View.Appointment.State == AppointmentState.Booked)
+    {
+        <input type="hidden" name="Command.Appointment" value="@View.Appointment.Id.ToString(CultureInfo.InvariantCulture)" />
+        <div class="side-actions">
+            <button type="submit" name="Command.Action" value="atendida">@Text["attended_button"]</button>
+            <button type="submit" name="Command.Action" value="no_asistio">@Text["no_show_button"]</button>
+            <a href="@AgendaLinks.Panel(Day, "mover", View.Appointment.Id.ToString(CultureInfo.InvariantCulture))">@Text["move_button"]</a>
+            <a href="@AgendaLinks.Panel(Day, "cancelar", View.Appointment.Id.ToString(CultureInfo.InvariantCulture))">@Text["cancel_button"]</a>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public AppointmentView View { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public AgendaSetup Setup { get; set; } = null!;
+
+    [Parameter]
+    public bool CanManage { get; set; }
+
+    [Parameter, EditorRequired]
+    public DateOnly Day { get; set; }
+
+    private string Range() =>
+        $"{View.Appointment.Start.ToString("HH:mm", CultureInfo.InvariantCulture)}–{View.Appointment.End.ToString("HH:mm", CultureInfo.InvariantCulture)}";
+
+    private string StateKey => View.Appointment.State switch
+    {
+        AppointmentState.Booked => "state_booked",
+        AppointmentState.Cancelled => "state_cancelled",
+        AppointmentState.Attended => "state_attended",
+        _ => "state_no_show",
+    };
+}

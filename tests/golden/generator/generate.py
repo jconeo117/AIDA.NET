@@ -13,6 +13,7 @@ import subprocess
 import sys
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
+from agenda_section import generate_agenda
 from decide_section import generate_deliberation
 from exp_section import check_exp_sentinel, generate_exp
 from journal_section import generate_journals
@@ -151,6 +152,7 @@ def generate_cases(out_file: Path) -> None:
 
 def generate_manifest(out_dir: Path, commit: str) -> None:
     rel_files = [
+        "agenda/cases.jsonl",
         "deliberation/cases.jsonl",
         "events/cases.jsonl",
         "hashing/blake2b.txt",
@@ -212,6 +214,7 @@ def main() -> None:
     generate_deliberation(aida_dir, out_dir)
     generate_journals(aida_dir, repo_dir, out_dir)
     generate_ledger(out_dir / "ledger" / "chain.tsv")
+    generate_agenda(aida_dir, repo_dir, out_dir / "agenda" / "cases.jsonl")
     generate_manifest(out_dir, commit)
 
 

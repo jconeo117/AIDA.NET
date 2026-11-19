@@ -16,8 +16,8 @@
     <NuGetAuditLevel>low</NuGetAuditLevel>
   </PropertyGroup>
 
-  <!-- Las API prohibidas (00-task.md B3–B5) se vigilan solo en el núcleo. -->
-  <ItemGroup Condition="'$(MSBuildProjectName)' == 'Aida.Engine' Or '$(MSBuildProjectName)' == 'Aida.Platform'">
+  <!-- Las API prohibidas (00-task.md B3–B5) se vigilan en el núcleo y en los brazos que deciden con reglas. -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'Aida.Engine' Or '$(MSBuildProjectName)' == 'Aida.Platform' Or '$(MSBuildProjectName)' == 'Aida.Arms.Agenda'">
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)BannedSymbols.txt" />
   </ItemGroup>
 
