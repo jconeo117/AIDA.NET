@@ -25,6 +25,10 @@
     {
         <p role="status">@_message</p>
     }
+    @if (_conflicts.Count > 0)
+    {
+        <ConflictList Conflicts="_conflicts" />
+    }
     <div class="agenda">
         <AgendaGrid View="_view" />
         <aside class="side">
@@ -36,17 +40,36 @@
             {
                 <SlotPicker View="_view" Day="_day" ServiceId="@_appointment.Appointment.Service" AppointmentId="_appointment.Appointment.Id" Moving="true" />
             }
+            else if (_panel == "editar" && _canManage && _appointment is not null)
+            {
+                <AppointmentEditor View="_appointment" Setup="_view.Setup" Day="_day" />
+            }
             else if (_panel == "cita" && _appointment is not null)
             {
                 <AppointmentDetail View="_appointment" Setup="_view.Setup" CanManage="_canManage" Day="_day" />
+            }
+            else if (_panel == "bloqueo" && _block is not null)
+            {
+                <BlockDetail View="_block" Setup="_view.Setup" CanBlock="_canBlock" Day="_day" />
+            }
+            else if (_panel == "bloquear" && _canBlock)
+            {
+                <BlockForm View="_view" Day="_day" />
             }
             else if (_panel == "nueva" && _canManage && _serviceId is not null)
             {
                 <SlotPicker View="_view" Day="_day" ServiceId="@_serviceId" Moving="false" />
             }
-            else if (_canManage && _firstService is not null)
+            else
             {
-                <a href="@AgendaLinks.Panel(_day, "nueva", _firstService)">@Text["new_button"]</a>
+                @if (_canManage && _firstService is not null)
+                {
+                    <a href="@AgendaLinks.Panel(_day, "nueva", _firstService)">@Text["new_button"]</a>
+                }
+                @if (_canBlock)
+                {
+                    <a href="@AgendaLinks.Panel(_day, "bloquear", "1")">@Text["block_button"]</a>
+                }
             }
         </aside>
     </div>
@@ -57,11 +80,14 @@
     private DateOnly _day;
     private DayView _view = null!;
     private bool _canManage;
+    private bool _canBlock;
     private string? _message;
     private string? _panel;
     private string? _serviceId;
     private string? _firstService;
     private AppointmentView? _appointment;
+    private BlockView? _block;
+    private IReadOnlyList<AppointmentView> _conflicts = [];
 
     [CascadingParameter]
     private HttpContext Http { get; set; } = default!;
@@ -81,6 +107,15 @@
     [SupplyParameterFromQuery(Name = "cancelar")]
     public string? Cancelar { get; set; }
 
+    [SupplyParameterFromQuery(Name = "editar")]
+    public string? Editar { get; set; }
+
+    [SupplyParameterFromQuery(Name = "bloquear")]
+    public string? Bloquear { get; set; }
+
+    [SupplyParameterFromQuery(Name = "bloqueo")]
+    public string? Bloqueo { get; set; }
+
     [SupplyParameterFromForm(FormName = "agenda-action", Name = "Command")]
     private AgendaCommandForm? PostedCommand { get; set; }
 
@@ -92,15 +127,34 @@
         _day = DateOnly.TryParseExact(Dia, AgendaLinks.DayFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsed) ? parsed : _today;
         var user = SessionGate.CurrentUser(Http);
         _canManage = user is not null && Desk.CanManage(user);
+        _canBlock = user is not null && Desk.CanBlock(user);
         _view = Desk.Day(_day);
         _firstService = _view.Setup.Services.FirstOrDefault()?.Id;
         _serviceId = Nueva is not null && _view.Setup.Service(Nueva) is not null ? Nueva : _firstService;
-        _panel = Cancelar is not null ? "cancelar" : Mover is not null ? "mover" : Cita is not null ? "cita" : Nueva is not null ? "nueva" : null;
-        var target = Cancelar ?? Mover ?? Cita;
-        _appointment = target is not null && long.TryParse(target, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)
+        _panel = PanelName();
+        _appointment = FindAppointment(Cancelar ?? Mover ?? Editar ?? Cita);
+        _block = FindBlock(Bloqueo);
+    }
+
+    private string? PanelName() =>
+        Cancelar is not null ? "cancelar"
+        : Mover is not null ? "mover"
+        : Editar is not null ? "editar"
+        : Cita is not null ? "cita"
+        : Bloqueo is not null ? "bloqueo"
+        : Bloquear is not null ? "bloquear"
+        : Nueva is not null ? "nueva"
+        : null;
+
+    private AppointmentView? FindAppointment(string? target) =>
+        target is not null && long.TryParse(target, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)
             ? _view.Appointments.FirstOrDefault(appointment => appointment.Appointment.Id == id)
             : null;
-    }
+
+    private BlockView? FindBlock(string? target) =>
+        target is not null && long.TryParse(target, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)
+            ? _view.Blocks.FirstOrDefault(block => block.Block.Id == id)
+            : null;
 
     private void Submit()
     {
@@ -110,12 +164,13 @@
             return;
         }
 
-        var arguments = AgendaArguments.From(Command);
-        var result = Desk.Submit(user, AidaWebApp.Workstation(Http), Command.Action ?? string.Empty, arguments);
+        var action = Command.Action ?? string.Empty;
+        var arguments = AgendaArguments.From(Command, _view.Now.Offset);
+        var result = Desk.Submit(user, AidaWebApp.Workstation(Http), action, arguments);
         if (result.Status == ToolStatus.Done)
         {
             var day = AgendaArguments.DayOf(arguments) ?? _day;
-            Navigation.NavigateTo($"{AgendaLinks.Day(day)}&cita={result.Data["appointment"]}");
+            Navigation.NavigateTo(AgendaLinks.AfterDone(day, action, result.Data));
             return;
         }
 
@@ -127,5 +182,6 @@
         }
 
         _message = Text.Reason(result.Reason);
+        _conflicts = Desk.Conflicts(result);
     }
 }

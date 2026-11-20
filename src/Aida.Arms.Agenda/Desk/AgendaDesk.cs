@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+using System.Globalization;
 using Aida.Arms.Agenda.Actions;
 using Aida.Arms.Agenda.Setup;
 using Aida.Arms.Agenda.Storage;
@@ -19,9 +21,10 @@ namespace Aida.Arms.Agenda.Desk;
 /// por la puerta del motor; aquí no hay ningún camino por botón que se la salte.</para>
 /// <para>Cambia respecto a la 0.1:</para>
 /// <list type="bullet">
-/// <item>cambiar la agenda pide <see cref="AgendaDeclarations.ManagePermission"/>, y sin él no se llega a la puerta;</item>
+/// <item>cambiar una cita pide <see cref="AgendaDeclarations.ManagePermission"/>, y sin él no se llega a la puerta;</item>
+/// <item>bloquear y desbloquear piden <see cref="AgendaDeclarations.BlockPermission"/>, que el profesional no tiene;</item>
 /// <item>la puerta compara con el techo que fija la composición (ADR 0035);</item>
-/// <item>la cita y su hecho <c>agenda_changed</c> se confirman en la misma transacción (ADR 0032).</item>
+/// <item>la cita o el bloqueo y su hecho <c>agenda_changed</c> se confirman en la misma transacción (ADR 0032).</item>
 /// </list>
 /// <para>El registro de la puerta vive en memoria, como en la 0.1 (<c>app.py:104</c>); lo que dura es la auditoría. Un
 /// cerrojo de proceso ordena las peticiones de todos los puestos, como el <c>lock</c> de la 0.1.</para>
@@ -29,6 +32,7 @@ namespace Aida.Arms.Agenda.Desk;
 public sealed class AgendaDesk
 {
     private static readonly AgentId _owner = new(AgendaDeclarations.ArmId);
+    private static readonly ImmutableArray<string> _subjects = ["appointment", "block"];
 
     private readonly PlatformDatabase _database;
     private readonly AuditLog _audit;
@@ -46,7 +50,7 @@ public sealed class AgendaDesk
     /// <summary>Crea el mostrador y deja al día las tablas de la agenda.</summary>
     /// <param name="database">La base del servidor.</param>
     /// <param name="audit">La auditoría.</param>
-    /// <param name="roles">Los roles, para el permiso de cambiar.</param>
+    /// <param name="roles">Los roles, para el permiso de cambiar y el de bloquear.</param>
     /// <param name="users">Los usuarios, para los nombres de quien agendó.</param>
     /// <param name="setup">La configuración de la clínica.</param>
     /// <param name="catalog">Las acciones y su reversibilidad, de <c>arm.yaml</c>.</param>
@@ -79,47 +83,46 @@ public sealed class AgendaDesk
     /// <returns><see langword="true"/> si su rol tiene el permiso.</returns>
     public bool CanManage(UserAccount user) => user is not null && _roles.Allows(user.RoleId, AgendaDeclarations.ManagePermission);
 
+    /// <summary>Si un usuario puede bloquear y desbloquear.</summary>
+    /// <param name="user">El usuario.</param>
+    /// <returns><see langword="true"/> si su rol tiene <see cref="AgendaDeclarations.BlockPermission"/>.</returns>
+    public bool CanBlock(UserAccount user) => user is not null && _roles.Allows(user.RoleId, AgendaDeclarations.BlockPermission);
+
     /// <summary>El día, para pintarlo.</summary>
     /// <param name="day">El día.</param>
-    /// <returns>Las citas, los huecos libres de cada servicio y la configuración.</returns>
+    /// <returns>Las citas, los bloqueos, los huecos libres de cada servicio y la configuración.</returns>
     public DayView Day(DateOnly day)
     {
-        var names = _users.List().ToDictionary(user => user.Actor.Id, user => user.DisplayName, StringComparer.Ordinal);
+        var names = UserNames();
         lock (_sync)
         {
             using var work = AgendaWork.Begin(_database, _sealer, _phoneKey);
             var now = _time.GetLocalNow();
             var start = new DateTimeOffset(day.ToDateTime(TimeOnly.MinValue), now.Offset);
-            var appointments = work.Store.Between(start, start.AddDays(1)).Select(appointment =>
-            {
-                var client = work.Store.GetClient(appointment.ClientId);
-                return new AppointmentView(
-                    appointment,
-                    client.Name,
-                    client.Phone,
-                    Setup.Service(appointment.Service)?.Label ?? appointment.Service,
-                    names.GetValueOrDefault(appointment.CreatedBy, appointment.CreatedBy),
-                    names.GetValueOrDefault(appointment.UpdatedBy, appointment.UpdatedBy));
-            }).ToList();
+            var appointments = work.Store.Between(start, start.AddDays(1)).Select(appointment => ViewOf(work.Store, appointment, names)).ToList();
+            var blocks = work.Store.BlocksBetween(start, start.AddDays(1))
+                .Select(block => new BlockView(block, names.GetValueOrDefault(block.CreatedBy, block.CreatedBy)))
+                .ToList();
             var free = Setup.Services.ToDictionary(
                 service => service.Id,
                 service => FreeSlots.For(work.Store, Setup, day, service.Id, now),
                 StringComparer.Ordinal);
-            return new DayView(day, now, Setup, appointments, free);
+            return new DayView(day, now, Setup, appointments, blocks, free);
         }
     }
 
     /// <summary>Pide un cambio: pasa por la puerta y, si se hace, queda en la auditoría.</summary>
     /// <param name="user">Quien lo pide, el de la sesión.</param>
     /// <param name="workstation">Desde qué puesto.</param>
-    /// <param name="action">La acción (<c>agendar</c>, <c>reprogramar</c>, <c>cancelar</c>, <c>atendida</c>, <c>no_asistio</c>).</param>
+    /// <param name="action">La acción: <c>agendar</c>, <c>editar</c>, <c>reprogramar</c>, <c>cancelar</c>, <c>atendida</c>,
+    /// <c>no_asistio</c>, <c>bloquear</c> o <c>desbloquear</c>.</param>
     /// <param name="arguments">Sus argumentos. Un <c>by</c> que venga en ellos se sobrescribe con quien pide.</param>
-    /// <returns>Cómo acabó. Sin el permiso, un rechazo <c>forbidden</c> que no llega a la puerta ni deja ningún evento.</returns>
+    /// <returns>Cómo acabó. Sin el permiso de la acción, un rechazo <c>forbidden</c> que no llega a la puerta ni deja ningún evento.</returns>
     public ToolResult Submit(UserAccount user, string workstation, string action, IReadOnlyDictionary<string, string> arguments)
     {
         ArgumentNullException.ThrowIfNull(user);
         ArgumentNullException.ThrowIfNull(arguments);
-        if (!CanManage(user))
+        if (user is null || !_roles.Allows(user.RoleId, PermissionFor(action)))
         {
             return ToolResult.Rejected("forbidden");
         }
@@ -136,14 +139,46 @@ public sealed class AgendaDesk
                 var data = new Dictionary<string, string>(StringComparer.Ordinal)
                 {
                     ["action"] = action,
-                    ["appointment"] = result.Data.GetValueOrDefault("appointment", string.Empty),
                     ["start"] = withAuthor.GetValueOrDefault("start", string.Empty),
                 };
+                foreach (var subject in _subjects)
+                {
+                    if (result.Data.TryGetValue(subject, out var id))
+                    {
+                        data[subject] = id;
+                        break;
+                    }
+                }
+
                 _audit.Record(work.Connection, work.Transaction, AgendaDeclarations.Changed, user.Actor, workstation, data);
                 work.Commit();
             }
 
             return result;
+        }
+    }
+
+    /// <summary>Las citas que impiden un bloqueo, para explicar el rechazo.</summary>
+    /// <param name="result">Lo que devolvió <see cref="Submit"/>.</param>
+    /// <returns>Las citas de <c>appointments</c>, en su orden, si el rechazo es <c>has_appointments</c>; si no, ninguna.</returns>
+    /// <remarks>Es la lista <c>conflicts</c> de la 0.1 (<c>app.py:581-592</c>). Se lee aparte, y no dentro de
+    /// <see cref="Submit"/>, para que la puerta siga devolviendo solo su resultado. Una cita que ya no existe se omite.</remarks>
+    public IReadOnlyList<AppointmentView> Conflicts(ToolResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        if (result.Reason != "has_appointments" || !result.Data.TryGetValue("appointments", out var ids))
+        {
+            return [];
+        }
+
+        var names = UserNames();
+        lock (_sync)
+        {
+            using var work = AgendaWork.Begin(_database, _sealer, _phoneKey);
+            return [.. ids.Split(',')
+                .Select(text => long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) ? work.Store.Get(id) : null)
+                .OfType<Appointment>()
+                .Select(appointment => ViewOf(work.Store, appointment, names))];
         }
     }
 
@@ -154,5 +189,25 @@ public sealed class AgendaDesk
         {
             return [.. _log.Select(recorded => recorded.ToJson())];
         }
+    }
+
+    /// <summary>El permiso que pide cada acción: los bloqueos, el suyo; las demás, el de cambiar la agenda.</summary>
+    /// <remarks>Una acción que no existe pide el de cambiar, y la puerta la rechaza después con <c>unknown_action</c>.</remarks>
+    private static string PermissionFor(string action) =>
+        action is "bloquear" or "desbloquear" ? AgendaDeclarations.BlockPermission : AgendaDeclarations.ManagePermission;
+
+    private IReadOnlyDictionary<string, string> UserNames() =>
+        _users.List().ToDictionary(user => user.Actor.Id, user => user.DisplayName, StringComparer.Ordinal);
+
+    private AppointmentView ViewOf(AgendaStore store, Appointment appointment, IReadOnlyDictionary<string, string> names)
+    {
+        var client = store.GetClient(appointment.ClientId);
+        return new AppointmentView(
+            appointment,
+            client.Name,
+            client.Phone,
+            Setup.Service(appointment.Service)?.Label ?? appointment.Service,
+            names.GetValueOrDefault(appointment.CreatedBy, appointment.CreatedBy),
+            names.GetValueOrDefault(appointment.UpdatedBy, appointment.UpdatedBy));
     }
 }

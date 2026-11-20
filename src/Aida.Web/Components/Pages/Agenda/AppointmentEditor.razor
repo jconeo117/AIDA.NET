@@ -1,0 +1,45 @@
+@using System.Globalization
+@using Aida.Arms.Agenda.Desk
+@using Aida.Arms.Agenda.Setup
+@using Aida.Arms.Agenda.Wording
+@inject AgendaWording Text
+
+<div class="panel-card">
+    <h3>@Text["edit_button"]</h3>
+    <input type="hidden" name="Command.Appointment" value="@View.Appointment.Id.ToString(CultureInfo.InvariantCulture)" />
+    <label>@Text["field_name"] <input name="Command.Name" value="@View.ClientName" /></label>
+    <label>@Text["field_phone"] <input name="Command.Phone" value="@View.ClientPhone" /></label>
+    <label>
+        @Text["field_service"]
+        <select name="Command.Service">
+            @foreach (var service in Setup.Services)
+            {
+                <option value="@service.Id" selected="@(service.Id == View.Appointment.Service)">@service.Label</option>
+            }
+        </select>
+    </label>
+    <label>
+        @Text["field_resource"]
+        <select name="Command.Resource">
+            @foreach (var resource in Setup.Resources)
+            {
+                <option value="@resource.Id" selected="@(resource.Id == View.Appointment.Resource)">@resource.Label</option>
+            }
+        </select>
+    </label>
+    <div class="side-actions">
+        <button type="submit" name="Command.Action" value="editar">@Text["save_button"]</button>
+        <a href="@AgendaLinks.Panel(Day, "cita", View.Appointment.Id.ToString(CultureInfo.InvariantCulture))">@Text["close_button"]</a>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public AppointmentView View { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public AgendaSetup Setup { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public DateOnly Day { get; set; }
+}

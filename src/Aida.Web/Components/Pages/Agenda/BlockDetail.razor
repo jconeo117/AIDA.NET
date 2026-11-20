@@ -1,0 +1,40 @@
+@using System.Globalization
+@using Aida.Arms.Agenda.Desk
+@using Aida.Arms.Agenda.Setup
+@using Aida.Arms.Agenda.Wording
+@inject AgendaWording Text
+
+<div class="panel-card">
+    <h3>@(View.Block.Reason.Length > 0 ? View.Block.Reason : Text["blocked_label"])</h3>
+    <dl class="kv">
+        <dt>@Text["field_who"]</dt>
+        <dd>@(View.Block.Resource.Length == 0 ? Text["all_resources"] : Setup.Resource(View.Block.Resource)?.Label ?? View.Block.Resource)</dd>
+        <dt>@Text["field_from"]</dt>
+        <dd>@View.Block.Start.ToString("dd/MM HH:mm", CultureInfo.InvariantCulture)</dd>
+        <dt>@Text["field_until"]</dt>
+        <dd>@View.Block.End.ToString("dd/MM HH:mm", CultureInfo.InvariantCulture)</dd>
+    </dl>
+    <p>@string.Format(CultureInfo.CurrentCulture, Text["blocked_by"], View.CreatedByName)</p>
+    @if (CanBlock)
+    {
+        <input type="hidden" name="Command.Block" value="@View.Block.Id.ToString(CultureInfo.InvariantCulture)" />
+        <div class="side-actions">
+            <button type="submit" name="Command.Action" value="desbloquear">@Text["unblock_button"]</button>
+        </div>
+    }
+    <a href="@AgendaLinks.Day(Day)">@Text["close_button"]</a>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public BlockView View { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public AgendaSetup Setup { get; set; } = null!;
+
+    [Parameter]
+    public bool CanBlock { get; set; }
+
+    [Parameter, EditorRequired]
+    public DateOnly Day { get; set; }
+}
