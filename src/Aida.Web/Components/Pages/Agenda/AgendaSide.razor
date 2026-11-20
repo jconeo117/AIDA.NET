@@ -1,0 +1,94 @@
+@using Aida.Arms.Agenda.Desk
+@using Aida.Arms.Agenda.Storage
+@using Aida.Arms.Agenda.Wording
+@inject AgendaWording Text
+
+@if (Panel == "cancelar" && Appointment is not null)
+{
+    <CancelConfirm View="@Appointment" Day="@Day" />
+}
+else if (Panel == "mover" && Appointment is not null)
+{
+    <SlotPicker View="@View" Day="@Day" ServiceId="@Appointment.Appointment.Service" AppointmentId="@Appointment.Appointment.Id" Moving="true" />
+}
+else if (Panel == "editar" && CanManage && Appointment is not null)
+{
+    <AppointmentEditor View="@Appointment" Setup="@View.Setup" Day="@Day" />
+}
+else if (Panel == "cita" && Appointment is not null)
+{
+    <AppointmentDetail View="@Appointment" Setup="@View.Setup" CanManage="@CanManage" Day="@Day" />
+}
+else if (Panel == "contacto" && CanManage && Card is not null)
+{
+    <ContactEditor Contact="@Card.Client" Day="@Day" />
+}
+else if (Panel == "ficha" && Card is not null)
+{
+    <ClientCardPanel Card="@Card" Setup="@View.Setup" CanManage="@CanManage" Day="@Day" FirstService="@FirstService" />
+}
+else if (Panel == "buscar" && Found is not null)
+{
+    <SearchResults Found="@Found" Day="@Day" />
+}
+else if (Panel == "bloqueo" && Block is not null)
+{
+    <BlockDetail View="@Block" Setup="@View.Setup" CanBlock="@CanBlock" Day="@Day" />
+}
+else if (Panel == "bloquear" && CanBlock)
+{
+    <BlockForm View="@View" Day="@Day" />
+}
+else if (Panel == "nueva" && CanManage && ServiceId is not null)
+{
+    <SlotPicker View="@View" Day="@Day" ServiceId="@ServiceId" Moving="false" Prefill="@Prefill" />
+}
+else
+{
+    @if (CanManage && FirstService is not null)
+    {
+        <a href="@AgendaLinks.Panel(Day, "nueva", FirstService)">@Text["new_button"]</a>
+    }
+    @if (CanBlock)
+    {
+        <a href="@AgendaLinks.Panel(Day, "bloquear", "1")">@Text["block_button"]</a>
+    }
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public DayView View { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public DateOnly Day { get; set; }
+
+    [Parameter]
+    public string? Panel { get; set; }
+
+    [Parameter]
+    public bool CanManage { get; set; }
+
+    [Parameter]
+    public bool CanBlock { get; set; }
+
+    [Parameter]
+    public string? ServiceId { get; set; }
+
+    [Parameter]
+    public string? FirstService { get; set; }
+
+    [Parameter]
+    public AppointmentView? Appointment { get; set; }
+
+    [Parameter]
+    public BlockView? Block { get; set; }
+
+    [Parameter]
+    public ClientCard? Card { get; set; }
+
+    [Parameter]
+    public Client? Prefill { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<Client>? Found { get; set; }
+}

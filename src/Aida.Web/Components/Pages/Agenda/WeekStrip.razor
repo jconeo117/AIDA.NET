@@ -1,0 +1,23 @@
+@using System.Globalization
+@using Aida.Arms.Agenda.Desk
+
+<nav class="week">
+    @foreach (var day in View.Week)
+    {
+        <a href="@AgendaLinks.Day(day.Day)" aria-current="@(day.Day == View.Day ? "date" : null)">
+            <b>@day.Day.ToString("dd/MM", CultureInfo.InvariantCulture)</b>
+            <span>@day.Booked / @day.Capacity</span>
+            <i style="width: @(Fill(day))%"></i>
+        </a>
+    }
+</nav>
+
+@code {
+    [Parameter, EditorRequired]
+    public DayView View { get; set; } = null!;
+
+    /// <summary>El porcentaje de la barra: lo ocupado sobre lo que cabe, sin pasar de cien.</summary>
+    /// <remarks>Es <c>Math.round</c> de JavaScript para valores positivos: la barra de la 0.1 se redondea igual.</remarks>
+    private static int Fill(WeekDay day) =>
+        day.Capacity == 0 ? 0 : Math.Min(100, (int)Math.Round(100.0 * day.Booked / day.Capacity, MidpointRounding.AwayFromZero));
+}

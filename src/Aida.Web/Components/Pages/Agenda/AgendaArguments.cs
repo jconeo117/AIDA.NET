@@ -21,6 +21,7 @@ internal static class AgendaArguments
         Add(arguments, "resource", command.Resource);
         Add(arguments, "block", command.Block);
         Add(arguments, "reason", command.Reason);
+        Add(arguments, "client", command.Client);
         if (command.Action == "editar")
         {
             arguments["name"] = command.Name?.Trim() ?? string.Empty;

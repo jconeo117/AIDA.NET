@@ -1,5 +1,6 @@
 @using System.Globalization
 @using Aida.Arms.Agenda.Desk
+@using Aida.Arms.Agenda.Storage
 @using Aida.Arms.Agenda.Wording
 @inject AgendaWording Text
 
@@ -22,8 +23,8 @@
         </p>
         <input type="hidden" name="Command.Action" value="agendar" />
         <input type="hidden" name="Command.Service" value="@ServiceId" />
-        <label>@Text["field_name"] <input name="Command.Name" required /></label>
-        <label>@Text["field_phone"] <input name="Command.Phone" required /></label>
+        <label>@Text["field_name"] <input name="Command.Name" value="@Prefill?.Name" required /></label>
+        <label>@Text["field_phone"] <input name="Command.Phone" value="@Prefill?.Phone" required /></label>
     }
 
     <h4>@string.Format(CultureInfo.CurrentCulture, Text["free_slots"], ServiceLabel)</h4>
@@ -62,6 +63,10 @@
 
     [Parameter]
     public bool Moving { get; set; }
+
+    /// <summary>La persona ya conocida, desde su ficha: su nombre y su teléfono llegan rellenos.</summary>
+    [Parameter]
+    public Client? Prefill { get; set; }
 
     private string ServiceLabel => View.Setup.Service(ServiceId)?.Label ?? ServiceId;
 

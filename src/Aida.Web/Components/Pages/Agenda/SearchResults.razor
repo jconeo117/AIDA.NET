@@ -1,0 +1,30 @@
+@using System.Globalization
+@using Aida.Arms.Agenda.Storage
+@using Aida.Arms.Agenda.Wording
+@inject AgendaWording Text
+
+<div class="panel-card">
+    @if (Found.Count == 0)
+    {
+        <p>@Text["search_empty"]</p>
+    }
+    else
+    {
+        <ul>
+            @foreach (var client in Found)
+            {
+                <li>
+                    <a href="@AgendaLinks.Panel(Day, "ficha", client.Id.ToString(CultureInfo.InvariantCulture))">@client.Name · @client.Phone</a>
+                </li>
+            }
+        </ul>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Client> Found { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public DateOnly Day { get; set; }
+}

@@ -14,3 +14,4 @@ actions:
   - {id: "no_asistio", reversibility: "reversible"}
   - {id: "bloquear", reversibility: "reversible"}
   - {id: "desbloquear", reversibility: "reversible"}
+  - {id: "editar_contacto", reversibility: "reversible"}

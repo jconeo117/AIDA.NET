@@ -20,6 +20,8 @@ public sealed class AgendaWording
         "book_button", "close_button", "move_title", "reason_failed", "reason_forbidden", "reason_needs_authorization",
         "edit_button", "save_button", "block_button", "block_title", "block_lead", "field_who", "all_resources", "field_from",
         "field_until", "field_reason", "block_save", "blocked_label", "blocked_by", "unblock_button", "conflicts_title",
+        "search_placeholder", "search_empty", "card_link", "card_upcoming", "card_attended", "card_no_show", "card_appointments",
+        "card_edit",
     ];
 
     private readonly FrozenDictionary<string, string> _texts;

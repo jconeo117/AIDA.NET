@@ -7,6 +7,7 @@
 
 <div class="panel-card">
     <h3>@View.ClientName</h3>
+    <p><a href="@AgendaLinks.Panel(Day, "ficha", View.Appointment.ClientId.ToString(CultureInfo.InvariantCulture))">@Text["card_link"]</a></p>
     <p>@Range()</p>
     <dl class="kv">
         <dt>@Text["detail_service"]</dt>
@@ -16,7 +17,7 @@
         <dt>@Text["detail_phone"]</dt>
         <dd>@View.ClientPhone</dd>
         <dt>@Text["detail_state"]</dt>
-        <dd>@Text[StateKey]</dd>
+        <dd>@Text[AgendaStateKeys.Of(View.Appointment.State)]</dd>
     </dl>
     <p>@string.Format(CultureInfo.CurrentCulture, Text["created_line"], View.CreatedByName, View.UpdatedByName)</p>
     @if (CanManage && View.Appointment.State == AppointmentState.Booked)
@@ -47,12 +48,4 @@
 
     private string Range() =>
         $"{View.Appointment.Start.ToString("HH:mm", CultureInfo.InvariantCulture)}–{View.Appointment.End.ToString("HH:mm", CultureInfo.InvariantCulture)}";
-
-    private string StateKey => View.Appointment.State switch
-    {
-        AppointmentState.Booked => "state_booked",
-        AppointmentState.Cancelled => "state_cancelled",
-        AppointmentState.Attended => "state_attended",
-        _ => "state_no_show",
-    };
 }

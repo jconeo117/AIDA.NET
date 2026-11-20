@@ -1,0 +1,56 @@
+@using System.Globalization
+@using Aida.Arms.Agenda.Desk
+@using Aida.Arms.Agenda.Setup
+@using Aida.Arms.Agenda.Wording
+@inject AgendaWording Text
+
+<div class="panel-card">
+    <h3>@Card.Client.Name</h3>
+    <p>@Text["field_phone"]: @Card.Client.Phone</p>
+    <dl class="kv">
+        <dt>@Text["card_upcoming"]</dt>
+        <dd>@Card.Upcoming</dd>
+        <dt>@Text["card_attended"]</dt>
+        <dd>@Card.Attended</dd>
+        <dt>@Text["card_no_show"]</dt>
+        <dd>@Card.NoShow</dd>
+    </dl>
+    <h4>@Text["card_appointments"]</h4>
+    <ul>
+        @foreach (var view in Card.Appointments)
+        {
+            <li>
+                <a href="@AgendaLinks.Panel(DateOnly.FromDateTime(view.Appointment.Start.DateTime), "cita", view.Appointment.Id.ToString(CultureInfo.InvariantCulture))">
+                    @view.Appointment.Start.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) · @view.ServiceLabel · @(Setup.Resource(view.Appointment.Resource)?.Label ?? view.Appointment.Resource) · @Text[AgendaStateKeys.Of(view.Appointment.State)]
+                </a>
+            </li>
+        }
+    </ul>
+    @if (CanManage)
+    {
+        <div class="side-actions">
+            <a href="@AgendaLinks.Panel(Day, "contacto", Card.Client.Id.ToString(CultureInfo.InvariantCulture))">@Text["card_edit"]</a>
+            @if (FirstService is not null)
+            {
+                <a href="@AgendaLinks.NewFor(Day, FirstService, Card.Client.Id)">@Text["new_button"]</a>
+            }
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public ClientCard Card { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public AgendaSetup Setup { get; set; } = null!;
+
+    [Parameter]
+    public bool CanManage { get; set; }
+
+    [Parameter, EditorRequired]
+    public DateOnly Day { get; set; }
+
+    [Parameter]
+    public string? FirstService { get; set; }
+}
