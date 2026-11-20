@@ -25,6 +25,7 @@ public sealed class AgendaGoldenTests
     [InlineData("peluqueria-sabado")]
     [InlineData("consultorio-bloqueos")]
     [InlineData("consultorio-edicion")]
+    [InlineData("consultorio-consulta")]
     public void El_oraculo_de_la_agenda_coincide_con_la_01(string caseName)
     {
         var repoRoot = FindRepoRoot();
@@ -172,6 +173,47 @@ public sealed class AgendaGoldenTests
                 Assert.True(exp.GetProperty("end").GetString() == StartArgument.Format(block.End), $"Caso '{caseName}', bloqueo {i + 1} end distinto");
                 Assert.True(exp.GetProperty("reason").GetString() == block.Reason, $"Caso '{caseName}', bloqueo {i + 1} reason distinto");
                 Assert.True(exp.GetProperty("created_by").GetString() == block.CreatedBy, $"Caso '{caseName}', bloqueo {i + 1} created_by distinto");
+            }
+
+            // 5.5 Semana
+            var monday = day.AddDays(-(((int)day.DayOfWeek + 6) % 7));
+            var actualWeek = WeekSummary.For(queryWork.Store, setup, monday, time.LocalTimeZone.BaseUtcOffset);
+            var expectedWeek = targetCase.GetProperty("week").EnumerateArray().ToList();
+            Assert.Equal(expectedWeek.Count, actualWeek.Count);
+            for (var i = 0; i < expectedWeek.Count; i++)
+            {
+                var row = expectedWeek[i];
+                var expDay = DateOnly.Parse(row[0].GetString()!, CultureInfo.InvariantCulture);
+                var expBooked = row[1].GetInt32();
+                var expCapacity = row[2].GetInt32();
+
+                Assert.True(expDay == actualWeek[i].Day, $"Caso '{caseName}', semana día {i + 1} fecha distinta");
+                Assert.True(expBooked == actualWeek[i].Booked, $"Caso '{caseName}', semana día {i + 1} ocupados distinto ({expBooked} vs {actualWeek[i].Booked})");
+                Assert.True(expCapacity == actualWeek[i].Capacity, $"Caso '{caseName}', semana día {i + 1} capacidad distinta ({expCapacity} vs {actualWeek[i].Capacity})");
+            }
+
+            // 5.6 Búsqueda (opcional)
+            if (targetCase.TryGetProperty("search", out var searchElem))
+            {
+                foreach (var searchProp in searchElem.EnumerateObject())
+                {
+                    var query = searchProp.Name;
+                    var expClients = searchProp.Value.EnumerateArray().ToList();
+                    var actualClients = ClientSearch.Find(queryWork.Store, query);
+
+                    Assert.True(expClients.Count == actualClients.Count,
+                        $"Caso '{caseName}', búsqueda '{query}': cantidad distinta ({expClients.Count} vs {actualClients.Count})");
+
+                    for (var i = 0; i < expClients.Count; i++)
+                    {
+                        var exp = expClients[i];
+                        var actual = actualClients[i];
+
+                        Assert.True(exp[0].GetInt64() == actual.Id, $"Caso '{caseName}', búsqueda '{query}', contacto {i + 1} id distinto");
+                        Assert.True(exp[1].GetString() == actual.Name, $"Caso '{caseName}', búsqueda '{query}', contacto {i + 1} name distinto");
+                        Assert.True(exp[2].GetString() == actual.Phone, $"Caso '{caseName}', búsqueda '{query}', contacto {i + 1} phone distinto");
+                    }
+                }
             }
         }
         finally

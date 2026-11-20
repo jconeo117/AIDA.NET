@@ -44,7 +44,7 @@ public sealed class DayViewTests
             new(blockAll, "Admin")
         };
 
-        var dayView = new DayView(day, now, setup, [], blocks, new Dictionary<string, IReadOnlyList<FreeSlot>>());
+        var dayView = new DayView(day, now, setup, [], blocks, new Dictionary<string, IReadOnlyList<FreeSlot>>(), []);
 
         // 1. Consulta para consultorio_1 entre 10:00 y 10:30 -> encuentra blockR1
         var atR1 = dayView.BlockAt("consultorio_1", t10, t10.AddMinutes(30));
