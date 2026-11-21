@@ -6,13 +6,14 @@ using Microsoft.Data.Sqlite;
 
 namespace Aida.Arms.Agenda.Storage;
 
-/// <summary>Las citas y las personas de la agenda, dentro de una transacción.</summary>
+/// <summary>Las citas, las personas y los bloqueos de la agenda, dentro de una transacción.</summary>
 /// <remarks>
-/// <para>Es <c>SqliteAgendaStore</c> de la 0.1 (<c>store.py:147-305</c>), sin los bloqueos ni las consultas de la ficha
-/// (N009). Trabaja dentro de la transacción de quien lo crea: el cambio y su hecho de auditoría se confirman juntos
+/// <para>Es <c>SqliteAgendaStore</c> de la 0.1 (<c>store.py:147-305</c>), con sus bloqueos. Las consultas de la ficha
+/// llegan en N010. Trabaja dentro de la transacción de quien lo crea: el cambio y su hecho de auditoría se confirman juntos
 /// (ADR 0032).</para>
 /// <para>El nombre y el teléfono van sellados (ADR 0029). El teléfono lleva además una huella HMAC con una clave derivada
-/// distinta de la que sella, para buscarlo exacto sin abrir a todos (<c>store.py:150, 163-166</c>).</para>
+/// distinta de la que sella, para buscarlo exacto sin abrir a todos (<c>store.py:150, 163-166</c>). El motivo de un bloqueo
+/// va sellado por la misma razón: es texto libre y puede nombrar a un paciente.</para>
 /// </remarks>
 internal sealed class AgendaStore
 {
@@ -88,12 +89,13 @@ internal sealed class AgendaStore
         return Get((long)command.ExecuteScalar()!)!;
     }
 
-    internal Appointment Update(long appointment, string by, DateTimeOffset? start = null, string? resource = null, AppointmentState? state = null)
+    internal Appointment Update(long appointment, string by, DateTimeOffset? start = null, string? resource = null, AppointmentState? state = null, string? service = null, int? minutes = null)
     {
         using var command = Command("""
             UPDATE agenda_appointments SET updated_by = $by,
                 start = coalesce($start, start), start_utc = coalesce($start_utc, start_utc),
-                resource = coalesce($resource, resource), state = coalesce($state, state)
+                resource = coalesce($resource, resource), state = coalesce($state, state),
+                service = coalesce($service, service), minutes = coalesce($minutes, minutes)
             WHERE id = $id;
             """);
         command.Parameters.AddWithValue("$by", by);
@@ -101,6 +103,8 @@ internal sealed class AgendaStore
         command.Parameters.AddWithValue("$start_utc", (object?)start?.ToUnixTimeSeconds() ?? DBNull.Value);
         command.Parameters.AddWithValue("$resource", (object?)resource ?? DBNull.Value);
         command.Parameters.AddWithValue("$state", state is { } value ? AppointmentStates.ToWire(value) : DBNull.Value);
+        command.Parameters.AddWithValue("$service", (object?)service ?? DBNull.Value);
+        command.Parameters.AddWithValue("$minutes", minutes is { } length ? (long)length : DBNull.Value);
         command.Parameters.AddWithValue("$id", appointment);
         return command.ExecuteNonQuery() == 0
             ? throw new KeyNotFoundException($"no hay cita {appointment}")
@@ -131,6 +135,62 @@ internal sealed class AgendaStore
         return found;
     }
 
+    /// <summary>Guarda un bloqueo, con el motivo sellado (<c>store.py:329-348</c>).</summary>
+    /// <param name="resource">El recurso, o vacío si el bloqueo es de todos.</param>
+    /// <param name="start">Desde cuándo.</param>
+    /// <param name="end">Hasta cuándo.</param>
+    /// <param name="reason">El motivo, ya recortado.</param>
+    /// <param name="by">Quién lo pone.</param>
+    /// <returns>El bloqueo, con su identificador.</returns>
+    internal Block AddBlock(string resource, DateTimeOffset start, DateTimeOffset end, string reason, string by)
+    {
+        using var command = Command("""
+            INSERT INTO agenda_blocks (resource, start, start_utc, ends, ends_utc, reason, created_by)
+            VALUES ($resource, $start, $start_utc, $ends, $ends_utc, $reason, $by) RETURNING id;
+            """);
+        command.Parameters.AddWithValue("$resource", resource);
+        command.Parameters.AddWithValue("$start", start.ToString(StartFormat, CultureInfo.InvariantCulture));
+        command.Parameters.AddWithValue("$start_utc", start.ToUnixTimeSeconds());
+        command.Parameters.AddWithValue("$ends", end.ToString(StartFormat, CultureInfo.InvariantCulture));
+        command.Parameters.AddWithValue("$ends_utc", end.ToUnixTimeSeconds());
+        command.Parameters.AddWithValue("$reason", _sealer.Seal(reason));
+        command.Parameters.AddWithValue("$by", by);
+        return new Block((long)command.ExecuteScalar()!, resource, start, end, reason, by);
+    }
+
+    /// <summary>Borra un bloqueo (<c>store.py:350-354</c>).</summary>
+    /// <param name="block">El identificador del bloqueo.</param>
+    /// <returns><see langword="false"/> si no existía.</returns>
+    internal bool RemoveBlock(long block)
+    {
+        using var command = Command("DELETE FROM agenda_blocks WHERE id = $id;");
+        command.Parameters.AddWithValue("$id", block);
+        return command.ExecuteNonQuery() > 0;
+    }
+
+    /// <summary>Los bloqueos que se cruzan con <c>[start, end)</c>, en orden de inicio y, a igualdad, de id
+    /// (<c>store.py:361-367</c>).</summary>
+    /// <param name="start">Desde cuándo.</param>
+    /// <param name="end">Hasta cuándo.</param>
+    /// <returns>Los bloqueos; vacío si ninguno se cruza.</returns>
+    internal IReadOnlyList<Block> BlocksBetween(DateTimeOffset start, DateTimeOffset end)
+    {
+        using var command = Command("""
+            SELECT id, resource, start, ends, reason, created_by FROM agenda_blocks
+            WHERE start_utc < $to AND ends_utc > $from ORDER BY start_utc, id;
+            """);
+        command.Parameters.AddWithValue("$from", start.ToUnixTimeSeconds());
+        command.Parameters.AddWithValue("$to", end.ToUnixTimeSeconds());
+        using var reader = command.ExecuteReader();
+        var found = new List<Block>();
+        while (reader.Read())
+        {
+            found.Add(ReadBlock(reader));
+        }
+
+        return found;
+    }
+
     private static Appointment ReadAppointment(SqliteDataReader reader) => new(
         reader.GetInt64(0),
         reader.GetInt64(1),
@@ -144,6 +204,14 @@ internal sealed class AgendaStore
 
     private Client ReadClient(SqliteDataReader reader) =>
         new(reader.GetInt64(0), _sealer.Open((byte[])reader[1]), _sealer.Open((byte[])reader[2]));
+
+    private Block ReadBlock(SqliteDataReader reader) => new(
+        reader.GetInt64(0),
+        reader.GetString(1),
+        DateTimeOffset.ParseExact(reader.GetString(2), StartFormat, CultureInfo.InvariantCulture),
+        DateTimeOffset.ParseExact(reader.GetString(3), StartFormat, CultureInfo.InvariantCulture),
+        _sealer.Open((byte[])reader[4]),
+        reader.GetString(5));
 
     private string Index(string phone) =>
         Convert.ToHexStringLower(HMACSHA256.HashData(_phoneKey, Encoding.UTF8.GetBytes(PhoneNumbers.Normalize(phone))));

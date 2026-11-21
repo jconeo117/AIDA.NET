@@ -1,6 +1,8 @@
 @using System.Globalization
 @using Aida.Arms.Agenda.Desk
 @using Aida.Arms.Agenda.Storage
+@using Aida.Arms.Agenda.Wording
+@inject AgendaWording Text
 
 <table class="grid">
     <thead>
@@ -25,6 +27,15 @@
                             <a class="appt @StateClass(item.Appointment.State)" href="@AgendaLinks.Panel(View.Day, "cita", item.Appointment.Id.ToString(CultureInfo.InvariantCulture))">
                                 <b>@item.ClientName</b>
                                 <span>@item.ServiceLabel</span>
+                            </a>
+                        }
+                        @if (BlockCell(resource.Id, time) is { } blocked)
+                        {
+                            <a class="blocked" href="@AgendaLinks.Panel(View.Day, "bloqueo", blocked.Block.Id.ToString(CultureInfo.InvariantCulture))">
+                                @if (IsFirstBlockCell(resource.Id, time, blocked))
+                                {
+                                    <span>@BlockLabel(blocked)</span>
+                                }
                             </a>
                         }
                     </td>
@@ -65,6 +76,29 @@
     private IEnumerable<AppointmentView> Cell(string resource, TimeOnly time) =>
         View.Appointments.Where(item => item.Appointment.Resource == resource
             && TimeOnly.FromDateTime(item.Appointment.Start.DateTime) == time);
+
+    /// <summary>El bloqueo que cubre la celda, si la celda no tiene cita.</summary>
+    /// <remarks>Una cita se pinta encima de un bloqueo: si las dos coinciden, la cita es la que importa en la rejilla.</remarks>
+    private BlockView? BlockCell(string resource, TimeOnly time)
+    {
+        if (Cell(resource, time).Any())
+        {
+            return null;
+        }
+
+        var start = CellStart(time);
+        return View.BlockAt(resource, start, start.AddMinutes(View.Setup.SlotMinutes));
+    }
+
+    /// <summary>Si esta es la primera celda que cubre el bloqueo en esa columna: el texto va solo ahí.</summary>
+    /// <remarks>Sin esto, un bloqueo de cuatro huecos repetiría su motivo en cada fila, y la columna se leería como cuatro cosas.</remarks>
+    private bool IsFirstBlockCell(string resource, TimeOnly time, BlockView blocked) =>
+        _times.FirstOrDefault(candidate => BlockCell(resource, candidate)?.Block.Id == blocked.Block.Id) == time;
+
+    private string BlockLabel(BlockView blocked) =>
+        blocked.Block.Reason.Length > 0 ? blocked.Block.Reason : Text["blocked_label"];
+
+    private DateTimeOffset CellStart(TimeOnly time) => new(View.Day.ToDateTime(time), View.Now.Offset);
 
     private static string StateClass(AppointmentState state) => state switch
     {

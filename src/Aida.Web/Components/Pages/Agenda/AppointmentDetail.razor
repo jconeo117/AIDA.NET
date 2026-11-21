@@ -25,6 +25,7 @@
         <div class="side-actions">
             <button type="submit" name="Command.Action" value="atendida">@Text["attended_button"]</button>
             <button type="submit" name="Command.Action" value="no_asistio">@Text["no_show_button"]</button>
+            <a href="@AgendaLinks.Panel(Day, "editar", View.Appointment.Id.ToString(CultureInfo.InvariantCulture))">@Text["edit_button"]</a>
             <a href="@AgendaLinks.Panel(Day, "mover", View.Appointment.Id.ToString(CultureInfo.InvariantCulture))">@Text["move_button"]</a>
             <a href="@AgendaLinks.Panel(Day, "cancelar", View.Appointment.Id.ToString(CultureInfo.InvariantCulture))">@Text["cancel_button"]</a>
         </div>

@@ -1,0 +1,36 @@
+@using System.Globalization
+@using Aida.Arms.Agenda.Desk
+@using Aida.Arms.Agenda.Wording
+@inject AgendaWording Text
+
+<div class="panel-card">
+    <h3>@Text["block_title"]</h3>
+    <p>@Text["block_lead"]</p>
+    <label>
+        @Text["field_who"]
+        <select name="Command.Resource">
+            <option value="">@Text["all_resources"]</option>
+            @foreach (var resource in View.Setup.Resources)
+            {
+                <option value="@resource.Id">@resource.Label</option>
+            }
+        </select>
+    </label>
+    <label>@Text["field_from"] <input type="datetime-local" name="Command.From" value="@DayAt("08:00")" /></label>
+    <label>@Text["field_until"] <input type="datetime-local" name="Command.Until" value="@DayAt("09:00")" /></label>
+    <label>@Text["field_reason"] <input name="Command.Reason" /></label>
+    <div class="side-actions">
+        <button type="submit" name="Command.Action" value="bloquear">@Text["block_save"]</button>
+        <a href="@AgendaLinks.Day(Day)">@Text["close_button"]</a>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public DayView View { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public DateOnly Day { get; set; }
+
+    private string DayAt(string time) => $"{Day.ToString(AgendaLinks.DayFormat, CultureInfo.InvariantCulture)}T{time}";
+}

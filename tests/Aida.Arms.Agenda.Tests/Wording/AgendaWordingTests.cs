@@ -45,6 +45,28 @@ public sealed class AgendaWordingTests
             Assert.StartsWith(tempFile, ex.Message);
             Assert.Contains("faltan textos de la agenda", ex.Message);
             Assert.Contains("new_button", ex.Message);
+            Assert.Contains("conflicts_title", ex.Message);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+
+    [Fact]
+    public void Un_ui_yaml_sin_conflicts_title_falla_al_cargar()
+    {
+        var repoRoot = FindRepoRoot();
+        var uiPath = Path.Combine(repoRoot, "packs", "agenda", "ui.yaml");
+        var content = File.ReadAllText(uiPath);
+        var withoutConflicts = content.Replace("conflicts_title:", "ignored_conflicts_title:");
+
+        var tempFile = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(tempFile, withoutConflicts);
+            var ex = Assert.Throws<InvalidDataException>(() => AgendaWording.Load(tempFile));
+            Assert.Contains("conflicts_title", ex.Message);
         }
         finally
         {

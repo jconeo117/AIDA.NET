@@ -1,9 +1,9 @@
 namespace Aida.Arms.Agenda.Storage;
 
 /// <summary>Las tablas de la agenda, por versión (ADR 0032).</summary>
-/// <remarks>Las de la 0.1 (<c>store.py:110-140</c>) sin <c>blocks</c>, que llega con los bloqueos (N009), y con dos
-/// cambios: el prefijo <c>agenda_</c>, para que ningún otro brazo las pise, y <c>start_utc</c>, para buscar por rango con
-/// un índice. La 0.1 filtraba en Python porque las fechas con distinto desfase no se comparan como texto
+/// <remarks>Las de la 0.1 (<c>store.py:110-140</c>), con tres cambios: el prefijo <c>agenda_</c>, para que ningún otro brazo
+/// las pise; <c>start_utc</c>, para buscar por rango con un índice; y, desde la versión 2, la tabla de los bloqueos
+/// (<c>store.py:131-138</c>). La 0.1 filtraba en Python porque las fechas con distinto desfase no se comparan como texto
 /// (<c>store.py:299</c>).</remarks>
 internal static class AgendaSchema
 {
@@ -29,5 +29,20 @@ internal static class AgendaSchema
         CREATE INDEX agenda_appointments_start ON agenda_appointments(start_utc);
         """;
 
-    internal static IReadOnlyList<string> Steps { get; } = [Version1];
+    internal const string Version2 = """
+        CREATE TABLE agenda_blocks (
+            id INTEGER PRIMARY KEY,
+            resource TEXT NOT NULL,
+            start TEXT NOT NULL,
+            start_utc INTEGER NOT NULL,
+            ends TEXT NOT NULL,
+            ends_utc INTEGER NOT NULL,
+            reason BLOB NOT NULL,
+            created_by TEXT NOT NULL,
+            CHECK (ends_utc > start_utc)
+        ) STRICT;
+        CREATE INDEX agenda_blocks_start ON agenda_blocks(start_utc);
+        """;
+
+    internal static IReadOnlyList<string> Steps { get; } = [Version1, Version2];
 }

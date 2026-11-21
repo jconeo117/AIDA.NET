@@ -124,13 +124,16 @@ public sealed class RoleCatalogTests
     public void Lee_el_roles_yaml_del_repositorio()
     {
         var path = Path.Combine(FindRepoRoot(), "packs", "platform", "roles.yaml");
-        var catalog = RoleCatalog.Load(path, ["agenda.manage"]);
+        var catalog = RoleCatalog.Load(path, ["agenda.manage", "agenda.block"]);
 
         Assert.NotEmpty(catalog.Roles);
         Assert.Equal("administracion", catalog.FirstAdministratorRole.Id);
         Assert.True(catalog.Allows("administracion", PlatformPermission.ManageUsers));
         Assert.False(catalog.Allows("recepcion", PlatformPermission.ManageUsers));
         Assert.True(catalog.Allows("recepcion", "agenda.manage"));
+        Assert.True(catalog.Allows("recepcion", "agenda.block"));
+        Assert.True(catalog.Allows("administracion", "agenda.block"));
+        Assert.False(catalog.Allows("profesional", "agenda.block"));
         Assert.False(catalog.Allows("caja", "agenda.manage"));
     }
 

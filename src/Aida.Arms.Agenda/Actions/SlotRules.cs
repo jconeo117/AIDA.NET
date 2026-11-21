@@ -5,8 +5,7 @@ namespace Aida.Arms.Agenda.Actions;
 
 /// <summary>Si un hueco se puede ocupar: la única puerta de esta comprobación.</summary>
 /// <remarks>Es <c>slot_rejection</c> de la 0.1 (<c>tool.py:65-119</c>), que usan la herramienta y los huecos libres: con dos
-/// copias podrían decir cosas distintas. El orden es el de la 0.1 sin la regla de los bloqueos, que llega en N009: fuera de
-/// horario y, después, solape.</remarks>
+/// copias podrían decir cosas distintas. El orden es el de la 0.1: fuera de horario, bloqueado y solape.</remarks>
 internal static class SlotRules
 {
     internal static string? Rejection(AgendaStore store, ResourceSpec resource, DateTimeOffset start, int minutes, long? except)
@@ -14,6 +13,15 @@ internal static class SlotRules
         if (!RangesCover(resource, start, minutes))
         {
             return "outside_hours";
+        }
+
+        var end = start.AddMinutes(minutes);
+        foreach (var block in store.BlocksBetween(start, end))
+        {
+            if (block.AppliesTo(resource.Id))
+            {
+                return "blocked";
+            }
         }
 
         foreach (var other in store.Between(start.AddDays(-1), start.AddDays(1)))

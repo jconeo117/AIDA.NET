@@ -7,7 +7,10 @@ icon: "calendar"
 default_sector: "consultorio"
 actions:
   - {id: "agendar", reversibility: "reversible"}
+  - {id: "editar", reversibility: "reversible"}
   - {id: "reprogramar", reversibility: "reversible"}
   - {id: "cancelar", reversibility: "reversible"}
   - {id: "atendida", reversibility: "reversible"}
   - {id: "no_asistio", reversibility: "reversible"}
+  - {id: "bloquear", reversibility: "reversible"}
+  - {id: "desbloquear", reversibility: "reversible"}

@@ -23,6 +23,8 @@ public sealed class AgendaGoldenTests
     [InlineData("consultorio-dia")]
     [InlineData("consultorio-bordes")]
     [InlineData("peluqueria-sabado")]
+    [InlineData("consultorio-bloqueos")]
+    [InlineData("consultorio-edicion")]
     public void El_oraculo_de_la_agenda_coincide_con_la_01(string caseName)
     {
         var repoRoot = FindRepoRoot();
@@ -153,6 +155,23 @@ public sealed class AgendaGoldenTests
                     Assert.True(expSlots[i][0] == actualPairs[i][0] && expSlots[i][1] == actualPairs[i][1],
                         $"Caso '{caseName}', servicio '{service.Id}', hueco {i + 1}:\nEsperado: {expSlots[i][0]} {expSlots[i][1]}\nObtenido: {actualPairs[i][0]} {actualPairs[i][1]}");
                 }
+            }
+
+            // 5.4 Bloqueos
+            var actualBlocks = queryWork.Store.BlocksBetween(dayStart.AddDays(-7), dayStart.AddDays(7));
+            var expectedBlocks = targetCase.GetProperty("blocks").EnumerateArray().ToList();
+            Assert.Equal(expectedBlocks.Count, actualBlocks.Count);
+            for (var i = 0; i < expectedBlocks.Count; i++)
+            {
+                var block = actualBlocks[i];
+                var exp = expectedBlocks[i];
+
+                Assert.True(exp.GetProperty("id").GetInt64() == block.Id, $"Caso '{caseName}', bloqueo {i + 1} id distinto");
+                Assert.True(exp.GetProperty("resource").GetString() == block.Resource, $"Caso '{caseName}', bloqueo {i + 1} resource distinto");
+                Assert.True(exp.GetProperty("start").GetString() == StartArgument.Format(block.Start), $"Caso '{caseName}', bloqueo {i + 1} start distinto");
+                Assert.True(exp.GetProperty("end").GetString() == StartArgument.Format(block.End), $"Caso '{caseName}', bloqueo {i + 1} end distinto");
+                Assert.True(exp.GetProperty("reason").GetString() == block.Reason, $"Caso '{caseName}', bloqueo {i + 1} reason distinto");
+                Assert.True(exp.GetProperty("created_by").GetString() == block.CreatedBy, $"Caso '{caseName}', bloqueo {i + 1} created_by distinto");
             }
         }
         finally

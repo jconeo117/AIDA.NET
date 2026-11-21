@@ -1,0 +1,19 @@
+@using System.Globalization
+@using Aida.Arms.Agenda.Desk
+@using Aida.Arms.Agenda.Wording
+@inject AgendaWording Text
+
+<div class="panel-card">
+    <p>@Text["conflicts_title"]</p>
+    <ul>
+        @foreach (var conflict in Conflicts)
+        {
+            <li>@conflict.Appointment.Start.ToString("dd/MM HH:mm", CultureInfo.InvariantCulture) · @conflict.ClientName</li>
+        }
+    </ul>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<AppointmentView> Conflicts { get; set; } = [];
+}
