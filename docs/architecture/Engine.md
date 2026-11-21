@@ -1,6 +1,6 @@
 # Aida.Engine
 
-- **Estado:** N002 trajo los eventos y su registro, la serialización canónica y BLAKE2b. N003 trajo la ontología y el pack: tipos, carga del YAML y validación. N004 trajo la disposición y el estado del agente, con su propio `pow`. N005 trajo la deliberación: el sorteo por clave con Mersenne Twister, la `exp` propia y las necesidades críticas. N006 trajo el bucle: el agente corre tick a tick con su buzón, su clasificador de intención y su techo de autoridad. N008 trae la puerta de acciones, por la que pasa todo cambio de un brazo. La explicación y la persistencia llegan con su consumidor (el asistente y el servicio del bucle).
+- **Estado:** N002 trajo los eventos y su registro, la serialización canónica y BLAKE2b. N003 trajo la ontología y el pack: tipos, carga del YAML y validación. N004 trajo la disposición y el estado del agente, con su propio `pow`. N005 trajo la deliberación: el sorteo por clave con Mersenne Twister, la `exp` propia y las necesidades críticas. N006 trajo el bucle: el agente corre tick a tick con su buzón, su clasificador de intención y su techo de autoridad. N008 trae la puerta de acciones, por la que pasa todo cambio de un brazo. N010 trae `TextFold`, el plegado de texto de la 0.1, con la búsqueda de la agenda como primer consumidor. La explicación y la persistencia llegan con su consumidor (el asistente y el servicio del bucle).
 - **ADR:** [0001](../adr/0001-el-motor-decide.md), [0002](../adr/0002-agnosticismo-de-dominio.md), [0004](../adr/0004-reloj-hibrido.md), [0025](../adr/0025-eventos-y-lo-derivado.md), [0006](../adr/0006-owner-y-autoria.md), [0007](../adr/0007-autoridad-y-puerta-de-herramientas.md), [0012](../adr/0012-packs-yaml.md), [0027](../adr/0027-determinismo-y-registros-dorados.md), [0024](../adr/0024-yaml-con-yamldotnet.md), [0026](../adr/0026-pow-propio.md), [0035](../adr/0035-lo-que-declara-un-brazo.md)
 
 ## Responsabilidad
@@ -29,6 +29,7 @@ Nada de la solución. De fuera, solo YamlDotNet ([ADR 0024](../adr/0024-yaml-con
 | `Aida.Engine.Disposition` | `Temperament` | Los seis parámetros de decisión ya compuestos para un agente, que lee la deliberación |
 | `Aida.Engine.State` | `PerformingAction` | Lo que el agente está haciendo y cuánto le falta |
 | `Aida.Engine.State` | `AgentState` | Cómo está el agente y qué deriva de su personalidad. Lo construye solo `FromSpec`; su API pública es de solo lectura y lo muta el motor ([ADR 0025](../adr/0025-eventos-y-lo-derivado.md)) |
+| `Aida.Engine.Text` | `TextFold` | Pliega un texto para compararlo (minúsculas y sin tildes), como `fold` de la 0.1. Una sola puerta: la usan la búsqueda de la agenda y, cuando se porten, la intención y los apartados |
 | `Aida.Engine.Actions` | `ActionGate`, `ActionCatalog`, `ActionRequest`, `IToolPort`, `ToolResult`, `ToolStatus` | La puerta única de acciones ([ADR 0007](../adr/0007-autoridad-y-puerta-de-herramientas.md)): registra la petición, compara la reversibilidad con el techo, ejecuta la herramienta del brazo y emite un solo cierre |
 
 Son internos, visibles solo para `Aida.Engine.Tests`:

@@ -32,7 +32,7 @@ namespace Aida.Arms.Agenda.Desk;
 public sealed class AgendaDesk
 {
     private static readonly AgentId _owner = new(AgendaDeclarations.ArmId);
-    private static readonly ImmutableArray<string> _subjects = ["appointment", "block"];
+    private static readonly ImmutableArray<string> _subjects = ["appointment", "block", "client"];
 
     private readonly PlatformDatabase _database;
     private readonly AuditLog _audit;
@@ -90,7 +90,7 @@ public sealed class AgendaDesk
 
     /// <summary>El día, para pintarlo.</summary>
     /// <param name="day">El día.</param>
-    /// <returns>Las citas, los bloqueos, los huecos libres de cada servicio y la configuración.</returns>
+    /// <returns>Las citas, los bloqueos, los huecos libres de cada servicio, la semana y la configuración.</returns>
     public DayView Day(DateOnly day)
     {
         var names = UserNames();
@@ -99,7 +99,9 @@ public sealed class AgendaDesk
             using var work = AgendaWork.Begin(_database, _sealer, _phoneKey);
             var now = _time.GetLocalNow();
             var start = new DateTimeOffset(day.ToDateTime(TimeOnly.MinValue), now.Offset);
-            var appointments = work.Store.Between(start, start.AddDays(1)).Select(appointment => ViewOf(work.Store, appointment, names)).ToList();
+            var appointments = work.Store.Between(start, start.AddDays(1))
+                .Select(appointment => AppointmentViews.Of(work.Store, Setup, names, appointment))
+                .ToList();
             var blocks = work.Store.BlocksBetween(start, start.AddDays(1))
                 .Select(block => new BlockView(block, names.GetValueOrDefault(block.CreatedBy, block.CreatedBy)))
                 .ToList();
@@ -107,7 +109,9 @@ public sealed class AgendaDesk
                 service => service.Id,
                 service => FreeSlots.For(work.Store, Setup, day, service.Id, now),
                 StringComparer.Ordinal);
-            return new DayView(day, now, Setup, appointments, blocks, free);
+            var monday = day.AddDays(-(((int)day.DayOfWeek + 6) % 7));
+            var week = WeekSummary.For(work.Store, Setup, monday, now.Offset);
+            return new DayView(day, now, Setup, appointments, blocks, free, week);
         }
     }
 
@@ -115,7 +119,7 @@ public sealed class AgendaDesk
     /// <param name="user">Quien lo pide, el de la sesión.</param>
     /// <param name="workstation">Desde qué puesto.</param>
     /// <param name="action">La acción: <c>agendar</c>, <c>editar</c>, <c>reprogramar</c>, <c>cancelar</c>, <c>atendida</c>,
-    /// <c>no_asistio</c>, <c>bloquear</c> o <c>desbloquear</c>.</param>
+    /// <c>no_asistio</c>, <c>bloquear</c>, <c>desbloquear</c> o <c>editar_contacto</c>.</param>
     /// <param name="arguments">Sus argumentos. Un <c>by</c> que venga en ellos se sobrescribe con quien pide.</param>
     /// <returns>Cómo acabó. Sin el permiso de la acción, un rechazo <c>forbidden</c> que no llega a la puerta ni deja ningún evento.</returns>
     public ToolResult Submit(UserAccount user, string workstation, string action, IReadOnlyDictionary<string, string> arguments)
@@ -178,7 +182,42 @@ public sealed class AgendaDesk
             return [.. ids.Split(',')
                 .Select(text => long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) ? work.Store.Get(id) : null)
                 .OfType<Appointment>()
-                .Select(appointment => ViewOf(work.Store, appointment, names))];
+                .Select(appointment => AppointmentViews.Of(work.Store, Setup, names, appointment))];
+        }
+    }
+
+    /// <summary>Busca contactos por nombre o por teléfono.</summary>
+    /// <param name="query">Lo tecleado.</param>
+    /// <returns>Hasta 20 contactos, por nombre sin tildes y luego por id; ninguno si la búsqueda está vacía.</returns>
+    /// <remarks>Cualquier sesión busca, como ve el día (debate de N010, D3). No deja auditoría ni evento: no cambia nada.</remarks>
+    public IReadOnlyList<Client> Search(string query)
+    {
+        lock (_sync)
+        {
+            using var work = AgendaWork.Begin(_database, _sealer, _phoneKey);
+            return ClientSearch.Find(work.Store, query);
+        }
+    }
+
+    /// <summary>La ficha de un contacto.</summary>
+    /// <param name="client">El id del contacto.</param>
+    /// <returns>La ficha, o <see langword="null"/> si el contacto no existe.</returns>
+    /// <remarks>Cualquier sesión la ve (D3). Las cifras las cuenta <see cref="ClientCard"/>.</remarks>
+    public ClientCard? Card(long client)
+    {
+        var names = UserNames();
+        lock (_sync)
+        {
+            using var work = AgendaWork.Begin(_database, _sealer, _phoneKey);
+            if (work.Store.FindClient(client) is not { } found)
+            {
+                return null;
+            }
+
+            var views = work.Store.AppointmentsFor(found.Id)
+                .Select(appointment => AppointmentViews.Of(work.Store, Setup, names, appointment))
+                .ToList();
+            return ClientCard.Build(found, views, _time.GetLocalNow());
         }
     }
 
@@ -198,16 +237,4 @@ public sealed class AgendaDesk
 
     private IReadOnlyDictionary<string, string> UserNames() =>
         _users.List().ToDictionary(user => user.Actor.Id, user => user.DisplayName, StringComparer.Ordinal);
-
-    private AppointmentView ViewOf(AgendaStore store, Appointment appointment, IReadOnlyDictionary<string, string> names)
-    {
-        var client = store.GetClient(appointment.ClientId);
-        return new AppointmentView(
-            appointment,
-            client.Name,
-            client.Phone,
-            Setup.Service(appointment.Service)?.Label ?? appointment.Service,
-            names.GetValueOrDefault(appointment.CreatedBy, appointment.CreatedBy),
-            names.GetValueOrDefault(appointment.UpdatedBy, appointment.UpdatedBy));
-    }
 }

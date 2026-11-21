@@ -158,6 +158,29 @@ SCRIPTS = [
             ["editar", {"appointment": "1", "name": "Ana", "phone": "3005550142", "service": "control", "resource": "consultorio_1"}],
         ],
     },
+    {
+        "name": "consultorio-consulta",
+        "template": "consultorio",
+        "day": "2026-11-16",
+        "now": "2026-11-16T07:30:00-05:00",
+        "requests": [
+            ["agendar", {"name": "Luis Gómez", "phone": "3105550000", "service": "control", "start": _s("08:00"), "resource": "consultorio_1"}],
+            ["agendar", {"name": "Ana Pérez", "phone": "3005550142", "service": "control", "start": _s("09:00"), "resource": "consultorio_2"}],
+            ["agendar", {"name": "Luisa Gomez", "phone": "3115550001", "service": "procedimiento", "start": _s("10:00"), "resource": "consultorio_1"}],
+            ["agendar", {"name": "Luis Gómez", "phone": "3105550000", "service": "control", "start": _s("08:00", "2026-11-18"), "resource": "consultorio_1"}],
+            ["cancelar", {"appointment": "4"}],
+            ["agendar", {"name": "Eva", "phone": "1", "service": "control", "start": _s("08:00", "2026-11-17"), "resource": "consultorio_1"}],
+            ["agendar", {"name": "Ana Pérez", "phone": "3005550142", "service": "control", "start": _s("09:00", "2026-11-19"), "resource": "consultorio_1"}],
+            ["bloquear", {"start": _s("08:00", "2026-11-20"), "end": _s("13:00", "2026-11-20"), "reason": "Festivo"}],
+            ["editar_contacto", {"client": "2", "name": "Ana María Pérez", "phone": "3005550142"}],
+            ["editar_contacto", {"client": "2", "name": "Ana", "phone": "3105550000"}],
+            ["editar_contacto", {"client": "9", "name": "X", "phone": "9"}],
+            ["editar_contacto", {"client": "x", "name": "X", "phone": "9"}],
+            ["editar_contacto", {"client": "1", "name": "  ", "phone": "3105550000"}],
+            ["agendar", {"name": "Ana María Pérez", "phone": "3005550142", "service": "primera_vez", "start": _s("08:30"), "resource": "consultorio_1"}],
+        ],
+        "searches": ["gomez", "GÓMEZ", "luis", "ana maria", "300 555", "3105550000", "", "   ", "zzz", "--"],
+    },
 ]
 
 
@@ -166,7 +189,7 @@ def generate_agenda(aida_dir: Path, repo_dir: Path, out_path: Path) -> None:
 
     from aida.arms.agenda.setup import load_setup
     from aida.arms.agenda.store import SqliteAgendaStore
-    from aida.arms.agenda.tool import ACTIONS, AgendaTool, free_slots
+    from aida.arms.agenda.tool import ACTIONS, AgendaTool, find_clients, free_slots, week_summary
     from aida.engine.actions import ActionGate, ActionRequest
     from aida.engine.events import EventLog
     from aida.engine.ontology import AgentId
@@ -219,7 +242,12 @@ def generate_agenda(aida_dir: Path, repo_dir: Path, out_path: Path) -> None:
                 s.id: [[r, h.isoformat()] for r, h in free_slots(store, setup, day, s.id, reloj["now"])]
                 for s in setup.services
             }
-            lines.append(json.dumps({
+            lunes = day - timedelta(days=day.weekday())
+            week = [
+                [dia.isoformat(), ocupados, capacidad]
+                for dia, ocupados, capacidad in week_summary(store, setup, lunes, reloj["now"])
+            ]
+            case_data = {
                 "appointments": appointments,
                 "blocks": blocks,
                 "day": script["day"],
@@ -229,7 +257,14 @@ def generate_agenda(aida_dir: Path, repo_dir: Path, out_path: Path) -> None:
                 "requests": requests,
                 "start_now": script["now"],
                 "template": script["template"],
-            }, ensure_ascii=False, sort_keys=True) + "\n")
+                "week": week,
+            }
+            if "searches" in script:
+                case_data["search"] = {
+                    consulta: [[c.id, c.name, c.phone] for c in find_clients(store, consulta)]
+                    for consulta in script["searches"]
+                }
+            lines.append(json.dumps(case_data, ensure_ascii=False, sort_keys=True) + "\n")
     out_path.parent.mkdir(parents=True, exist_ok=True)
     with open(out_path, "w", encoding="utf-8", newline="\n") as f:
         f.writelines(lines)

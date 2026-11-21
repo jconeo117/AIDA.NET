@@ -1,0 +1,23 @@
+@using System.Globalization
+@using Aida.Arms.Agenda.Storage
+@using Aida.Arms.Agenda.Wording
+@inject AgendaWording Text
+
+<div class="panel-card">
+    <h3>@Text["card_edit"]</h3>
+    <input type="hidden" name="Command.Client" value="@Contact.Id.ToString(CultureInfo.InvariantCulture)" />
+    <label>@Text["field_name"] <input name="Command.Name" value="@Contact.Name" /></label>
+    <label>@Text["field_phone"] <input name="Command.Phone" value="@Contact.Phone" /></label>
+    <div class="side-actions">
+        <button type="submit" name="Command.Action" value="editar_contacto">@Text["save_button"]</button>
+        <a href="@AgendaLinks.Panel(Day, "ficha", Contact.Id.ToString(CultureInfo.InvariantCulture))">@Text["close_button"]</a>
+    </div>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public Client Contact { get; set; } = null!;
+
+    [Parameter, EditorRequired]
+    public DateOnly Day { get; set; }
+}

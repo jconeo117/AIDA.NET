@@ -6,7 +6,7 @@ namespace Aida.Web.Components.Pages.Agenda;
 public sealed class AgendaCommandForm
 {
     /// <summary>La acción: <c>agendar</c>, <c>editar</c>, <c>reprogramar</c>, <c>cancelar</c>, <c>atendida</c>, <c>no_asistio</c>,
-    /// <c>bloquear</c> o <c>desbloquear</c>.</summary>
+    /// <c>bloquear</c>, <c>desbloquear</c> o <c>editar_contacto</c>.</summary>
     public string? Action { get; set; }
 
     /// <summary>La cita, para todas las acciones sobre una cita salvo <c>agendar</c>.</summary>
@@ -38,4 +38,7 @@ public sealed class AgendaCommandForm
 
     /// <summary>El motivo del bloqueo, para <c>bloquear</c>; solo lo ve el personal.</summary>
     public string? Reason { get; set; }
+
+    /// <summary>El contacto, para <c>editar_contacto</c>: su id, que va en la URL de la ficha y en este campo.</summary>
+    public string? Client { get; set; }
 }

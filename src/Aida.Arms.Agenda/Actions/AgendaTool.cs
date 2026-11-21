@@ -7,8 +7,8 @@ namespace Aida.Arms.Agenda.Actions;
 
 /// <summary>Las reglas de cada acción de la agenda, detrás de la puerta del motor.</summary>
 /// <remarks>
-/// <para>Es <c>AgendaTool</c> de la 0.1 (<c>tool.py:133-378</c>) con ocho de sus nueve acciones; solo <c>editar_contacto</c>
-/// llega con la ficha, en N010. No registra ni audita nada: eso es de la puerta y de <c>AgendaDesk</c>. Una regla que dice
+/// <para>Es <c>AgendaTool</c> de la 0.1 (<c>tool.py:133-378</c>) con sus nueve acciones: agendar, editar, reprogramar, cerrar
+/// citas, bloquear y los datos del contacto. No registra ni audita nada: eso es de la puerta y de <c>AgendaDesk</c>. Una regla que dice
 /// que no se devuelve como rechazo, no se lanza.</para>
 /// <para>El orden de las reglas importa, porque la primera que falla es la que se explica a quien pidió: es el de la 0.1,
 /// regla por regla. Quién pide llega en el argumento <c>by</c>, que pone <c>AgendaDesk</c> a partir de la sesión.</para>
@@ -37,7 +37,8 @@ internal sealed class AgendaTool : IToolPort
         "no_asistio" => Close(arguments, AppointmentState.NoShow, onlyAfterStart: true),
         "bloquear" => BlockActions.Block(_store, _setup, _time.GetLocalNow(), arguments),
         "desbloquear" => BlockActions.Unblock(_store, arguments),
-        _ => ToolResult.Rejected("unknown_action"),
+        "editar_contacto" => EditAction.Contact(_store, arguments),
+        _ =>ToolResult.Rejected("unknown_action"),
     };
 
     private ToolResult Book(IReadOnlyDictionary<string, string> arguments)

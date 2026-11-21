@@ -1,6 +1,7 @@
 @page "/agenda"
 @using System.Globalization
 @using Aida.Arms.Agenda.Desk
+@using Aida.Arms.Agenda.Storage
 @using Aida.Arms.Agenda.Wording
 @using Aida.Engine.Actions
 @inject AgendaDesk Desk
@@ -10,67 +11,37 @@
 
 <PageTitle>@Text["title"]</PageTitle>
 
+<div class="agenda-head">
+    <h1>@Text["title"]</h1>
+    <nav class="day-nav">
+        <a href="@AgendaLinks.Day(_day.AddDays(-1))">‹</a>
+        <a href="@AgendaLinks.Day(_today)">@Text["today"]</a>
+        <a href="@AgendaLinks.Day(_day.AddDays(1))">›</a>
+    </nav>
+    <span>@_day.ToString("D", CultureInfo.CurrentCulture)</span>
+    <EditForm Model="Search" FormName="agenda-search" method="post" OnSubmit="SubmitSearch">
+        <AntiforgeryToken />
+        <input name="Search.Query" type="search" placeholder="@Text["search_placeholder"]" value="@Search.Query" />
+    </EditForm>
+</div>
+<WeekStrip View="@_view" />
+
 <EditForm Model="Command" FormName="agenda-action" method="post" OnSubmit="Submit">
     <AntiforgeryToken />
-    <div class="agenda-head">
-        <h1>@Text["title"]</h1>
-        <nav class="day-nav">
-            <a href="@AgendaLinks.Day(_day.AddDays(-1))">‹</a>
-            <a href="@AgendaLinks.Day(_today)">@Text["today"]</a>
-            <a href="@AgendaLinks.Day(_day.AddDays(1))">›</a>
-        </nav>
-        <span>@_day.ToString("D", CultureInfo.CurrentCulture)</span>
-    </div>
     @if (_message is not null)
     {
         <p role="status">@_message</p>
     }
     @if (_conflicts.Count > 0)
     {
-        <ConflictList Conflicts="_conflicts" />
+        <ConflictList Conflicts="@_conflicts" />
     }
     <div class="agenda">
-        <AgendaGrid View="_view" />
+        <AgendaGrid View="@_view" />
         <aside class="side">
-            @if (_panel == "cancelar" && _appointment is not null)
-            {
-                <CancelConfirm View="_appointment" Day="_day" />
-            }
-            else if (_panel == "mover" && _appointment is not null)
-            {
-                <SlotPicker View="_view" Day="_day" ServiceId="@_appointment.Appointment.Service" AppointmentId="_appointment.Appointment.Id" Moving="true" />
-            }
-            else if (_panel == "editar" && _canManage && _appointment is not null)
-            {
-                <AppointmentEditor View="_appointment" Setup="_view.Setup" Day="_day" />
-            }
-            else if (_panel == "cita" && _appointment is not null)
-            {
-                <AppointmentDetail View="_appointment" Setup="_view.Setup" CanManage="_canManage" Day="_day" />
-            }
-            else if (_panel == "bloqueo" && _block is not null)
-            {
-                <BlockDetail View="_block" Setup="_view.Setup" CanBlock="_canBlock" Day="_day" />
-            }
-            else if (_panel == "bloquear" && _canBlock)
-            {
-                <BlockForm View="_view" Day="_day" />
-            }
-            else if (_panel == "nueva" && _canManage && _serviceId is not null)
-            {
-                <SlotPicker View="_view" Day="_day" ServiceId="@_serviceId" Moving="false" />
-            }
-            else
-            {
-                @if (_canManage && _firstService is not null)
-                {
-                    <a href="@AgendaLinks.Panel(_day, "nueva", _firstService)">@Text["new_button"]</a>
-                }
-                @if (_canBlock)
-                {
-                    <a href="@AgendaLinks.Panel(_day, "bloquear", "1")">@Text["block_button"]</a>
-                }
-            }
+            <AgendaSide View="@_view" Day="@_day" Panel="@_panel" CanManage="@_canManage" CanBlock="@_canBlock"
+                ServiceId="@_serviceId" FirstService="@_firstService" Appointment="@_appointment" Block="@_block"
+                Card="@_card" Prefill="@_prefill" Found="@_found" />
         </aside>
     </div>
 </EditForm>
@@ -87,6 +58,9 @@
     private string? _firstService;
     private AppointmentView? _appointment;
     private BlockView? _block;
+    private ClientCard? _card;
+    private Client? _prefill;
+    private IReadOnlyList<Client>? _found;
     private IReadOnlyList<AppointmentView> _conflicts = [];
 
     [CascadingParameter]
@@ -116,10 +90,21 @@
     [SupplyParameterFromQuery(Name = "bloqueo")]
     public string? Bloqueo { get; set; }
 
+    [SupplyParameterFromQuery(Name = "ficha")]
+    public string? Ficha { get; set; }
+
+    [SupplyParameterFromQuery(Name = "contacto")]
+    public string? Contacto { get; set; }
+
     [SupplyParameterFromForm(FormName = "agenda-action", Name = "Command")]
     private AgendaCommandForm? PostedCommand { get; set; }
 
     private AgendaCommandForm Command => PostedCommand ??= new();
+
+    [SupplyParameterFromForm(FormName = "agenda-search", Name = "Search")]
+    private AgendaSearchForm? PostedSearch { get; set; }
+
+    private AgendaSearchForm Search => PostedSearch ??= new();
 
     protected override void OnInitialized()
     {
@@ -134,13 +119,20 @@
         _panel = PanelName();
         _appointment = FindAppointment(Cancelar ?? Mover ?? Editar ?? Cita);
         _block = FindBlock(Bloqueo);
+        _card = FindCard(Ficha ?? Contacto);
+        _prefill = Nueva is not null && Contacto is not null ? _card?.Client : null;
     }
 
+    /// <summary>El panel que pide la URL, en el orden de la pantalla.</summary>
+    /// <remarks>El contacto solo abre su editor si no hay una nueva cita: con <c>nueva</c> su nombre rellena el formulario.
+    /// La búsqueda no está aquí: la pone su manejador, nunca la URL.</remarks>
     private string? PanelName() =>
         Cancelar is not null ? "cancelar"
         : Mover is not null ? "mover"
         : Editar is not null ? "editar"
         : Cita is not null ? "cita"
+        : Contacto is not null && Nueva is null ? "contacto"
+        : Ficha is not null ? "ficha"
         : Bloqueo is not null ? "bloqueo"
         : Bloquear is not null ? "bloquear"
         : Nueva is not null ? "nueva"
@@ -154,6 +146,11 @@
     private BlockView? FindBlock(string? target) =>
         target is not null && long.TryParse(target, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)
             ? _view.Blocks.FirstOrDefault(block => block.Block.Id == id)
+            : null;
+
+    private ClientCard? FindCard(string? target) =>
+        target is not null && long.TryParse(target, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)
+            ? Desk.Card(id)
             : null;
 
     private void Submit()
@@ -183,5 +180,17 @@
 
         _message = Text.Reason(result.Reason);
         _conflicts = Desk.Conflicts(result);
+    }
+
+    /// <summary>Busca y muestra el resultado en el mismo panel, sin redirigir: la consulta no llega a la URL.</summary>
+    private void SubmitSearch()
+    {
+        if (SessionGate.CurrentUser(Http) is null)
+        {
+            return;
+        }
+
+        _found = Desk.Search(Search.Query ?? string.Empty);
+        _panel = "buscar";
     }
 }

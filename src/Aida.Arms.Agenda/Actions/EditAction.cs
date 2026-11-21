@@ -1,3 +1,4 @@
+using System.Globalization;
 using Aida.Arms.Agenda.Setup;
 using Aida.Arms.Agenda.Storage;
 using Aida.Engine.Actions;
@@ -86,13 +87,43 @@ internal static class EditAction
         return ActionArguments.AppointmentDone(appointment.Id);
     }
 
+    /// <summary>Corregir el nombre o el teléfono de un contacto, desde su ficha.</summary>
+    /// <param name="store">El almacén de la petición.</param>
+    /// <param name="arguments">Los argumentos: <c>client</c>, <c>name</c> y <c>phone</c>.</param>
+    /// <returns>El contacto hecho, o el primer rechazo en su orden.</returns>
+    /// <remarks>Es <c>_edit_client</c> de la 0.1 (<c>tool.py:351-364</c>). A diferencia de <see cref="Run"/>, los dos campos se
+    /// piden y se guardan recortados. Cambia el contacto de todas sus citas.</remarks>
+    internal static ToolResult Contact(AgendaStore store, IReadOnlyDictionary<string, string> arguments)
+    {
+        if (!long.TryParse(ActionArguments.Text(arguments, "client"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)
+            || store.FindClient(id) is not { } current)
+        {
+            return ToolResult.Rejected("unknown_client");
+        }
+
+        var name = ActionArguments.Text(arguments, "name").Trim();
+        var phone = ActionArguments.Text(arguments, "phone").Trim();
+        if (name.Length == 0 || phone.Length == 0)
+        {
+            return ToolResult.Rejected("missing_client");
+        }
+
+        if (PhoneRejection(store, current.Id, phone) is { } taken)
+        {
+            return ToolResult.Rejected(taken);
+        }
+
+        store.UpdateClient(current.Id, name, phone);
+        return ToolResult.Done(new Dictionary<string, string> { ["client"] = current.Id.ToString(CultureInfo.InvariantCulture) });
+    }
+
     /// <summary>El teléfono es la llave del contacto: dos contactos no lo comparten (<c>tool.py:122-130</c>).</summary>
     /// <param name="store">El almacén de la petición.</param>
     /// <param name="clientId">El contacto al que pertenece la cita.</param>
     /// <param name="phone">El teléfono nuevo.</param>
     /// <returns><c>phone_taken</c>, o <see langword="null"/> si el teléfono es libre o ya era de ese contacto.</returns>
     /// <remarks>Sin esta regla, la base lo impide igual con su índice único, pero la puerta lo convertiría en un fallo y a
-    /// quien pidió no se le explicaría nada. La reutiliza <c>editar_contacto</c> en N010.</remarks>
+    /// quien pidió no se le explicaría nada.</remarks>
     internal static string? PhoneRejection(AgendaStore store, long clientId, string phone) =>
         store.ClientByPhone(phone) is { } other && other.Id != clientId ? "phone_taken" : null;
 }

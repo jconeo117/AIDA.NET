@@ -25,9 +25,9 @@ public sealed class AgendaManifestTests
 
         var manifest = AgendaManifest.Load(armPath);
         Assert.Equal("consultorio", manifest.DefaultSector);
-        Assert.Equal(8, manifest.Actions.Count);
+        Assert.Equal(9, manifest.Actions.Count);
 
-        string[] actions = ["agendar", "editar", "reprogramar", "cancelar", "atendida", "no_asistio", "bloquear", "desbloquear"];
+        string[] actions = ["agendar", "editar", "reprogramar", "cancelar", "atendida", "no_asistio", "bloquear", "desbloquear", "editar_contacto"];
         foreach (var action in actions)
         {
             Assert.True(manifest.Actions.TryGet(new ActionId(action), out var reversibility));

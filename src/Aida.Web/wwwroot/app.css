@@ -37,6 +37,28 @@ h1:focus {
     text-align: start;
 }
 
+.week {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.week a {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+}
+
+.week a[aria-current="date"] {
+    font-weight: bold;
+}
+
+.week i {
+    display: block;
+    height: 0.4rem;
+    background: #26b050;
+}
+
 .blocked {
     display: block;
     min-height: 2rem;

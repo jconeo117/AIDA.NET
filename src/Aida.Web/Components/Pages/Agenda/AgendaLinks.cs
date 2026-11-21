@@ -4,7 +4,7 @@ namespace Aida.Web.Components.Pages.Agenda;
 
 /// <summary>Los enlaces de la agenda: la URL es lo que dice qué día y qué panel se ve.</summary>
 /// <remarks>Una sola fuente para las direcciones, para que la rejilla, los paneles y la redirección tras cambiar algo
-/// no escriban cada una su propia cadena de consulta.</remarks>
+/// no escriban cada una su propia cadena de consulta. Lo que se busca nunca va en la URL: va en el formulario.</remarks>
 internal static class AgendaLinks
 {
     /// <summary>El formato del día en la URL.</summary>
@@ -21,20 +21,35 @@ internal static class AgendaLinks
     /// <summary>El día con un panel abierto.</summary>
     /// <param name="day">El día.</param>
     /// <param name="panel">El nombre del panel: <c>cita</c>, <c>mover</c>, <c>cancelar</c>, <c>nueva</c>, <c>editar</c>,
-    /// <c>bloquear</c> o <c>bloqueo</c>.</param>
-    /// <param name="value">Su argumento: la cita, el servicio para <c>nueva</c>, o el bloqueo para <c>bloqueo</c>.</param>
+    /// <c>contacto</c>, <c>ficha</c>, <c>bloquear</c> o <c>bloqueo</c>.</param>
+    /// <param name="value">Su argumento: la cita, el servicio para <c>nueva</c>, el contacto para <c>ficha</c> y
+    /// <c>contacto</c>, o el bloqueo para <c>bloqueo</c>.</param>
     /// <returns>La dirección.</returns>
     internal static string Panel(DateOnly day, string panel, string value) =>
         $"{Day(day)}&{panel}={Uri.EscapeDataString(value)}";
 
-    /// <summary>A dónde se vuelve tras una acción hecha: a la cita o al bloqueo que quedó, o al día si ya no existe.</summary>
+    /// <summary>La nueva cita, ya con los datos de la persona de su ficha.</summary>
+    /// <param name="day">El día.</param>
+    /// <param name="service">El servicio con el que se abre el formulario.</param>
+    /// <param name="client">El contacto, cuyo nombre y teléfono rellena el servidor.</param>
+    /// <returns>La dirección.</returns>
+    internal static string NewFor(DateOnly day, string service, long client) =>
+        $"{Panel(day, "nueva", service)}&contacto={client.ToString(CultureInfo.InvariantCulture)}";
+
+    /// <summary>A dónde se vuelve tras una acción hecha: a la ficha, a la cita o al bloqueo que quedó, o al día si ya no existe.</summary>
     /// <param name="day">El día de la acción.</param>
     /// <param name="action">La acción hecha.</param>
     /// <param name="data">Lo que devolvió la acción.</param>
     /// <returns>La dirección.</returns>
-    /// <remarks>Al quitar un bloqueo su fila ya no existe, así que la vuelta es al día: no hay nada que abrir.</remarks>
+    /// <remarks>Al quitar un bloqueo su fila ya no existe, así que la vuelta es al día: no hay nada que abrir. El contacto va
+    /// antes que la cita porque editar un contacto no deja ninguna cita que abrir.</remarks>
     internal static string AfterDone(DateOnly day, string action, IReadOnlyDictionary<string, string> data)
     {
+        if (data.TryGetValue("client", out var client))
+        {
+            return Panel(day, "ficha", client);
+        }
+
         if (data.TryGetValue("appointment", out var appointment))
         {
             return Panel(day, "cita", appointment);

@@ -8,8 +8,8 @@ namespace Aida.Arms.Agenda.Storage;
 
 /// <summary>Las citas, las personas y los bloqueos de la agenda, dentro de una transacción.</summary>
 /// <remarks>
-/// <para>Es <c>SqliteAgendaStore</c> de la 0.1 (<c>store.py:147-305</c>), con sus bloqueos. Las consultas de la ficha
-/// llegan en N010. Trabaja dentro de la transacción de quien lo crea: el cambio y su hecho de auditoría se confirman juntos
+/// <para>Es <c>SqliteAgendaStore</c> de la 0.1 (<c>store.py:147-305</c>), con sus bloqueos y las consultas de la ficha.
+/// Trabaja dentro de la transacción de quien lo crea: el cambio y su hecho de auditoría se confirman juntos
 /// (ADR 0032).</para>
 /// <para>El nombre y el teléfono van sellados (ADR 0029). El teléfono lleva además una huella HMAC con una clave derivada
 /// distinta de la que sella, para buscarlo exacto sin abrir a todos (<c>store.py:150, 163-166</c>). El motivo de un bloqueo
@@ -65,12 +65,48 @@ internal sealed class AgendaStore
         }
     }
 
-    internal Client GetClient(long client)
+    /// <summary>Un contacto por su id, o <see langword="null"/> si no existe.</summary>
+    internal Client? FindClient(long client)
     {
         using var command = Command("SELECT id, name, phone FROM agenda_clients WHERE id = $id;");
         command.Parameters.AddWithValue("$id", client);
         using var reader = command.ExecuteReader();
-        return reader.Read() ? ReadClient(reader) : throw new KeyNotFoundException($"no hay contacto {client}");
+        return reader.Read() ? ReadClient(reader) : null;
+    }
+
+    internal Client GetClient(long client) => FindClient(client) ?? throw new KeyNotFoundException($"no hay contacto {client}");
+
+    /// <summary>Todos los contactos, ya abiertos, por id (<c>store.py:316-319</c>).</summary>
+    /// <remarks>Los nombres van sellados: buscar por nombre es abrirlos todos. A la escala de un mostrador cabe en memoria,
+    /// como en la 0.1.</remarks>
+    internal IReadOnlyList<Client> Clients()
+    {
+        using var command = Command("SELECT id, name, phone FROM agenda_clients ORDER BY id;");
+        using var reader = command.ExecuteReader();
+        var found = new List<Client>();
+        while (reader.Read())
+        {
+            found.Add(ReadClient(reader));
+        }
+
+        return found;
+    }
+
+    /// <summary>Las citas de un contacto, en orden de inicio y, a igualdad, de id (<c>store.py:321-327</c>).</summary>
+    /// <param name="client">El contacto.</param>
+    /// <returns>Todas sus citas, también las canceladas.</returns>
+    internal IReadOnlyList<Appointment> AppointmentsFor(long client)
+    {
+        using var command = Command($"{_select} WHERE client = $client ORDER BY start_utc, id;");
+        command.Parameters.AddWithValue("$client", client);
+        using var reader = command.ExecuteReader();
+        var found = new List<Appointment>();
+        while (reader.Read())
+        {
+            found.Add(ReadAppointment(reader));
+        }
+
+        return found;
     }
 
     internal Appointment Add(long client, string service, string resource, DateTimeOffset start, int minutes, string by)
