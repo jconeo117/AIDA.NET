@@ -21,7 +21,10 @@
 ## Decisión
 - **Qué entra.** Un solo archivo `.aidacopia`, que es un tar (Ustar) sin comprimir con una lista cerrada de entradas:
   - `manifest.json`, siempre primero;
-  - `aida.db`, una copia coherente hecha con la API de copia de SQLite;
+  - `aida.db`, una copia coherente hecha con `VACUUM INTO` de SQLite. Lee en una sola transacción, recoge lo que aún
+    está en el WAL y sale compacta y en modo de diario normal; al abrirla, `PlatformDatabase` vuelve a poner el WAL.
+    No se usa `BackupDatabase` porque el guardián A2 veta su nombre en `Aida.Platform`, y esquivar el guardián con
+    reflexión no se acepta (N011-fix);
   - `machine.key`, la clave del equipo **en bruto**, 32 bytes;
   - `config/<nombre>`, los archivos de la configuración de la instalación.
 
@@ -36,7 +39,8 @@
     [600 000, 10 000 000] se rechazan;
   - el contenido tiene un tope de 1 GiB.
 - **Sin compresión.** Lo sellado no se comprime, y así no hay bomba de descompresión. Medido el 2026-11-23 sobre una
-  base de 20,6 MiB: 15 ms de copia, 112 ms de PBKDF2 y 24 ms de cifrado.
+  base de 20,6 MiB: 15 ms de copia, 112 ms de PBKDF2 y 24 ms de cifrado. Con `VACUUM INTO` (2026-11-24, SQLite
+  3.53.3), una base de unos 20 MiB se copia en 19 ms.
 - **Quién la hace:**
   - quien tiene el permiso de plataforma `snapshot.create`, que en el pack por defecto solo tiene administración;
   - se descarga en el navegador y nunca se guarda en el equipo;
@@ -75,9 +79,13 @@
   restauración no acepte una copia más nueva.
 
 ## Cómo se hace cumplir
-- Test de arquitectura: `AesGcm` y `ProtectedData` solo en `src/Aida.Platform/`
-  ([0009](0009-datos-sellados.md), [0034](0034-clave-del-equipo.md)).
+- Tests de arquitectura:
+  - `AesGcm` y `ProtectedData` solo en `src/Aida.Platform/` ([0009](0009-datos-sellados.md),
+    [0034](0034-clave-del-equipo.md));
+  - fuera de `src/Aida.Guards/` no se buscan ni se invocan miembros por reflexión, para que nadie esquive un guardián
+    llamando a un método por su nombre (N011-fix).
 - Tests:
+  - la copia de la base recoge lo que aún está en el WAL;
   - la ida y vuelta entre dos equipos, con otro protector, abre lo sellado;
   - un trozo cambiado, quitado, reordenado o de más se rechaza, igual que una frase distinta;
   - cualquier entrada fuera de la lista se rechaza, y tras un fallo no queda nada preparado;
