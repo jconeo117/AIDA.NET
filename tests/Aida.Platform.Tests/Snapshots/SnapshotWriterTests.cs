@@ -101,9 +101,9 @@ public sealed class SnapshotWriterTests
     public void Base_se_copia_con_wal_activo_y_escrituras_sin_volcar()
     {
         using var env = new TestEnvironment();
-        using (var conn = env.Database.Open())
+        using var conn = env.Database.Open();
+        using (var cmd = conn.CreateCommand())
         {
-            using var cmd = conn.CreateCommand();
             cmd.CommandText = "CREATE TABLE IF NOT EXISTS items (v TEXT); INSERT INTO items VALUES ('pendiente');";
             cmd.ExecuteNonQuery();
         }
