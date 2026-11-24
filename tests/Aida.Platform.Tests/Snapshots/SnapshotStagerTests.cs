@@ -224,7 +224,7 @@ public sealed class SnapshotStagerTests
             var tmp = Path.GetTempFileName();
             try
             {
-                using (var conn = new SqliteConnection($"Data Source={tmp}"))
+                using (var conn = new SqliteConnection($"Data Source={tmp};Pooling=False"))
                 {
                     conn.Open();
                     using var c = conn.CreateCommand();
@@ -241,7 +241,7 @@ public sealed class SnapshotStagerTests
             var tmp = Path.GetTempFileName();
             try
             {
-                using (var conn = new SqliteConnection($"Data Source={tmp}"))
+                using (var conn = new SqliteConnection($"Data Source={tmp};Pooling=False"))
                 {
                     conn.Open();
                     setup(conn);

@@ -4,6 +4,7 @@ using Aida.Platform.Keys;
 using Aida.Platform.Paths;
 using Aida.Platform.Snapshots;
 using Aida.Platform.Storage;
+using Microsoft.Data.Sqlite;
 using Xunit;
 
 namespace Aida.Platform.Tests.Snapshots;
@@ -103,29 +104,38 @@ public sealed class SnapshotWriterTests
         using (var conn = env.Database.Open())
         {
             using var cmd = conn.CreateCommand();
-            cmd.CommandText = "PRAGMA journal_mode = WAL; CREATE TABLE IF NOT EXISTS items (v TEXT); INSERT INTO items VALUES ('pendiente');";
+            cmd.CommandText = "CREATE TABLE IF NOT EXISTS items (v TEXT); INSERT INTO items VALUES ('pendiente');";
             cmd.ExecuteNonQuery();
         }
+
+        // Condición previa: la fila sigue en el WAL; el pool no ha volcado nada en la base.
+        Assert.True(new FileInfo($"{env.Paths.DatabaseFile}-wal").Length > 0);
 
         using var output = new MemoryStream();
         env.Writer.Write(output, GoodPassphrase);
 
+        var extracted = Path.Combine(env.Paths.DataDirectory, "extraida.db");
         output.Position = 0;
-        using var decrypting = new ChunkDecryptingStream(output, GoodPassphrase);
-        using var tar = new TarReader(decrypting);
-        var foundDb = false;
-        while (tar.GetNextEntry() is { } entry)
+        using (var decrypting = new ChunkDecryptingStream(output, GoodPassphrase))
+        using (var tar = new TarReader(decrypting))
         {
-            if (entry.Name == "aida.db")
+            while (tar.GetNextEntry() is { } entry)
             {
-                foundDb = true;
-                using var dbStream = new MemoryStream();
-                entry.DataStream!.CopyTo(dbStream);
-                Assert.True(dbStream.Length > 0);
+                if (entry.Name == "aida.db")
+                {
+                    entry.ExtractToFile(extracted, overwrite: false);
+                }
             }
         }
 
-        Assert.True(foundDb);
+        using var copy = new SqliteConnection($"Data Source={extracted};Mode=ReadOnly;Pooling=False");
+        copy.Open();
+        using var read = copy.CreateCommand();
+        read.CommandText = "SELECT (SELECT v FROM items), (SELECT user_version FROM pragma_user_version);";
+        using var reader = read.ExecuteReader();
+        Assert.True(reader.Read());
+        Assert.Equal("pendiente", reader.GetString(0));
+        Assert.Equal(2L, reader.GetInt64(1)); // la versión del esquema de la plataforma (Schema.Version)
     }
 
     private sealed class FailingStream : MemoryStream
