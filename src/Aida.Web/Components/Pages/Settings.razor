@@ -1,0 +1,29 @@
+@page "/ajustes"
+@attribute [Authorize(Policy = PlatformPermission.CreateSnapshot)]
+@inject ShellWording Text
+
+<PageTitle>@Text["title_settings"]</PageTitle>
+<h1>@Text["title_settings"]</h1>
+<p>@Text["settings_lead"]</p>
+
+<section>
+    <h2>@Text["snapshot_title"]</h2>
+    <p>@Text["snapshot_text"]</p>
+    @if (SnapshotMessages.For(Text, Error) is { } message)
+    {
+        <p role="alert">@message</p>
+    }
+    <form method="post" action="/ajustes/copia">
+        <AntiforgeryToken />
+        <label>@Text["snapshot_pass"] <input type="password" name="passphrase" autocomplete="new-password" /></label>
+        <label>@Text["snapshot_pass2"] <input type="password" name="passphrase2" autocomplete="new-password" /></label>
+        <button type="submit">@Text["snapshot_create"]</button>
+    </form>
+</section>
+
+<a href="/">@Text["back_label"]</a>
+
+@code {
+    [SupplyParameterFromQuery(Name = "error")]
+    private string? Error { get; set; }
+}

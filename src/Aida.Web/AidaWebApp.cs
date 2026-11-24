@@ -10,6 +10,7 @@ using Aida.Platform.Keys;
 using Aida.Platform.Paths;
 using Aida.Platform.Roles;
 using Aida.Platform.Sessions;
+using Aida.Platform.Snapshots;
 using Aida.Platform.Storage;
 using Aida.Platform.Wording;
 using Aida.Web.Components;
@@ -57,6 +58,9 @@ public static class AidaWebApp
         var agendaPack = paths.ArmPackDirectory(AgendaDeclarations.ArmId);
         builder.Services.AddSingleton(_ => KeyProtectors.ForHost(builder.Environment.IsDevelopment()));
         builder.Services.AddSingleton(provider => MachineKey.OpenOrCreate(paths.MachineKeyFile, provider.GetRequiredService<IKeyProtector>()));
+        builder.Services.AddSingleton(provider => new SnapshotWriter(provider.GetRequiredService<PlatformDatabase>(), provider.GetRequiredService<MachineKey>(), paths, provider.GetRequiredService<TimeProvider>()));
+        builder.Services.AddSingleton(provider => new SnapshotStager(paths, provider.GetRequiredService<IKeyProtector>(), new Dictionary<string, int>(StringComparer.Ordinal) { [AgendaDeclarations.ArmId] = AgendaDeclarations.SchemaVersion }));
+        builder.Services.AddSingleton(provider => new RestoreNotice(paths, provider.GetRequiredService<AuditLog>()));
         builder.Services.AddSingleton(_ => AgendaManifest.Load(Path.Combine(agendaPack, "arm.yaml")));
         builder.Services.AddSingleton(_ => AgendaWording.Load(Path.Combine(agendaPack, "ui.yaml")));
         builder.Services.AddSingleton(provider =>
@@ -86,12 +90,25 @@ public static class AidaWebApp
             .SetFallbackPolicy(new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder().RequireAuthenticatedUser().Build())
             .AddPolicy(PlatformPermission.ManageUsers, policy => policy.RequireAssertion(context =>
                 context.Resource is HttpContext http && SessionGate.CurrentUser(http) is { } user
-                && http.RequestServices.GetRequiredService<RoleCatalog>().Allows(user.RoleId, PlatformPermission.ManageUsers)));
+                && http.RequestServices.GetRequiredService<RoleCatalog>().Allows(user.RoleId, PlatformPermission.ManageUsers)))
+            .AddPolicy(PlatformPermission.CreateSnapshot, policy => policy.RequireAssertion(context =>
+                context.Resource is HttpContext http && SessionGate.CurrentUser(http) is { } user
+                && http.RequestServices.GetRequiredService<RoleCatalog>().Allows(user.RoleId, PlatformPermission.CreateSnapshot)));
         builder.Services.AddCascadingAuthenticationState();
         builder.Services.AddRazorComponents();
         configure?.Invoke(builder);
 
         var app = builder.Build();
+        var restore = SnapshotInstaller.ApplyPending(paths, app.Services.GetRequiredService<TimeProvider>());
+        if (restore == PendingRestore.Installed)
+        {
+            app.Logger.LogWarning("Se aplicó una copia restaurada; lo que había quedó apartado en la carpeta de datos.");
+        }
+        else if (restore == PendingRestore.Discarded)
+        {
+            app.Logger.LogError("Había una copia preparada, pero la base ya tiene usuarios: se apartó sin aplicarla.");
+        }
+
         if (!OperatingSystem.IsWindows() && app.Environment.IsDevelopment())
         {
             app.Logger.LogWarning("La clave del equipo se guarda sin proteger: solo vale para desarrollar fuera de Windows (ADR 0034).");
@@ -115,6 +132,7 @@ public static class AidaWebApp
             await http.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
             return Results.Redirect("/entrar");
         }).WithMetadata(new Microsoft.AspNetCore.Antiforgery.RequireAntiforgeryTokenAttribute());
+        app.MapSnapshotEndpoints();
         return app;
     }
 

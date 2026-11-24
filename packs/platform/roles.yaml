@@ -2,7 +2,7 @@
 roles:
   - id: administracion
     label: "Administración"
-    permissions: [users.manage, agenda.manage, agenda.block]
+    permissions: [users.manage, snapshot.create, agenda.manage, agenda.block]
   - id: recepcion
     label: "Recepción"
     permissions: [agenda.manage, agenda.block]

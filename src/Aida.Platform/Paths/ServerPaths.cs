@@ -43,7 +43,19 @@ public sealed class ServerPaths
     /// <summary>La ruta de un archivo de configuración de esta instalación, que el servidor copia de una plantilla y se edita a mano.</summary>
     /// <param name="fileName">El nombre del archivo.</param>
     /// <returns>La ruta completa, dentro de <c>config/</c> de la carpeta de datos.</returns>
-    public string ConfigFile(string fileName) => Path.Combine(DataDirectory, "config", fileName);
+    public string ConfigFile(string fileName) => Path.Combine(ConfigDirectory, fileName);
+
+    /// <summary>La carpeta de la configuración de esta instalación: la que lleva la copia de seguridad.</summary>
+    public string ConfigDirectory => Path.Combine(DataDirectory, "config");
+
+    /// <summary>La carpeta donde queda preparada una copia restaurada, hasta el siguiente arranque.</summary>
+    public string RestoreStagingDirectory => Path.Combine(DataDirectory, "restaurar");
+
+    /// <summary>El aviso de una restauración aplicada, que firma el primero que entra.</summary>
+    public string RestorePendingFile => Path.Combine(DataDirectory, "restore-pending.json");
+
+    /// <summary>La carpeta de paso de las copias que se descargan.</summary>
+    public string TemporaryDirectory => Path.Combine(DataDirectory, "tmp");
 
     /// <summary>La ruta del archivo de la clave del equipo.</summary>
     public string MachineKeyFile => Path.Combine(DataDirectory, "keys", "machine.key");

@@ -4,6 +4,8 @@
 @inject SessionTracker Sessions
 @inject ShellWording Text
 @inject NavigationManager Navigation
+@using Aida.Platform.Snapshots
+@inject RestoreNotice Notice
 
 <PageTitle>@Text["login_title"]</PageTitle>
 <h1>@Text["login_title"]</h1>
@@ -34,7 +36,7 @@
         try
         {
             var user = Users.Verify(Form.UserName ?? string.Empty, Form.Password ?? string.Empty);
-            await SignIn.StartAsync(Http, Sessions, user);
+            await SignIn.StartAsync(Http, Sessions, user, Notice);
             Navigation.NavigateTo("/");
         }
         catch (IdentityException exception)

@@ -21,7 +21,7 @@ public sealed partial class RoleCatalog
     /// <exception cref="InvalidDataException">Si no cumple las reglas del catálogo.</exception>
     public RoleCatalog(IReadOnlyList<RoleSpec> roles, IEnumerable<string>? armPermissions = null)
     {
-        var known = new HashSet<string>(armPermissions ?? [], StringComparer.Ordinal) { PlatformPermission.ManageUsers };
+        var known = new HashSet<string>(armPermissions ?? [], StringComparer.Ordinal) { PlatformPermission.ManageUsers, PlatformPermission.CreateSnapshot };
         var problems = new List<string>();
         if (roles.Count == 0)
         {
