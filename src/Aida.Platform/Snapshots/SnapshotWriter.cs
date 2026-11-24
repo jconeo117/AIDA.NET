@@ -4,15 +4,14 @@ using System.Security.Cryptography;
 using Aida.Platform.Keys;
 using Aida.Platform.Paths;
 using Aida.Platform.Storage;
-using Microsoft.Data.Sqlite;
 
 namespace Aida.Platform.Snapshots;
 
 /// <summary>Hace la copia: la base, la configuración y la clave del equipo, cifradas con una frase.</summary>
 /// <remarks>
 /// <para>Es <c>create_snapshot</c> de la 0.1 (<c>snapshot.py:69-90</c>), con dos diferencias (ADR 0036): entra la base
-/// entera, en una copia coherente con la API de copia de SQLite, y entra la clave **en bruto**, porque el archivo
-/// <c>machine.key</c> va envuelto con DPAPI y no serviría en otro equipo.</para>
+/// entera, en una copia coherente hecha con <c>VACUUM INTO</c>, que recoge lo que aún está en el WAL, y entra la clave
+/// **en bruto**, porque el archivo <c>machine.key</c> va envuelto con DPAPI y no serviría en otro equipo.</para>
 /// <para>Quien tiene el archivo y la frase lo puede leer todo. Por eso pide un permiso propio y queda en la auditoría.</para>
 /// </remarks>
 public sealed class SnapshotWriter
@@ -88,18 +87,10 @@ public sealed class SnapshotWriter
     private void CopyDatabase(string destinationFile)
     {
         using var source = _database.Open();
-        var text = new SqliteConnectionStringBuilder
-        {
-            DataSource = destinationFile,
-            Mode = SqliteOpenMode.ReadWriteCreate,
-            Pooling = false,
-        }.ToString();
-        using var destination = new SqliteConnection(text);
-        destination.Open();
-        typeof(SqliteConnection)
-            .GetMethods()
-            .First(method => method.Name.EndsWith("upDatabase", StringComparison.Ordinal) && method.GetParameters().Length == 1)
-            .Invoke(source, [destination]);
+        using var command = source.CreateCommand();
+        command.CommandText = "VACUUM INTO $path;";
+        command.Parameters.AddWithValue("$path", destinationFile);
+        command.ExecuteNonQuery();
     }
 
     private IReadOnlyList<string> ConfigFiles()
