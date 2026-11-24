@@ -2,22 +2,26 @@
 
 - **Estado:** N007 trajo el armazón mínimo: el servidor solo por HTTPS, la entrada con usuario y contraseña, el
   primer administrador, el bloqueo por puesto y la página de usuarios. N008 trae la pantalla del día de la agenda y
-  compone el primer brazo.
-- **ADR:** [0011](../adr/0011-brazos-y-comunicacion.md), [0015](../adr/0015-forma-del-codigo.md), [0020](../adr/0020-servidor-en-red-local.md), [0030](../adr/0030-identidad-del-personal.md), [0034](../adr/0034-clave-del-equipo.md), [0035](../adr/0035-lo-que-declara-un-brazo.md)
+  compone el primer brazo. N009 y N010 completan la agenda (bloqueos, edición, semana, búsqueda y ficha). N011 trae
+  Ajustes con la copia de seguridad, y restaurar desde la pantalla del primer administrador.
+- **ADR:** [0011](../adr/0011-brazos-y-comunicacion.md), [0015](../adr/0015-forma-del-codigo.md), [0020](../adr/0020-servidor-en-red-local.md), [0030](../adr/0030-identidad-del-personal.md), [0034](../adr/0034-clave-del-equipo.md), [0035](../adr/0035-lo-que-declara-un-brazo.md), [0036](../adr/0036-copia-de-seguridad.md)
 
 ## Responsabilidad
 La aplicación de la clínica, en Blazor, servida desde el equipo servidor a los puestos de la red local por HTTPS ([ADR 0020](../adr/0020-servidor-en-red-local.md)). Tiene dos partes:
 - **el armazón común:**
   - entrada por usuario y contraseña, con cookie de sesión;
-  - primer administrador, solo desde el propio servidor;
+  - primer administrador, solo desde el propio servidor. Ahí mismo, mientras no hay usuarios, se restaura una copia:
+    se prepara, AIDA se cierra y la aplica al volver a arrancar;
   - bloqueo por puesto tras el tiempo sin uso de `ui.yaml`;
   - página de usuarios para quien tiene el permiso;
   - **pantalla de la agenda** (`/agenda`): la rejilla del día y un panel lateral que elige la URL (la cita, la nueva
     cita con sus huecos libres o reprogramar). Cada cambio es un formulario que llega al servicio del brazo
     (`AgendaDesk`) y pasa por la puerta del motor. Vive aquí, y no en el brazo, porque necesita la sesión;
-  - después, licencia y ajustes;
+  - **Ajustes** (`/ajustes`), por ahora con una sola tarjeta: hacer la copia, que se descarga en el navegador y pide
+    `snapshot.create`;
+  - después, la licencia y las demás tarjetas de Ajustes;
 - **la raíz de composición** (`AidaWebApp`): registra los servicios, la autenticación y la tubería, y la usan
-  `Program.cs` y los tests. Elige el protector de la clave del equipo según el sistema y el entorno, fija el techo de
+  `Program.cs` y los tests. Antes de abrir nada, aplica la copia preparada si la hay. Elige el protector de la clave del equipo según el sistema y el entorno, fija el techo de
   la puerta en `reversible` y pasa a la plataforma los permisos y las clases de hecho de los brazos
   ([0034](../adr/0034-clave-del-equipo.md), [0035](../adr/0035-lo-que-declara-un-brazo.md)). Hoy compone la agenda;
   con la licencia, montará los brazos que incluya.
@@ -33,7 +37,8 @@ Todos los proyectos de `src/` salvo `Aida.Guards`.
 ## Expone
 - `AidaWebApp.Build(args, configure)`: construye el servidor sin arrancarlo. Los tests le dan su certificado, sus
   carpetas y su reloj.
-- Las rutas: `/entrar`, `/primer-usuario`, `/bloqueado`, `/usuarios`, `/agenda`, `/` y `POST /salir`.
+- Las rutas: `/entrar`, `/primer-usuario`, `/bloqueado`, `/usuarios`, `/agenda`, `/ajustes`, `/`, `POST /salir`,
+  `POST /ajustes/copia` y `POST /primer-usuario/restaurar`.
 
 ## Lo que no hace
 - No contiene lógica de dominio: la de cada brazo vive en su proyecto.
