@@ -45,6 +45,8 @@ public sealed class AuditLogTests
             [AuditKind.UserCreated] = "user_created",
             [AuditKind.UserDisabled] = "user_disabled",
             [AuditKind.PasswordReset] = "password_reset",
+            [AuditKind.SnapshotCreated] = "snapshot_created",
+            [AuditKind.SnapshotRestored] = "snapshot_restored",
         };
 
         using var db = new TestDatabase();
