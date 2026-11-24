@@ -66,7 +66,7 @@ shell:
   # Ajustes y primer arranque (plan 78). {0} es lo que dice cada comprobación.
   settings_label: "Ajustes"
   title_settings: "Ajustes"
-  settings_lead: "Lo que AIDA necesita en este equipo. Se configura una vez y se guarda solo para su usuario."
+  settings_lead: "Lo que vale para toda la instalación de AIDA. Solo lo ve quien tiene permiso."
   back_label: "Volver al inicio"
   title_first_run: "Primer arranque"
   # Minutos sin uso tras los que el puesto se bloquea y se vuelve a pedir la contraseña:
@@ -83,7 +83,7 @@ shell:
   reset_done: "Contraseña restablecida."
   # Copia de seguridad de la configuración (78d).
   snapshot_title: "Copia de seguridad"
-  snapshot_text: "Guarda las claves de este equipo, los perfiles y la licencia en un archivo pequeño, cifrado con una frase. Sin esta copia, si se pierde la carpeta de AIDA no se pueden abrir las consultas guardadas. Guárdela fuera de este equipo (una memoria USB). Las claves puestas en variables de entorno no entran."
+  snapshot_text: "Guarda en un archivo cifrado con una frase la base de datos de AIDA, su configuración y la clave del equipo. Sin esta copia, si se pierde este equipo se pierde todo lo guardado. Guarde el archivo fuera de este equipo (una memoria USB) y la frase aparte: con los dos se puede leer todo."
   snapshot_pass: "Frase (12 caracteres o más)"
   snapshot_pass2: "Repita la frase"
   snapshot_create: "Guardar copia"
@@ -94,7 +94,7 @@ shell:
   snapshot_restore_pass: "Frase de la copia"
   snapshot_restore: "Restaurar"
   snapshot_confirm: "Entiendo que reemplaza la configuración actual (la anterior queda apartada, no se borra)."
-  snapshot_restored: "Copia restaurada. AIDA se cerró: vuelva a abrirla."
+  snapshot_restored: "Copia preparada. AIDA se cerró: vuelva a abrirla y entre con un usuario de la copia."
   snapshot_nofile: "Elija el archivo de la copia."
   snapshot_first_link: "¿Viene de otro equipo? Restaurar una copia"
   snapshot_error_weak: "La frase debe tener al menos 12 caracteres."
@@ -104,4 +104,5 @@ shell:
   snapshot_error_bad_file: "Ese archivo no es una copia de AIDA o está dañado."
   snapshot_error_bad_passphrase: "La frase no es la de esta copia."
   snapshot_error_unsafe_path: "La copia contiene rutas no válidas y no se restauró."
+  snapshot_error_too_new: "La copia es de un AIDA más nuevo que este. Instale esa versión antes de restaurar."
   snapshot_confirm_needed: "Marque la confirmación: restaurar reemplaza la configuración actual."

@@ -11,6 +11,10 @@
 {
     <a href="/usuarios">@Text["users_title"]</a>
 }
+@if (_user is not null && Roles.Allows(_user.RoleId, PlatformPermission.CreateSnapshot))
+{
+    <a href="/ajustes">@Text["settings_label"]</a>
+}
 @if (_user is not null)
 {
     <a href="/agenda">@Agenda["title"]</a>

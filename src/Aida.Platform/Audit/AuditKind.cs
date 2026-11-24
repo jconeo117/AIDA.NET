@@ -35,9 +35,15 @@ public sealed partial record AuditKind
     /// <summary>Un administrador puso una contraseña nueva a un usuario.</summary>
     public static AuditKind PasswordReset { get; } = new("password_reset");
 
-    /// <summary>Las clases de la plataforma, en el orden de N007.</summary>
+    /// <summary>Se hizo una copia de la instalación, y quién la descargó.</summary>
+    public static AuditKind SnapshotCreated { get; } = new("snapshot_created");
+
+    /// <summary>Se aplicó una copia restaurada, firmada por quien entró primero después.</summary>
+    public static AuditKind SnapshotRestored { get; } = new("snapshot_restored");
+
+    /// <summary>Las clases de la plataforma: las de N007, y al final las de la copia de seguridad (N011).</summary>
     public static IReadOnlyList<AuditKind> Platform { get; } =
-        [SessionOpened, SessionClosed, Locked, Unlocked, UserCreated, UserDisabled, PasswordReset];
+        [SessionOpened, SessionClosed, Locked, Unlocked, UserCreated, UserDisabled, PasswordReset, SnapshotCreated, SnapshotRestored];
 
     /// <summary>El nombre que se escribe en el campo <c>kind</c> de la línea.</summary>
     public string Name { get; }

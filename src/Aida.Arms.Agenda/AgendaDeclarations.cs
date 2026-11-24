@@ -1,3 +1,4 @@
+using Aida.Arms.Agenda.Storage;
 using Aida.Platform.Audit;
 
 namespace Aida.Arms.Agenda;
@@ -26,4 +27,7 @@ public static class AgendaDeclarations
 
     /// <summary>Las clases de hecho del brazo.</summary>
     public static IReadOnlyList<AuditKind> AuditKinds { get; } = [Changed];
+
+    /// <summary>La versión de esquema que conoce este código; la lee la restauración para no aceptar una copia más nueva.</summary>
+    public static int SchemaVersion => AgendaSchema.Steps.Count;
 }

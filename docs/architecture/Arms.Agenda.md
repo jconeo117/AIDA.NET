@@ -44,7 +44,7 @@ No referencia ningún paquete directamente.
 ## Expone
 | Espacio de nombres | Tipos públicos | Para qué |
 |---|---|---|
-| `Aida.Arms.Agenda` | `AgendaDeclarations` | El identificador del brazo, sus permisos (`agenda.manage` y `agenda.block`) y su clase de hecho (`agenda_changed`), que la composición pasa a la plataforma |
+| `Aida.Arms.Agenda` | `AgendaDeclarations` | El identificador del brazo, sus permisos (`agenda.manage` y `agenda.block`) su clase de hecho (`agenda_changed`) y la versión de su esquema (`SchemaVersion`, que lee la restauración), que la composición pasa a la plataforma |
 | `Aida.Arms.Agenda.Setup` | `AgendaManifest`, `AgendaSetup`, `AgendaSetupLoader`, `ServiceSpec`, `ResourceSpec`, `TimeRange` | `arm.yaml` (sector por defecto y acciones) y la configuración de la clínica, copiada de la plantilla del sector al primer arranque |
 | `Aida.Arms.Agenda.Storage` | `Appointment`, `AppointmentState`, `Client`, `Block` | Lo que se guarda, ya abierto. `Block` lleva las dos reglas que comparten el hueco, la rejilla y la semana |
 | `Aida.Arms.Agenda.Desk` | `AgendaDesk`, `DayView`, `AppointmentView`, `BlockView`, `FreeSlot`, `WeekDay`, `ClientCard` | Ver el día y la semana, buscar, ver la ficha y pedir un cambio. Es lo único que usa la web |

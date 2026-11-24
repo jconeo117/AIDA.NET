@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Security.Claims;
 using Aida.Platform.Identity;
 using Aida.Platform.Sessions;
+using Aida.Platform.Snapshots;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 
@@ -17,10 +18,12 @@ internal static class SignIn
     /// <param name="http">La petición.</param>
     /// <param name="sessions">El registro de sesiones.</param>
     /// <param name="user">Quién entra, ya verificado.</param>
+    /// <param name="notice">El aviso de una copia aplicada, si lo hay: lo firma el primero que entra.</param>
     /// <returns>La tarea de la cookie.</returns>
-    internal static Task StartAsync(HttpContext http, SessionTracker sessions, UserAccount user)
+    internal static Task StartAsync(HttpContext http, SessionTracker sessions, UserAccount user, RestoreNotice notice)
     {
         var session = sessions.Open(user, AidaWebApp.Workstation(http));
+        notice.SignIfPending(user.Actor, AidaWebApp.Workstation(http));
         var identity = new ClaimsIdentity(
             [
                 new Claim(ClaimTypes.NameIdentifier, user.Id.ToString(CultureInfo.InvariantCulture)),

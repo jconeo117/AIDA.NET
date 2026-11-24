@@ -4,6 +4,8 @@
 @inject SessionTracker Sessions
 @inject ShellWording Text
 @inject NavigationManager Navigation
+@using Aida.Platform.Snapshots
+@inject RestoreNotice Notice
 
 <PageTitle>@Text["first_title"]</PageTitle>
 <h1>@Text["first_title"]</h1>
@@ -25,6 +27,20 @@ else
         <label>@Text["first_password2"] <InputText type="password" @bind-Value="Form.Password2" autocomplete="new-password" /></label>
         <button type="submit">@Text["first_button"]</button>
     </EditForm>
+    <details open="@(CopyMessage is not null)">
+        <summary>@Text["snapshot_first_link"]</summary>
+        <p>@Text["snapshot_restore_text"]</p>
+        @if (CopyMessage is not null)
+        {
+            <p role="alert">@CopyMessage</p>
+        }
+        <form method="post" action="/primer-usuario/restaurar" enctype="multipart/form-data">
+            <AntiforgeryToken />
+            <label>@Text["snapshot_file"] <input type="file" name="file" accept=".aidacopia" /></label>
+            <label>@Text["snapshot_restore_pass"] <input type="password" name="passphrase" autocomplete="off" /></label>
+            <button type="submit">@Text["snapshot_restore"]</button>
+        </form>
+    </details>
 }
 
 @code {
@@ -39,6 +55,11 @@ else
     private FirstForm Form => PostedForm ??= new();
 
     private bool FromServer => ServerOrigin.IsServerItself(Http);
+
+    [SupplyParameterFromQuery(Name = "copia")]
+    private string? CopyError { get; set; }
+
+    private string? CopyMessage => SnapshotMessages.For(Text, CopyError);
 
     protected override void OnInitialized()
     {
@@ -64,7 +85,7 @@ else
         try
         {
             var user = Users.CreateFirstAdministrator(Form.UserName ?? string.Empty, Form.DisplayName ?? string.Empty, Form.Password ?? string.Empty, AidaWebApp.Workstation(Http));
-            await SignIn.StartAsync(Http, Sessions, user);
+            await SignIn.StartAsync(Http, Sessions, user, Notice);
             Navigation.NavigateTo("/");
         }
         catch (IdentityException exception)

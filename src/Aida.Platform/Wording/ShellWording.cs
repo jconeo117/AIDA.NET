@@ -26,6 +26,11 @@ public sealed class ShellWording
         "identity_missing", "identity_user_name_format", "identity_password_format", "identity_duplicate",
         "identity_unknown", "identity_bad_credentials", "identity_wait", "identity_role_unknown",
         "identity_forbidden", "identity_last_administrator", "identity_already_initialized",
+        "settings_label", "title_settings", "settings_lead", "back_label",
+        "snapshot_title", "snapshot_text", "snapshot_pass", "snapshot_pass2", "snapshot_create", "snapshot_first_link",
+        "snapshot_restore_text", "snapshot_file", "snapshot_restore_pass", "snapshot_restore", "snapshot_restored",
+        "snapshot_nofile", "snapshot_error_weak", "snapshot_error_mismatch", "snapshot_error_too_large",
+        "snapshot_error_bad_file", "snapshot_error_bad_passphrase", "snapshot_error_unsafe_path", "snapshot_error_too_new",
     ];
 
     private readonly FrozenDictionary<string, string> _texts;

@@ -21,23 +21,29 @@ internal sealed class ServerHarness : IAsyncDisposable
     public string HttpsBaseUrl { get; }
     public string HttpBaseUrl { get; }
     public ManualTime Time { get; }
+    public string DataDir { get; }
+    private readonly bool _deleteOnDispose;
     public AuditLog Audit => App.Services.GetRequiredService<AuditLog>();
     public UserStore Users => App.Services.GetRequiredService<UserStore>();
 
-    private ServerHarness(WebApplication app, string tempDir, string httpsBaseUrl, string httpBaseUrl, ManualTime time)
+    private ServerHarness(WebApplication app, string tempDir, string dataDir, string httpsBaseUrl, string httpBaseUrl, ManualTime time, bool deleteOnDispose)
     {
         App = app;
         TempDir = tempDir;
+        DataDir = dataDir;
         HttpsBaseUrl = httpsBaseUrl;
         HttpBaseUrl = httpBaseUrl;
         Time = time;
+        _deleteOnDispose = deleteOnDispose;
     }
 
     public static async Task<ServerHarness> CreateAsync(
         Action<WebApplicationBuilder>? configure = null,
-        bool withDevelopmentKeyProtector = true)
+        bool withDevelopmentKeyProtector = true,
+        string? existingTempDir = null,
+        bool deleteOnDispose = true)
     {
-        var tempDir = Path.Combine(Path.GetTempPath(), "aida-web-test-" + Guid.NewGuid().ToString("n"));
+        var tempDir = existingTempDir ?? Path.Combine(Path.GetTempPath(), "aida-web-test-" + Guid.NewGuid().ToString("n"));
         var dataDir = Path.Combine(tempDir, "data");
         Directory.CreateDirectory(dataDir);
 
@@ -74,7 +80,7 @@ internal sealed class ServerHarness : IAsyncDisposable
         var boundHttp = addresses.First();
         var boundHttps = boundHttp.Replace("http://", "https://");
 
-        return new ServerHarness(app, tempDir, boundHttps, boundHttp, time);
+        return new ServerHarness(app, tempDir, dataDir, boundHttps, boundHttp, time, deleteOnDispose);
     }
 
     public HttpClient CreateClient(CookieContainer? cookies = null)
@@ -113,7 +119,7 @@ internal sealed class ServerHarness : IAsyncDisposable
         Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
         try
         {
-            if (Directory.Exists(TempDir))
+            if (_deleteOnDispose && Directory.Exists(TempDir))
             {
                 Directory.Delete(TempDir, true);
             }

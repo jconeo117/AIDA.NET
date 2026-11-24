@@ -26,7 +26,7 @@ cumpliendo**.
 | [0006](0006-owner-y-autoria.md) | `Owner` obligatorio; todo registro tiene autor | Aceptado |
 | [0007](0007-autoridad-y-puerta-de-herramientas.md) | Ninguna acción irreversible sin autoridad; una sola puerta de acciones | Aceptado; precisado por [0035](0035-lo-que-declara-un-brazo.md) |
 | [0008](0008-local-primero.md) | Local primero; la nube con autorización aparte; lo clínico, siempre local | Sustituido por [0021](0021-local-primero-y-salidas-autorizadas.md) |
-| [0009](0009-datos-sellados.md) | Datos sellados en reposo con AES-GCM y la clave del equipo protegida con DPAPI | Aceptado; precisado por [0029](0029-que-se-sella.md) y [0034](0034-clave-del-equipo.md) |
+| [0009](0009-datos-sellados.md) | Datos sellados en reposo con AES-GCM y la clave del equipo protegida con DPAPI | Aceptado; precisado por [0029](0029-que-se-sella.md), [0034](0034-clave-del-equipo.md) y [0036](0036-copia-de-seguridad.md) |
 | [0010](0010-licencia-firmada.md) | Licencia firmada con Ed25519 y comprobada sin conexión | Aceptado |
 | [0011](0011-brazos-y-comunicacion.md) | Brazos descritos por datos; se comunican por el motor, nunca entre sí | Aceptado; precisado por [0035](0035-lo-que-declara-un-brazo.md) |
 | [0012](0012-packs-yaml.md) | Packs en YAML, con el formato de la versión 0.1 | Aceptado |
@@ -47,12 +47,13 @@ cumpliendo**.
 | [0027](0027-determinismo-y-registros-dorados.md) | Determinismo, con semilla de 64 bits; la reproducibilidad entre procesos la prueban los registros del bucle de la 0.1 | Aceptado |
 | [0028](0028-sqlite-como-almacen-del-servidor.md) | SQLite como almacén del servidor, con Microsoft.Data.Sqlite y sin ORM | Aceptado; precisado por [0032](0032-sql-de-cada-brazo.md) |
 | [0029](0029-que-se-sella.md) | Qué se sella: los datos de los pacientes y los secretos, no las cuentas del personal | Aceptado |
-| [0030](0030-identidad-del-personal.md) | Identidad del personal: usuario y contraseña, PBKDF2, espera tras cinco fallos y primer administrador solo desde el servidor | Aceptado |
+| [0030](0030-identidad-del-personal.md) | Identidad del personal: usuario y contraseña, PBKDF2, espera tras cinco fallos y primer administrador solo desde el servidor | Aceptado; precisado por [0036](0036-copia-de-seguridad.md) |
 | [0031](0031-yaml-en-la-plataforma.md) | YamlDotNet también en la plataforma, para los archivos de `packs/platform` | Aceptado; ampliado por [0033](0033-packs-de-los-brazos.md) |
 | [0032](0032-sql-de-cada-brazo.md) | Cada brazo escribe el SQL de sus tablas, en el archivo de la plataforma, con su versión de esquema | Aceptado |
 | [0033](0033-packs-de-los-brazos.md) | Los brazos leen su pack con el lector de nodos de la plataforma (`PlatformYaml` público) | Aceptado |
-| [0034](0034-clave-del-equipo.md) | La clave del equipo: DPAPI en Windows, archivo sin proteger solo en desarrollo, claves derivadas con HKDF | Aceptado |
+| [0034](0034-clave-del-equipo.md) | La clave del equipo: DPAPI en Windows, archivo sin proteger solo en desarrollo, claves derivadas con HKDF | Aceptado; precisado por [0036](0036-copia-de-seguridad.md) |
 | [0035](0035-lo-que-declara-un-brazo.md) | Lo que declara un brazo: permisos, clases de hecho y acciones con su reversibilidad; el techo lo fija la composición | Aceptado |
+| [0036](0036-copia-de-seguridad.md) | La copia de seguridad: la base, la configuración y la clave del equipo, cifradas con una frase; restaurar solo en un equipo vacío, al arrancar | Aceptado |
 
 ## Plantilla
 

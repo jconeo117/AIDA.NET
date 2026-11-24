@@ -129,7 +129,9 @@ public sealed class RoleCatalogTests
         Assert.NotEmpty(catalog.Roles);
         Assert.Equal("administracion", catalog.FirstAdministratorRole.Id);
         Assert.True(catalog.Allows("administracion", PlatformPermission.ManageUsers));
+        Assert.True(catalog.Allows("administracion", PlatformPermission.CreateSnapshot));
         Assert.False(catalog.Allows("recepcion", PlatformPermission.ManageUsers));
+        Assert.False(catalog.Allows("recepcion", PlatformPermission.CreateSnapshot));
         Assert.True(catalog.Allows("recepcion", "agenda.manage"));
         Assert.True(catalog.Allows("recepcion", "agenda.block"));
         Assert.True(catalog.Allows("administracion", "agenda.block"));
