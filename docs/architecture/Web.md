@@ -3,8 +3,9 @@
 - **Estado:** N007 trajo el armazón mínimo: el servidor solo por HTTPS, la entrada con usuario y contraseña, el
   primer administrador, el bloqueo por puesto y la página de usuarios. N008 trae la pantalla del día de la agenda y
   compone el primer brazo. N009 y N010 completan la agenda (bloqueos, edición, semana, búsqueda y ficha). N011 trae
-  Ajustes con la copia de seguridad, y restaurar desde la pantalla del primer administrador.
-- **ADR:** [0011](../adr/0011-brazos-y-comunicacion.md), [0015](../adr/0015-forma-del-codigo.md), [0020](../adr/0020-servidor-en-red-local.md), [0030](../adr/0030-identidad-del-personal.md), [0034](../adr/0034-clave-del-equipo.md), [0035](../adr/0035-lo-que-declara-un-brazo.md), [0036](../adr/0036-copia-de-seguridad.md)
+  Ajustes con la copia de seguridad, y restaurar desde la pantalla del primer administrador. N012 trae la caja del
+  asistente en la agenda.
+- **ADR:** [0011](../adr/0011-brazos-y-comunicacion.md), [0015](../adr/0015-forma-del-codigo.md), [0020](../adr/0020-servidor-en-red-local.md), [0030](../adr/0030-identidad-del-personal.md), [0034](../adr/0034-clave-del-equipo.md), [0035](../adr/0035-lo-que-declara-un-brazo.md), [0036](../adr/0036-copia-de-seguridad.md), [0037](../adr/0037-asistente-sin-llm.md)
 
 ## Responsabilidad
 La aplicación de la clínica, en Blazor, servida desde el equipo servidor a los puestos de la red local por HTTPS ([ADR 0020](../adr/0020-servidor-en-red-local.md)). Tiene dos partes:
@@ -17,6 +18,9 @@ La aplicación de la clínica, en Blazor, servida desde el equipo servidor a los
   - **pantalla de la agenda** (`/agenda`): la rejilla del día y un panel lateral que elige la URL (la cita, la nueva
     cita con sus huecos libres o reprogramar). Cada cambio es un formulario que llega al servicio del brazo
     (`AgendaDesk`) y pasa por la puerta del motor. Vive aquí, y no en el brazo, porque necesita la sesión;
+  - **la caja del asistente**, en la agenda y solo para quien puede cambiarla: lo tecleado va por POST, nunca en la
+    URL. La frase la entiende `Aida.Cognition` y la convierte en propuesta el brazo. La página abre el panel de siempre,
+    ya relleno, y el operador pulsa el botón de siempre ([0037](../adr/0037-asistente-sin-llm.md));
   - **Ajustes** (`/ajustes`), por ahora con una sola tarjeta: hacer la copia, que se descarga en el navegador y pide
     `snapshot.create`;
   - después, la licencia y las demás tarjetas de Ajustes;

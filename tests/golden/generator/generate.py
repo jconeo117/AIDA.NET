@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 from agenda_section import generate_agenda
 from decide_section import generate_deliberation
 from exp_section import check_exp_sentinel, generate_exp
+from intent_section import generate_intent
 from journal_section import generate_journals
 from ledger_section import generate_ledger
 from packs_section import generate_packs
@@ -156,6 +157,7 @@ def generate_manifest(out_dir: Path, commit: str) -> None:
         "deliberation/cases.jsonl",
         "events/cases.jsonl",
         "hashing/blake2b.txt",
+        "intent/cases.jsonl",
         "journals/consultorio-sin-clasificador.jsonl",
         "journals/plantilla-1312-300.jsonl",
         "journals/plantilla-peticiones.jsonl",
@@ -215,6 +217,7 @@ def main() -> None:
     generate_journals(aida_dir, repo_dir, out_dir)
     generate_ledger(out_dir / "ledger" / "chain.tsv")
     generate_agenda(aida_dir, repo_dir, out_dir / "agenda" / "cases.jsonl")
+    generate_intent(aida_dir, repo_dir, out_dir / "intent" / "cases.jsonl")
     generate_manifest(out_dir, commit)
 
 

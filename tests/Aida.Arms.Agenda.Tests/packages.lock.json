@@ -140,6 +140,12 @@
           "Aida.Platform": "[1.0.0, )"
         }
       },
+      "aida.cognition": {
+        "type": "Project",
+        "dependencies": {
+          "Aida.Platform": "[1.0.0, )"
+        }
+      },
       "aida.engine": {
         "type": "Project",
         "dependencies": {

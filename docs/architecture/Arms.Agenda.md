@@ -16,7 +16,9 @@
     - la semana;
     - la búsqueda de contactos por nombre o teléfono;
     - la ficha, con `editar_contacto`.
-- **ADR:** [0007](../adr/0007-autoridad-y-puerta-de-herramientas.md), [0011](../adr/0011-brazos-y-comunicacion.md), [0013](../adr/0013-python-como-oraculo.md), [0029](../adr/0029-que-se-sella.md), [0032](../adr/0032-sql-de-cada-brazo.md), [0033](../adr/0033-packs-de-los-brazos.md), [0034](../adr/0034-clave-del-equipo.md), [0035](../adr/0035-lo-que-declara-un-brazo.md)
+  - **N012** trae el asistente: de lo entendido de una frase saca una propuesta (qué panel abrir y con qué relleno).
+    No ejecuta nada. N013 le añade las fechas y las horas, y N014 cancelar y reprogramar sobre la cita concreta.
+- **ADR:** [0007](../adr/0007-autoridad-y-puerta-de-herramientas.md), [0011](../adr/0011-brazos-y-comunicacion.md), [0013](../adr/0013-python-como-oraculo.md), [0029](../adr/0029-que-se-sella.md), [0032](../adr/0032-sql-de-cada-brazo.md), [0033](../adr/0033-packs-de-los-brazos.md), [0034](../adr/0034-clave-del-equipo.md), [0035](../adr/0035-lo-que-declara-un-brazo.md), [0037](../adr/0037-asistente-sin-llm.md)
 
 ## Responsabilidad
 - **Las citas de la clínica:** quién viene, a qué servicio, con qué recurso y a qué hora, y en qué estado está cada
@@ -49,6 +51,7 @@ No referencia ningún paquete directamente.
 | `Aida.Arms.Agenda.Storage` | `Appointment`, `AppointmentState`, `Client`, `Block` | Lo que se guarda, ya abierto. `Block` lleva las dos reglas que comparten el hueco, la rejilla y la semana |
 | `Aida.Arms.Agenda.Desk` | `AgendaDesk`, `DayView`, `AppointmentView`, `BlockView`, `FreeSlot`, `WeekDay`, `ClientCard` | Ver el día y la semana, buscar, ver la ficha y pedir un cambio. Es lo único que usa la web |
 | `Aida.Arms.Agenda.Wording` | `AgendaWording` | Los textos de `packs/agenda/ui.yaml` |
+| `Aida.Arms.Agenda.Assistant` | `AgendaAssistant`, `AgendaProposal`, `ProposalKind` | De lo entendido a una propuesta para la pantalla. Solo lee (el día, la búsqueda y la ficha); si encaja más de una persona, las lista ([0037](../adr/0037-asistente-sin-llm.md)). Sus intenciones están en `AgendaDeclarations.Intents` y sus ejemplos en `packs/agenda/intents.yaml` |
 
 Son internos (visibles para `Aida.Arms.Agenda.Tests`):
 - `AgendaStore` y `AgendaSchema`: el SQL, en dos versiones;

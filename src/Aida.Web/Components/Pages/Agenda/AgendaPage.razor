@@ -1,11 +1,15 @@
 @page "/agenda"
 @using System.Globalization
+@using Aida.Arms.Agenda.Assistant
 @using Aida.Arms.Agenda.Desk
 @using Aida.Arms.Agenda.Storage
 @using Aida.Arms.Agenda.Wording
+@using Aida.Cognition.Understanding
 @using Aida.Engine.Actions
 @inject AgendaDesk Desk
 @inject AgendaWording Text
+@inject AssistantInterpreter Interpreter
+@inject AgendaAssistant Proposer
 @inject TimeProvider Time
 @inject NavigationManager Navigation
 
@@ -22,6 +26,14 @@
     <EditForm Model="Search" FormName="agenda-search" method="post" OnSubmit="SubmitSearch">
         <AntiforgeryToken />
         <input name="Search.Query" type="search" placeholder="@Text["search_placeholder"]" value="@Search.Query" />
+    </EditForm>
+    <EditForm Model="Assistant" FormName="agenda-assistant" method="post" OnSubmit="SubmitAssistant">
+        <AntiforgeryToken />
+        @if (_canManage)
+        {
+            <input name="Assistant.Text" type="text" placeholder="@Text["assistant_placeholder"]" />
+            <button type="submit">@Text["assistant_button"]</button>
+        }
     </EditForm>
 </div>
 <WeekStrip View="@_view" />
@@ -41,7 +53,8 @@
         <aside class="side">
             <AgendaSide View="@_view" Day="@_day" Panel="@_panel" CanManage="@_canManage" CanBlock="@_canBlock"
                 ServiceId="@_serviceId" FirstService="@_firstService" Appointment="@_appointment" Block="@_block"
-                Card="@_card" Prefill="@_prefill" Found="@_found" />
+                Card="@_card" Prefill="@_prefill" Found="@_found" Choices="@_choices" ChoicesForCard="@_choicesForCard"
+                TimeNotice="@_timeNotice" />
         </aside>
     </div>
 </EditForm>
@@ -61,6 +74,9 @@
     private ClientCard? _card;
     private Client? _prefill;
     private IReadOnlyList<Client>? _found;
+    private IReadOnlyList<Client>? _choices;
+    private bool _choicesForCard;
+    private string? _timeNotice;
     private IReadOnlyList<AppointmentView> _conflicts = [];
 
     [CascadingParameter]
@@ -105,6 +121,11 @@
     private AgendaSearchForm? PostedSearch { get; set; }
 
     private AgendaSearchForm Search => PostedSearch ??= new();
+
+    [SupplyParameterFromForm(FormName = "agenda-assistant", Name = "Assistant")]
+    private AgendaAssistantForm? PostedAssistant { get; set; }
+
+    private AgendaAssistantForm Assistant => PostedAssistant ??= new();
 
     protected override void OnInitialized()
     {
@@ -192,5 +213,36 @@
 
         _found = Desk.Search(Search.Query ?? string.Empty);
         _panel = "buscar";
+    }
+
+    /// <summary>Entiende la frase y propone un panel, en la misma petición y sin redirigir. No cambia nada: el cambio lo hace el
+    /// operador con el botón de siempre.</summary>
+    private void SubmitAssistant()
+    {
+        if (SessionGate.CurrentUser(Http) is not { } user)
+        {
+            return;
+        }
+
+        if (!Desk.CanManage(user))
+        {
+            Http.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return;
+        }
+
+        var proposal = Proposer.Propose(Interpreter.Interpret(Assistant.Text ?? string.Empty));
+        var outcome = AgendaAssistantView.Apply(proposal, Desk);
+        if (outcome.Panel is not null)
+        {
+            _panel = outcome.Panel;
+            _serviceId = outcome.ServiceId ?? _serviceId;
+            _prefill = outcome.Prefill;
+            _card = outcome.Card;
+            _choices = outcome.Choices;
+            _choicesForCard = outcome.ChoicesForCard;
+        }
+
+        _message = outcome.MessageKey is null ? null : Text[outcome.MessageKey];
+        _timeNotice = outcome.TimeNoticeKey is null ? null : Text[outcome.TimeNoticeKey];
     }
 }

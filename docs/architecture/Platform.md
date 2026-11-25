@@ -2,8 +2,9 @@
 
 - **Estado:** N007 trajo las rutas, el almacén SQLite, la cadena, la auditoría, la identidad, los roles, los textos
   del armazón y las sesiones. N008 trae la clave del equipo, el sellado, el esquema por brazo y lo que declaran los
-  brazos (permisos y clases de hecho). N011 trae la copia de seguridad. El resto entra con su primer consumidor.
-- **ADR:** [0006](../adr/0006-owner-y-autoria.md), [0009](../adr/0009-datos-sellados.md), [0010](../adr/0010-licencia-firmada.md), [0011](../adr/0011-brazos-y-comunicacion.md), [0020](../adr/0020-servidor-en-red-local.md), [0021](../adr/0021-local-primero-y-salidas-autorizadas.md), [0028](../adr/0028-sqlite-como-almacen-del-servidor.md), [0029](../adr/0029-que-se-sella.md), [0030](../adr/0030-identidad-del-personal.md), [0031](../adr/0031-yaml-en-la-plataforma.md), [0032](../adr/0032-sql-de-cada-brazo.md), [0033](../adr/0033-packs-de-los-brazos.md), [0034](../adr/0034-clave-del-equipo.md), [0035](../adr/0035-lo-que-declara-un-brazo.md), [0036](../adr/0036-copia-de-seguridad.md)
+  brazos (permisos y clases de hecho). N011 trae la copia de seguridad. N012 trae lo que entiende el asistente
+  (`Aida.Platform.Assistant`) y el catálogo de intenciones de un brazo. El resto entra con su primer consumidor.
+- **ADR:** [0006](../adr/0006-owner-y-autoria.md), [0009](../adr/0009-datos-sellados.md), [0010](../adr/0010-licencia-firmada.md), [0011](../adr/0011-brazos-y-comunicacion.md), [0020](../adr/0020-servidor-en-red-local.md), [0021](../adr/0021-local-primero-y-salidas-autorizadas.md), [0028](../adr/0028-sqlite-como-almacen-del-servidor.md), [0029](../adr/0029-que-se-sella.md), [0030](../adr/0030-identidad-del-personal.md), [0031](../adr/0031-yaml-en-la-plataforma.md), [0032](../adr/0032-sql-de-cada-brazo.md), [0033](../adr/0033-packs-de-los-brazos.md), [0034](../adr/0034-clave-del-equipo.md), [0035](../adr/0035-lo-que-declara-un-brazo.md), [0036](../adr/0036-copia-de-seguridad.md), [0037](../adr/0037-asistente-sin-llm.md)
 
 ## Responsabilidad
 Lo común a todos los brazos:
@@ -55,6 +56,7 @@ Con su primer consumidor entrarán:
 | `Aida.Platform.Wording` | `ShellWording` | Los textos del armazón y el tiempo sin uso |
 | `Aida.Platform.Sessions` | `SessionTracker`, `SessionView`, `SessionStatus` | Abrir, comprobar, bloquear, desbloquear y cerrar la sesión de un puesto |
 | `Aida.Platform.Snapshots` | `SnapshotWriter`, `SnapshotStager`, `SnapshotInstaller`, `PendingRestore`, `RestoreNotice`, `SnapshotError`, `SnapshotException` | Hacer la copia, prepararla, aplicarla al arrancar y firmar el aviso |
+| `Aida.Platform.Assistant` | `Understanding`, `Word`, `WordRole`, `IntentCatalog`, `IntentExamples` | Lo que se entendió de una frase del operador, que produce `Aida.Cognition` y leen los brazos, y el catálogo de intenciones de un brazo, cargado de su pack ([0037](../adr/0037-asistente-sin-llm.md)). Sin vocabulario de dominio |
 
 ## Lo que no hace
 - No conoce ningún brazo ni ningún dominio: ni la factura ni la historia clínica, ni las tablas de un brazo. Los

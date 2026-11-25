@@ -1,0 +1,19 @@
+# Lo que entiende el asistente de la agenda (ADR 0037). Los ejemplos y las palabras vacías se comparan plegados. Las
+# cuatro intenciones van juntas: con solo dos, «cancela la cita de Ana» se toma por «agendar». El umbral sale de la
+# medida del debate de N012: la frase buena más baja dio 0.267, y las ajenas, 0.
+threshold: 0.25
+stopwords: ["a", "al", "de", "del", "la", "el", "las", "los", "un", "una", "para", "en", "su", "me", "y", "o", "que",
+            "por", "con", "lo", "le", "se", "mi"]
+intents:
+  - id: "agendar"
+    examples: ["agenda una cita", "agendame", "agendar cita para", "dar una cita", "nueva cita", "cita para",
+               "programa una cita", "apunta una cita", "reserva una cita"]
+  - id: "ver_huecos"
+    examples: ["que huecos hay", "que hay libre", "hay espacio", "huecos libres", "que horas tiene libres",
+               "disponibilidad", "cuando hay cita disponible", "tiene algo libre"]
+  - id: "cancelar"
+    examples: ["cancela la cita", "cancelar cita", "anula la cita", "quita la cita", "borra la cita",
+               "no va a venir cancela"]
+  - id: "reprogramar"
+    examples: ["mueve la cita", "pasa la cita", "reprograma la cita", "cambia la cita para", "cambiar la hora de la cita",
+               "corre la cita", "aplaza la cita"]

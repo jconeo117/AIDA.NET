@@ -1,0 +1,15 @@
+# Las palabras del tiempo que entiende el asistente (ADR 0037). Se comparan plegadas: «miércoles» y «miercoles» son la
+# misma. En N012 solo sirven para que no se tomen por un nombre; N013 las lee para entender fechas y horas.
+time:
+  relative_days: {"hoy": 0, "mañana": 1, "pasado mañana": 2}
+  weekdays: {"lunes": monday, "martes": tuesday, "miércoles": wednesday, "jueves": thursday, "viernes": friday,
+             "sábado": saturday, "domingo": sunday}
+  months: {"enero": 1, "febrero": 2, "marzo": 3, "abril": 4, "mayo": 5, "junio": 6, "julio": 7, "agosto": 8,
+           "septiembre": 9, "octubre": 10, "noviembre": 11, "diciembre": 12}
+  periods: {"mañana": morning, "tarde": afternoon, "noche": afternoon}
+  period_markers: ["la"]
+  noon: ["mediodía"]
+  half: ["media"]
+  quarter: ["cuarto"]
+  and: ["y"]
+  hour_markers: ["las", "la"]

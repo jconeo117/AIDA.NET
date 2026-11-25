@@ -18,13 +18,13 @@ cumpliendo**.
 
 | ADR | Decisión | Estado |
 |---|---|---|
-| [0001](0001-el-motor-decide.md) | El motor decide; el modelo de lenguaje lee y redacta | Aceptado |
+| [0001](0001-el-motor-decide.md) | El motor decide; el modelo de lenguaje lee y redacta | Aceptado; precisado por [0037](0037-asistente-sin-llm.md) |
 | [0002](0002-agnosticismo-de-dominio.md) | El núcleo no sabe de dominio: el mundo va en packs | Aceptado |
 | [0003](0003-determinismo.md) | Determinismo: aleatoriedad por clave, orden explícito, desempate por entero | Sustituido por [0023](0023-determinismo-y-blake2b-propio.md) |
 | [0004](0004-reloj-hibrido.md) | Reloj híbrido y motor síncrono | Aceptado |
 | [0005](0005-eventos-y-journal.md) | Ningún cambio de estado sin evento; journal de entradas | Sustituido por [0025](0025-eventos-y-lo-derivado.md) |
 | [0006](0006-owner-y-autoria.md) | `Owner` obligatorio; todo registro tiene autor | Aceptado |
-| [0007](0007-autoridad-y-puerta-de-herramientas.md) | Ninguna acción irreversible sin autoridad; una sola puerta de acciones | Aceptado; precisado por [0035](0035-lo-que-declara-un-brazo.md) |
+| [0007](0007-autoridad-y-puerta-de-herramientas.md) | Ninguna acción irreversible sin autoridad; una sola puerta de acciones | Aceptado; precisado por [0035](0035-lo-que-declara-un-brazo.md) y [0037](0037-asistente-sin-llm.md) |
 | [0008](0008-local-primero.md) | Local primero; la nube con autorización aparte; lo clínico, siempre local | Sustituido por [0021](0021-local-primero-y-salidas-autorizadas.md) |
 | [0009](0009-datos-sellados.md) | Datos sellados en reposo con AES-GCM y la clave del equipo protegida con DPAPI | Aceptado; precisado por [0029](0029-que-se-sella.md), [0034](0034-clave-del-equipo.md) y [0036](0036-copia-de-seguridad.md) |
 | [0010](0010-licencia-firmada.md) | Licencia firmada con Ed25519 y comprobada sin conexión | Aceptado |
@@ -52,8 +52,9 @@ cumpliendo**.
 | [0032](0032-sql-de-cada-brazo.md) | Cada brazo escribe el SQL de sus tablas, en el archivo de la plataforma, con su versión de esquema | Aceptado |
 | [0033](0033-packs-de-los-brazos.md) | Los brazos leen su pack con el lector de nodos de la plataforma (`PlatformYaml` público) | Aceptado |
 | [0034](0034-clave-del-equipo.md) | La clave del equipo: DPAPI en Windows, archivo sin proteger solo en desarrollo, claves derivadas con HKDF | Aceptado; precisado por [0036](0036-copia-de-seguridad.md) |
-| [0035](0035-lo-que-declara-un-brazo.md) | Lo que declara un brazo: permisos, clases de hecho y acciones con su reversibilidad; el techo lo fija la composición | Aceptado |
+| [0035](0035-lo-que-declara-un-brazo.md) | Lo que declara un brazo: permisos, clases de hecho y acciones con su reversibilidad; el techo lo fija la composición | Aceptado; precisado por [0037](0037-asistente-sin-llm.md) |
 | [0036](0036-copia-de-seguridad.md) | La copia de seguridad: la base, la configuración y la clave del equipo, cifradas con una frase; restaurar solo en un equipo vacío, al arrancar | Aceptado |
+| [0037](0037-asistente-sin-llm.md) | El asistente del operador sin LLM: quien entiende propone en el formulario y nunca ejecuta; intenciones y palabras del tiempo en packs | Aceptado |
 
 ## Plantilla
 

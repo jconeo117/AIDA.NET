@@ -1,0 +1,37 @@
+@using System.Globalization
+@using Aida.Arms.Agenda.Storage
+@using Aida.Arms.Agenda.Wording
+@inject AgendaWording Text
+
+<div class="panel-card">
+    <p>@Text["assistant_pick_client"]</p>
+    <ul>
+        @foreach (var client in Choices)
+        {
+            <li>
+                @if (ForCard)
+                {
+                    <a href="@AgendaLinks.Panel(Day, "ficha", client.Id.ToString(CultureInfo.InvariantCulture))">@client.Name · @client.Phone</a>
+                }
+                else
+                {
+                    <a href="@AgendaLinks.NewFor(Day, ServiceId, client.Id)">@client.Name · @client.Phone</a>
+                }
+            </li>
+        }
+    </ul>
+</div>
+
+@code {
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Client> Choices { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public DateOnly Day { get; set; }
+
+    [Parameter]
+    public bool ForCard { get; set; }
+
+    [Parameter, EditorRequired]
+    public string ServiceId { get; set; } = string.Empty;
+}
