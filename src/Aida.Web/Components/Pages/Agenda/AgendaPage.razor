@@ -4,7 +4,7 @@
 @using Aida.Arms.Agenda.Desk
 @using Aida.Arms.Agenda.Storage
 @using Aida.Arms.Agenda.Wording
-@using Aida.Cognition.Understanding
+@using Aida.Cognition.Interpretation
 @using Aida.Engine.Actions
 @inject AgendaDesk Desk
 @inject AgendaWording Text
@@ -230,7 +230,7 @@
             return;
         }
 
-        var proposal = Proposer.Propose(Interpreter.Interpret(Assistant.Text ?? string.Empty));
+        var proposal = Proposer.Propose(Interpreter.Interpret(Assistant.Text ?? string.Empty, _today));
         var outcome = AgendaAssistantView.Apply(proposal, Desk);
         if (outcome.Panel is not null)
         {
