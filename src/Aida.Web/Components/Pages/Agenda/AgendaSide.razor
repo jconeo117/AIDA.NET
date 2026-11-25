@@ -3,6 +3,11 @@
 @using Aida.Arms.Agenda.Wording
 @inject AgendaWording Text
 
+@if (TimeNotice is not null)
+{
+    <p role="note">@TimeNotice</p>
+}
+
 @if (Panel == "cancelar" && Appointment is not null)
 {
     <CancelConfirm View="@Appointment" Day="@Day" />
@@ -38,6 +43,10 @@ else if (Panel == "bloqueo" && Block is not null)
 else if (Panel == "bloquear" && CanBlock)
 {
     <BlockForm View="@View" Day="@Day" />
+}
+else if (Panel == "elegir" && Choices is not null)
+{
+    <AssistantChoices Choices="@Choices" Day="@Day" ForCard="@ChoicesForCard" ServiceId="@(ServiceId ?? string.Empty)" />
 }
 else if (Panel == "nueva" && CanManage && ServiceId is not null)
 {
@@ -91,4 +100,13 @@ else
 
     [Parameter]
     public IReadOnlyList<Client>? Found { get; set; }
+
+    [Parameter]
+    public IReadOnlyList<Client>? Choices { get; set; }
+
+    [Parameter]
+    public bool ChoicesForCard { get; set; }
+
+    [Parameter]
+    public string? TimeNotice { get; set; }
 }

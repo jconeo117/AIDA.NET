@@ -22,6 +22,8 @@ public sealed class AgendaWording
         "field_until", "field_reason", "block_save", "blocked_label", "blocked_by", "unblock_button", "conflicts_title",
         "search_placeholder", "search_empty", "card_link", "card_upcoming", "card_attended", "card_no_show", "card_appointments",
         "card_edit",
+        "assistant_placeholder", "assistant_button", "assistant_not_understood", "assistant_no_client", "assistant_pick_client",
+        "assistant_no_dates",
     ];
 
     private readonly FrozenDictionary<string, string> _texts;

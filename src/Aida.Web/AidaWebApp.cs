@@ -1,9 +1,12 @@
 using System.Security.Claims;
 using Aida.Arms.Agenda;
+using Aida.Arms.Agenda.Assistant;
 using Aida.Arms.Agenda.Desk;
 using Aida.Arms.Agenda.Setup;
 using Aida.Arms.Agenda.Wording;
+using Aida.Cognition.Understanding;
 using Aida.Engine.Ontology;
+using Aida.Platform.Assistant;
 using Aida.Platform.Audit;
 using Aida.Platform.Identity;
 using Aida.Platform.Keys;
@@ -63,6 +66,10 @@ public static class AidaWebApp
         builder.Services.AddSingleton(provider => new RestoreNotice(paths, provider.GetRequiredService<AuditLog>()));
         builder.Services.AddSingleton(_ => AgendaManifest.Load(Path.Combine(agendaPack, "arm.yaml")));
         builder.Services.AddSingleton(_ => AgendaWording.Load(Path.Combine(agendaPack, "ui.yaml")));
+        builder.Services.AddSingleton(_ => TimeVocabulary.Load(paths.PlatformPackFile("time.yaml")));
+        builder.Services.AddSingleton(_ => IntentCatalog.Load(Path.Combine(agendaPack, "intents.yaml"), AgendaDeclarations.Intents));
+        builder.Services.AddSingleton(provider => new AssistantInterpreter(provider.GetRequiredService<IntentCatalog>(), provider.GetRequiredService<TimeVocabulary>()));
+        builder.Services.AddSingleton(provider => new AgendaAssistant(provider.GetRequiredService<AgendaDesk>(), provider.GetRequiredService<TimeProvider>()));
         builder.Services.AddSingleton(provider =>
         {
             var manifest = provider.GetRequiredService<AgendaManifest>();
