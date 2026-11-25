@@ -14,7 +14,7 @@
 }
 else if (Panel == "mover" && Appointment is not null)
 {
-    <SlotPicker View="@View" Day="@Day" ServiceId="@Appointment.Appointment.Service" AppointmentId="@Appointment.Appointment.Id" Moving="true" />
+    <SlotPicker View="@View" Day="@Day" ServiceId="@Appointment.Appointment.Service" AppointmentId="@Appointment.Appointment.Id" Moving="true" Preferred="@Preferred" />
 }
 else if (Panel == "editar" && CanManage && Appointment is not null)
 {
@@ -44,9 +44,9 @@ else if (Panel == "bloquear" && CanBlock)
 {
     <BlockForm View="@View" Day="@Day" />
 }
-else if (Panel == "elegir" && Choices is not null)
+else if (Panel == "elegir" && (Choices is not null || Appointments is not null))
 {
-    <AssistantChoices Choices="@Choices" Day="@Day" ForCard="@ChoicesForCard" ServiceId="@(ServiceId ?? string.Empty)" Preferred="@Preferred" />
+    <AssistantChoices Choices="@Choices" Appointments="@Appointments" ToMove="@ChoicesToMove" MoveTo="@MoveTo" Day="@Day" ServiceId="@(ServiceId ?? string.Empty)" Preferred="@Preferred" />
 }
 else if (Panel == "nueva" && CanManage && ServiceId is not null)
 {
@@ -105,7 +105,13 @@ else
     public IReadOnlyList<Client>? Choices { get; set; }
 
     [Parameter]
-    public bool ChoicesForCard { get; set; }
+    public IReadOnlyList<AppointmentView>? Appointments { get; set; }
+
+    [Parameter]
+    public bool ChoicesToMove { get; set; }
+
+    [Parameter]
+    public DateOnly? MoveTo { get; set; }
 
     [Parameter]
     public string? AssistantNote { get; set; }

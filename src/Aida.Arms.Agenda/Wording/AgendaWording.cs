@@ -23,7 +23,7 @@ public sealed class AgendaWording
         "search_placeholder", "search_empty", "card_link", "card_upcoming", "card_attended", "card_no_show", "card_appointments",
         "card_edit",
         "assistant_placeholder", "assistant_button", "assistant_not_understood", "assistant_no_client", "assistant_pick_client",
-        "assistant_time_taken", "assistant_past_day",
+        "assistant_time_taken", "assistant_past_day", "assistant_no_appointment", "assistant_pick_appointment",
     ];
 
     private readonly FrozenDictionary<string, string> _texts;

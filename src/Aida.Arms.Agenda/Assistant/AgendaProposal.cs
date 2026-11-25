@@ -1,3 +1,4 @@
+using Aida.Arms.Agenda.Desk;
 using Aida.Arms.Agenda.Storage;
 
 namespace Aida.Arms.Agenda.Assistant;
@@ -12,6 +13,8 @@ namespace Aida.Arms.Agenda.Assistant;
 /// <param name="Prefill">Nombre y teléfono para una cita nueva: el contacto que encajó, o uno con id 0 hecho de lo que
 /// sobra (D11). <see langword="null"/> si no hay nada que rellenar.</param>
 /// <param name="Clients">La persona de la ficha, o las personas para elegir.</param>
+/// <param name="Appointments">La cita (una) o las citas para elegir, por inicio y por id.</param>
+/// <param name="MoveTo">El día de destino al reprogramar, si se dijo; si no, cada cita se mueve dentro de su propio día.</param>
 /// <remarks>Es una propuesta y no una orden: quien la recibe abre un panel con estos datos, y el cambio lo hace el operador
 /// con el botón de siempre, que pasa por la puerta (ADR 0037).</remarks>
 public sealed record AgendaProposal(
@@ -21,4 +24,6 @@ public sealed record AgendaProposal(
     TimeOnly? Time,
     bool TimeTaken,
     Client? Prefill,
-    IReadOnlyList<Client> Clients);
+    IReadOnlyList<Client> Clients,
+    IReadOnlyList<AppointmentView> Appointments,
+    DateOnly? MoveTo);

@@ -1,5 +1,6 @@
 using Aida.Arms.Agenda.Assistant;
 using Aida.Arms.Agenda.Desk;
+using Aida.Arms.Agenda.Storage;
 
 namespace Aida.Web.Components.Pages.Agenda;
 
@@ -17,16 +18,39 @@ internal static class AgendaAssistantView
         var service = proposal.Service ?? desk.Setup.Services.FirstOrDefault()?.Id;
         var preferred = proposal.TimeTaken ? null : proposal.Time;
         var note = proposal.TimeTaken ? "assistant_time_taken" : null;
+        var appointment = proposal.Appointments.FirstOrDefault();
         return proposal.Kind switch
         {
-            ProposalKind.NewAppointment => new AssistantOutcome("nueva", proposal.Day, service, preferred, proposal.Prefill, null, null, false, null, note),
-            ProposalKind.FreeSlots => new AssistantOutcome("nueva", proposal.Day, service, preferred, null, null, null, false, null, note),
-            ProposalKind.OpenCard => new AssistantOutcome("ficha", proposal.Day, null, null, null, desk.Card(proposal.Clients[0].Id), null, false, null, null),
-            ProposalKind.PickClientForNew => new AssistantOutcome("elegir", proposal.Day, service, preferred, null, null, proposal.Clients, false, null, note),
-            ProposalKind.PickClientForCard => new AssistantOutcome("elegir", proposal.Day, null, null, null, null, proposal.Clients, true, null, null),
-            ProposalKind.NoClient => new AssistantOutcome(null, proposal.Day, null, null, null, null, null, false, "assistant_no_client", null),
-            ProposalKind.PastDay => new AssistantOutcome(null, proposal.Day, null, null, null, null, null, false, "assistant_past_day", null),
-            _ => new AssistantOutcome(null, proposal.Day, null, null, null, null, null, false, "assistant_not_understood", null),
+            ProposalKind.NewAppointment => Panel("nueva", proposal.Day, service, preferred, proposal.Prefill, note: note),
+            ProposalKind.FreeSlots => Panel("nueva", proposal.Day, service, preferred, note: note),
+            ProposalKind.OpenCard => Panel("ficha", proposal.Day, card: desk.Card(proposal.Clients[0].Id), note: "assistant_no_appointment"),
+            ProposalKind.PickClientForNew => Panel("elegir", proposal.Day, service, preferred, choices: proposal.Clients, note: note),
+            ProposalKind.Cancel => Panel("cancelar", proposal.Day, appointment: appointment),
+            ProposalKind.Move => Panel("mover", proposal.Day, service, preferred, appointment: appointment, moveTo: proposal.MoveTo, note: note),
+            ProposalKind.PickToCancel => Panel("elegir", proposal.Day, appointmentChoices: proposal.Appointments),
+            ProposalKind.PickToMove => Panel("elegir", proposal.Day, preferred: proposal.Time, appointmentChoices: proposal.Appointments, toMove: true, moveTo: proposal.MoveTo),
+            ProposalKind.NoClient => Message(proposal.Day, "assistant_no_client"),
+            ProposalKind.NoAppointment => Message(proposal.Day, "assistant_no_appointment"),
+            ProposalKind.PastDay => Message(proposal.Day, "assistant_past_day"),
+            _ => Message(proposal.Day, "assistant_not_understood"),
         };
     }
+
+    private static AssistantOutcome Panel(
+        string panel,
+        DateOnly day,
+        string? service = null,
+        TimeOnly? preferred = null,
+        Client? prefill = null,
+        ClientCard? card = null,
+        AppointmentView? appointment = null,
+        IReadOnlyList<Client>? choices = null,
+        IReadOnlyList<AppointmentView>? appointmentChoices = null,
+        bool toMove = false,
+        DateOnly? moveTo = null,
+        string? note = null) =>
+        new(panel, day, service, preferred, prefill, card, appointment, choices, appointmentChoices, toMove, moveTo, null, note);
+
+    private static AssistantOutcome Message(DateOnly day, string key) =>
+        new(null, day, null, null, null, null, null, null, null, false, null, key, null);
 }

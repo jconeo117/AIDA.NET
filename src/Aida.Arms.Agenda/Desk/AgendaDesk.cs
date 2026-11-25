@@ -221,6 +221,23 @@ public sealed class AgendaDesk
         }
     }
 
+    /// <summary>Una cita por su id, sea del día que sea.</summary>
+    /// <param name="appointment">El id.</param>
+    /// <returns>La cita, como la pinta la pantalla, o <see langword="null"/> si no existe.</returns>
+    /// <remarks>Para abrir «mover» o «cancelar» desde otro día que el de la cita (D16). Cualquier sesión la ve, como el día.
+    /// No deja auditoría ni evento: no cambia nada.</remarks>
+    public AppointmentView? Appointment(long appointment)
+    {
+        var names = UserNames();
+        lock (_sync)
+        {
+            using var work = AgendaWork.Begin(_database, _sealer, _phoneKey);
+            return work.Store.Get(appointment) is { } found
+                ? AppointmentViews.Of(work.Store, Setup, names, found)
+                : null;
+        }
+    }
+
     /// <summary>Los eventos de la puerta, en JSON canónico; para los tests.</summary>
     internal IReadOnlyList<string> EventLines()
     {

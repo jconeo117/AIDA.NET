@@ -1,41 +1,68 @@
 @using System.Globalization
+@using Aida.Arms.Agenda.Desk
 @using Aida.Arms.Agenda.Storage
 @using Aida.Arms.Agenda.Wording
 @inject AgendaWording Text
 
 <div class="panel-card">
-    <p>@Text["assistant_pick_client"]</p>
-    <ul>
-        @foreach (var client in Choices)
-        {
-            <li>
-                @if (ForCard)
-                {
-                    <a href="@AgendaLinks.Panel(Day, "ficha", client.Id.ToString(CultureInfo.InvariantCulture))">@client.Name · @client.Phone</a>
-                }
-                else
-                {
+    @if (Appointments is not null)
+    {
+        <p>@Text["assistant_pick_appointment"]</p>
+        <ul>
+            @foreach (var view in Appointments)
+            {
+                var start = view.Appointment.Start;
+                var day = DateOnly.FromDateTime(start.DateTime);
+                <li>
+                    <a href="@AppointmentLink(view, day)">@start.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture) · @view.ClientName · @view.ServiceLabel</a>
+                </li>
+            }
+        </ul>
+    }
+    else if (Choices is not null)
+    {
+        <p>@Text["assistant_pick_client"]</p>
+        <ul>
+            @foreach (var client in Choices)
+            {
+                <li>
                     <a href="@AgendaLinks.WithTime(AgendaLinks.NewFor(Day, ServiceId, client.Id), Preferred)">@client.Name · @client.Phone</a>
-                }
-            </li>
-        }
-    </ul>
+                </li>
+            }
+        </ul>
+    }
 </div>
 
 @code {
-    [Parameter, EditorRequired]
-    public IReadOnlyList<Client> Choices { get; set; } = [];
+    /// <summary>Las personas que encajan, para una cita nueva.</summary>
+    [Parameter]
+    public IReadOnlyList<Client>? Choices { get; set; }
+
+    /// <summary>Las citas que encajan, para cancelar o mover.</summary>
+    [Parameter]
+    public IReadOnlyList<AppointmentView>? Appointments { get; set; }
+
+    /// <summary>Si las citas son para mover (y no para cancelar).</summary>
+    [Parameter]
+    public bool ToMove { get; set; }
+
+    /// <summary>El día de destino al mover, si se dijo: la cita se abre en ese día.</summary>
+    [Parameter]
+    public DateOnly? MoveTo { get; set; }
 
     [Parameter, EditorRequired]
     public DateOnly Day { get; set; }
 
     [Parameter]
-    public bool ForCard { get; set; }
-
-    [Parameter, EditorRequired]
     public string ServiceId { get; set; } = string.Empty;
 
-    /// <summary>La hora que pidió la frase, que se lleva a la cita nueva para marcar su hueco.</summary>
+    /// <summary>La hora que pidió la frase, que se lleva al enlace para marcar el hueco.</summary>
     [Parameter]
     public TimeOnly? Preferred { get; set; }
+
+    // Solo ids, días y la hora van en el enlace: el nombre de la persona se escribe, nunca se pone en la dirección.
+    private string AppointmentLink(AppointmentView view, DateOnly day) =>
+        ToMove
+            ? AgendaLinks.WithTime(AgendaLinks.Panel(MoveTo ?? day, "mover", view.Appointment.Id.ToString(CultureInfo.InvariantCulture)), Preferred)
+            : AgendaLinks.Panel(day, "cancelar", view.Appointment.Id.ToString(CultureInfo.InvariantCulture));
 }
