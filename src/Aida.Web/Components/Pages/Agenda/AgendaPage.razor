@@ -4,7 +4,7 @@
 @using Aida.Arms.Agenda.Desk
 @using Aida.Arms.Agenda.Storage
 @using Aida.Arms.Agenda.Wording
-@using Aida.Cognition.Understanding
+@using Aida.Cognition.Interpretation
 @using Aida.Engine.Actions
 @inject AgendaDesk Desk
 @inject AgendaWording Text
@@ -54,7 +54,7 @@
             <AgendaSide View="@_view" Day="@_day" Panel="@_panel" CanManage="@_canManage" CanBlock="@_canBlock"
                 ServiceId="@_serviceId" FirstService="@_firstService" Appointment="@_appointment" Block="@_block"
                 Card="@_card" Prefill="@_prefill" Found="@_found" Choices="@_choices" ChoicesForCard="@_choicesForCard"
-                TimeNotice="@_timeNotice" />
+                AssistantNote="@_assistantNote" Preferred="@_preferred" />
         </aside>
     </div>
 </EditForm>
@@ -76,7 +76,8 @@
     private IReadOnlyList<Client>? _found;
     private IReadOnlyList<Client>? _choices;
     private bool _choicesForCard;
-    private string? _timeNotice;
+    private string? _assistantNote;
+    private TimeOnly? _preferred;
     private IReadOnlyList<AppointmentView> _conflicts = [];
 
     [CascadingParameter]
@@ -112,6 +113,9 @@
     [SupplyParameterFromQuery(Name = "contacto")]
     public string? Contacto { get; set; }
 
+    [SupplyParameterFromQuery(Name = "hora")]
+    public string? Hora { get; set; }
+
     [SupplyParameterFromForm(FormName = "agenda-action", Name = "Command")]
     private AgendaCommandForm? PostedCommand { get; set; }
 
@@ -142,6 +146,7 @@
         _block = FindBlock(Bloqueo);
         _card = FindCard(Ficha ?? Contacto);
         _prefill = Nueva is not null && Contacto is not null ? _card?.Client : null;
+        _preferred = TimeOnly.TryParseExact(Hora, "HH:mm", CultureInfo.InvariantCulture, DateTimeStyles.None, out var hour) ? hour : null;
     }
 
     /// <summary>El panel que pide la URL, en el orden de la pantalla.</summary>
@@ -230,12 +235,20 @@
             return;
         }
 
-        var proposal = Proposer.Propose(Interpreter.Interpret(Assistant.Text ?? string.Empty));
+        var proposal = Proposer.Propose(Interpreter.Interpret(Assistant.Text ?? string.Empty, _today));
         var outcome = AgendaAssistantView.Apply(proposal, Desk);
         if (outcome.Panel is not null)
         {
+            if (outcome.Day != _day)
+            {
+                _day = outcome.Day;
+                _view = Desk.Day(_day);
+                _firstService = _view.Setup.Services.FirstOrDefault()?.Id;
+            }
+
             _panel = outcome.Panel;
             _serviceId = outcome.ServiceId ?? _serviceId;
+            _preferred = outcome.Preferred;
             _prefill = outcome.Prefill;
             _card = outcome.Card;
             _choices = outcome.Choices;
@@ -243,6 +256,6 @@
         }
 
         _message = outcome.MessageKey is null ? null : Text[outcome.MessageKey];
-        _timeNotice = outcome.TimeNoticeKey is null ? null : Text[outcome.TimeNoticeKey];
+        _assistantNote = outcome.NoteKey is null ? null : Text[outcome.NoteKey];
     }
 }

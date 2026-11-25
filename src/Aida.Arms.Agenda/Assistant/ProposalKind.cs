@@ -23,4 +23,7 @@ public enum ProposalKind
 
     /// <summary>La ficha de la persona, para cancelar o mover una cita suya con los botones de siempre.</summary>
     OpenCard = 6,
+
+    /// <summary>La fecha que se dijo ya pasó (D19): no se abre nada.</summary>
+    PastDay = 7,
 }

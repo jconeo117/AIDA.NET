@@ -63,6 +63,14 @@ internal static class AgendaLinks
         return Day(day);
     }
 
+    /// <summary>Añade la hora preferida a un enlace, para que el hueco de esa hora salga marcado.</summary>
+    /// <param name="link">El enlace, que ya lleva el día y el panel.</param>
+    /// <param name="time">La hora, si la frase la dijo y hay un hueco que la tiene.</param>
+    /// <returns>El enlace con <c>&amp;hora=HH:mm</c>, o el mismo enlace si no hay hora.</returns>
+    /// <remarks>La hora es lo único que de la frase viaja en la dirección, y solo como <c>HH:mm</c>: lo tecleado nunca va en la URL.</remarks>
+    internal static string WithTime(string link, TimeOnly? time) =>
+        time is { } hour ? $"{link}&hora={hour.ToString("HH:mm", CultureInfo.InvariantCulture)}" : link;
+
     /// <summary>El valor de un hueco en el formulario: <c>recurso|inicio</c>.</summary>
     /// <param name="resource">El recurso.</param>
     /// <param name="start">El inicio.</param>

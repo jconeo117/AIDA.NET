@@ -2,12 +2,12 @@ using Aida.Cognition.Intent;
 using Aida.Engine.Text;
 using Aida.Platform.Assistant;
 
-namespace Aida.Cognition.Understanding;
+namespace Aida.Cognition.Interpretation;
 
-/// <summary>Entiende una frase del operador: la intención, el teléfono y el papel de cada palabra.</summary>
+/// <summary>Entiende una frase del operador: la intención, el teléfono, los momentos y el papel de cada palabra.</summary>
 /// <remarks>
 /// No decide ni cambia nada: devuelve lo entendido, y el brazo propone (ADR 0037). Es la pieza que un modelo de lenguaje
-/// sustituirá o completará más adelante; sin él, AIDA sigue entendiendo así. Los momentos (día y hora) llegan en N013.
+/// sustituirá o completará más adelante; sin él, AIDA sigue entendiendo así.
 /// </remarks>
 public sealed class AssistantInterpreter
 {
@@ -18,18 +18,20 @@ public sealed class AssistantInterpreter
     private readonly IntentCatalog _catalog;
     private readonly TimeVocabulary _vocabulary;
     private readonly BagOfWordsClassifier _classifier;
+    private readonly WhenReader _when;
     private readonly IReadOnlySet<string> _intentWords;
 
     /// <summary>Crea el intérprete de un brazo.</summary>
     /// <param name="catalog">Las intenciones del brazo.</param>
     /// <param name="vocabulary">Las palabras del tiempo.</param>
     /// <exception cref="ArgumentNullException">Si alguno es <see langword="null"/>.</exception>
-    /// <remarks>El clasificador y las palabras de los ejemplos se calculan una vez, aquí, y no en cada frase.</remarks>
+    /// <remarks>El clasificador, el lector de fechas y las palabras de los ejemplos se calculan una vez, aquí, y no en cada frase.</remarks>
     public AssistantInterpreter(IntentCatalog catalog, TimeVocabulary vocabulary)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         _vocabulary = vocabulary ?? throw new ArgumentNullException(nameof(vocabulary));
         _classifier = BagOfWordsClassifier.FromCatalog(catalog);
+        _when = new WhenReader(vocabulary);
         _intentWords = catalog.Intents
             .SelectMany(intent => intent.Examples)
             .SelectMany(example => TextTokens.Tokenize(example))
@@ -39,34 +41,40 @@ public sealed class AssistantInterpreter
 
     /// <summary>Entiende una frase.</summary>
     /// <param name="text">Lo que escribió el operador.</param>
-    /// <returns>Lo entendido. Con un texto vacío o de solo espacios, sin intención, sin teléfono y sin palabras.</returns>
+    /// <param name="today">El día de hoy, el del reloj de quien llama: contra él se resuelven «hoy», «el jueves» o «20/11».</param>
+    /// <returns>Lo entendido. Con un texto vacío o de solo espacios, sin intención, sin teléfono, sin palabras y sin momentos.</returns>
     /// <exception cref="ArgumentNullException">Si <paramref name="text"/> es <see langword="null"/>.</exception>
-    /// <remarks>El papel de cada palabra sale en un orden fijo: teléfono, número, tiempo, vacía, intención y, si nada de eso,
-    /// libre. Un nombre se queda libre porque no está en ninguna lista, no porque se adivine.</remarks>
-    public Aida.Platform.Assistant.Understanding Interpret(string text)
+    /// <remarks>Los momentos se leen antes que el teléfono: las palabras que forman un momento no pueden ser también un teléfono
+    /// («hoy 10» no es un número de teléfono).</remarks>
+    public Understanding Interpret(string text, DateOnly today)
     {
         ArgumentNullException.ThrowIfNull(text);
         var spans = TextTokens.Spans(text);
-        var phone = FirstPhoneRun(text, spans);
+        var when = _when.Read(text, spans, today);
+        var phone = FirstPhoneRun(text, spans, when.Consumed);
         var words = new List<Word>(spans.Count);
         for (var index = 0; index < spans.Count; index++)
         {
             var span = spans[index];
-            var role = phone is { } run && index >= run.From && index <= run.To
-                ? WordRole.Phone
-                : RoleOf(span.Token, TextFold.Fold(span.Token));
-            words.Add(new Word(text[span.Start..span.End], TextFold.Fold(span.Token), role));
+            var folded = TextFold.Fold(span.Token);
+            var role = when.Consumed.Contains(index)
+                ? WordRole.Time
+                : phone is { } run && index >= run.From && index <= run.To
+                    ? WordRole.Phone
+                    : RoleOf(span.Token, folded);
+            words.Add(new Word(text[span.Start..span.End], folded, role));
         }
 
         var digits = phone is { } found
             ? string.Concat(spans.Skip(found.From).Take(found.To - found.From + 1).Select(span => span.Token))
             : null;
-        return new Aida.Platform.Assistant.Understanding(_classifier.Classify(text), digits, words);
+        return new Understanding(_classifier.Classify(text), digits, words, when.Mentions);
     }
 
+    // Las palabras que no son de un momento ni de un teléfono: número, tiempo, vacía, intención o libre.
     private WordRole RoleOf(string token, string folded)
     {
-        if (IsDigits(token))
+        if (WhenScan.IsDigits(token))
         {
             return WordRole.Number;
         }
@@ -85,12 +93,12 @@ public sealed class AssistantInterpreter
     }
 
     // La primera racha de palabras numéricas, seguidas y separadas solo por espacios, guiones o puntos, que suma de 7 a 15
-    // dígitos. Una racha más corta o más larga no es teléfono: «300-55» son dos números.
-    private static (int From, int To)? FirstPhoneRun(string text, IReadOnlyList<TokenSpan> spans)
+    // dígitos. Las que ya forman un momento no cuentan. Una racha más corta o más larga no es teléfono.
+    private static (int From, int To)? FirstPhoneRun(string text, IReadOnlyList<TokenSpan> spans, IReadOnlySet<int> consumed)
     {
         for (var from = 0; from < spans.Count; from++)
         {
-            if (!IsDigits(spans[from].Token))
+            if (!IsPhoneDigit(spans, from, consumed))
             {
                 continue;
             }
@@ -98,7 +106,7 @@ public sealed class AssistantInterpreter
             var to = from;
             var digits = spans[from].Token.Length;
             while (to + 1 < spans.Count
-                && IsDigits(spans[to + 1].Token)
+                && IsPhoneDigit(spans, to + 1, consumed)
                 && OnlySeparators(text, spans[to].End, spans[to + 1].Start))
             {
                 to++;
@@ -116,8 +124,9 @@ public sealed class AssistantInterpreter
         return null;
     }
 
+    private static bool IsPhoneDigit(IReadOnlyList<TokenSpan> spans, int index, IReadOnlySet<int> consumed) =>
+        !consumed.Contains(index) && WhenScan.IsDigits(spans[index].Token);
+
     private static bool OnlySeparators(string text, int from, int to) =>
         text.AsSpan(from, to - from).IndexOfAnyExcept(PhoneSeparators.AsSpan()) < 0;
-
-    private static bool IsDigits(string token) => token.Length > 0 && token.All(character => character is >= '0' and <= '9');
 }

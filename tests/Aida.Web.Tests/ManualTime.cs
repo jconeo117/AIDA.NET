@@ -17,7 +17,13 @@ public sealed class ManualTime : TimeProvider
         _now = initialUtc ?? DefaultInitialUtc;
     }
 
-    public override DateTimeOffset GetUtcNow() => _now;
+    public DateTimeOffset Now
+    {
+        get => _now;
+        set => _now = value;
+    }
+
+    public override DateTimeOffset GetUtcNow() => _now.ToUniversalTime();
 
     public override TimeZoneInfo LocalTimeZone => CustomUtcMinus5;
 

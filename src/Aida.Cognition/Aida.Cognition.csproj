@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Aida.Platform\Aida.Platform.csproj" />
+    <InternalsVisibleTo Include="Aida.Cognition.Tests" />
   </ItemGroup>
 
   <ItemGroup>

@@ -56,7 +56,7 @@ Con su primer consumidor entrarán:
 | `Aida.Platform.Wording` | `ShellWording` | Los textos del armazón y el tiempo sin uso |
 | `Aida.Platform.Sessions` | `SessionTracker`, `SessionView`, `SessionStatus` | Abrir, comprobar, bloquear, desbloquear y cerrar la sesión de un puesto |
 | `Aida.Platform.Snapshots` | `SnapshotWriter`, `SnapshotStager`, `SnapshotInstaller`, `PendingRestore`, `RestoreNotice`, `SnapshotError`, `SnapshotException` | Hacer la copia, prepararla, aplicarla al arrancar y firmar el aviso |
-| `Aida.Platform.Assistant` | `Understanding`, `Word`, `WordRole`, `IntentCatalog`, `IntentExamples` | Lo que se entendió de una frase del operador, que produce `Aida.Cognition` y leen los brazos, y el catálogo de intenciones de un brazo, cargado de su pack ([0037](../adr/0037-asistente-sin-llm.md)). Sin vocabulario de dominio |
+| `Aida.Platform.Assistant` | `Understanding`, `Word`, `WordRole`, `WhenMention`, `DayPeriod`, `IntentCatalog`, `IntentExamples`, `TimeVocabulary` | Lo que se entendió de una frase del operador, que produce `Aida.Cognition` y leen los brazos, y el catálogo de intenciones de un brazo, cargado de su pack ([0037](../adr/0037-asistente-sin-llm.md)). Sin vocabulario de dominio |
 
 ## Lo que no hace
 - No conoce ningún brazo ni ningún dominio: ni la factura ni la historia clínica, ni las tablas de un brazo. Los

@@ -15,7 +15,7 @@
                 }
                 else
                 {
-                    <a href="@AgendaLinks.NewFor(Day, ServiceId, client.Id)">@client.Name · @client.Phone</a>
+                    <a href="@AgendaLinks.WithTime(AgendaLinks.NewFor(Day, ServiceId, client.Id), Preferred)">@client.Name · @client.Phone</a>
                 }
             </li>
         }
@@ -34,4 +34,8 @@
 
     [Parameter, EditorRequired]
     public string ServiceId { get; set; } = string.Empty;
+
+    /// <summary>La hora que pidió la frase, que se lleva a la cita nueva para marcar su hueco.</summary>
+    [Parameter]
+    public TimeOnly? Preferred { get; set; }
 }

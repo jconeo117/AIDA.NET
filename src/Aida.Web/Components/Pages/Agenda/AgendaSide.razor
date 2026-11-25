@@ -3,9 +3,9 @@
 @using Aida.Arms.Agenda.Wording
 @inject AgendaWording Text
 
-@if (TimeNotice is not null)
+@if (AssistantNote is not null)
 {
-    <p role="note">@TimeNotice</p>
+    <p role="note">@AssistantNote</p>
 }
 
 @if (Panel == "cancelar" && Appointment is not null)
@@ -46,11 +46,11 @@ else if (Panel == "bloquear" && CanBlock)
 }
 else if (Panel == "elegir" && Choices is not null)
 {
-    <AssistantChoices Choices="@Choices" Day="@Day" ForCard="@ChoicesForCard" ServiceId="@(ServiceId ?? string.Empty)" />
+    <AssistantChoices Choices="@Choices" Day="@Day" ForCard="@ChoicesForCard" ServiceId="@(ServiceId ?? string.Empty)" Preferred="@Preferred" />
 }
 else if (Panel == "nueva" && CanManage && ServiceId is not null)
 {
-    <SlotPicker View="@View" Day="@Day" ServiceId="@ServiceId" Moving="false" Prefill="@Prefill" />
+    <SlotPicker View="@View" Day="@Day" ServiceId="@ServiceId" Moving="false" Prefill="@Prefill" Preferred="@Preferred" />
 }
 else
 {
@@ -108,5 +108,8 @@ else
     public bool ChoicesForCard { get; set; }
 
     [Parameter]
-    public string? TimeNotice { get; set; }
+    public string? AssistantNote { get; set; }
+
+    [Parameter]
+    public TimeOnly? Preferred { get; set; }
 }
