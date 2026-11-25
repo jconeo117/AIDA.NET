@@ -54,13 +54,13 @@ internal static class DayExpressions
         return new WhenMention(withoutYear, null, DayPeriod.Unknown);
     }
 
-    /// <summary>La regla 2: un día relativo, como «mañana» o «pasado mañana».</summary>
+    /// <summary>La regla 2: un día relativo del vocabulario, como «hoy».</summary>
     /// <param name="scan">La frase.</param>
     /// <param name="at">La posición de la primera palabra.</param>
     /// <param name="consumed">Las posiciones usadas.</param>
     /// <returns>El momento, o <see langword="null"/>.</returns>
-    /// <remarks>Se prueba la clave más larga primero, para que «pasado mañana» gane a «mañana». «la mañana» no es un día: es una
-    /// parte del día, y la regla 6 la lee.</remarks>
+    /// <remarks>Se prueba la clave más larga primero, para que una clave de dos palabras gane a una de una. Una parte del día con su
+    /// marcador («la noche») no es un día: la regla 6 la lee.</remarks>
     internal static WhenMention? TryRelative(WhenScan scan, int at, List<int> consumed)
     {
         foreach (var (key, days) in scan.Vocabulary.RelativeDays

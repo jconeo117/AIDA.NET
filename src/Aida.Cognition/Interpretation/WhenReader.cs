@@ -8,7 +8,7 @@ namespace Aida.Cognition.Interpretation;
 /// <para>Recorre la frase de izquierda a derecha. En cada posición prueba las reglas en orden y la primera que encaja consume
 /// sus palabras. Las palabras vacías no se saltan: cada regla dice cuáles admite.</para>
 /// <para>Cada pieza se añade al último momento si a ese le falta, y abre uno nuevo si ya la tiene: «del martes al jueves a las
-/// 11» son dos momentos, y «mañana en la mañana», uno. Una hora con su parte del día ocupan las dos piezas a la vez.</para>
+/// 11» son dos momentos, y «hoy en la noche», uno. Una hora con su parte del día ocupan las dos piezas a la vez.</para>
 /// </remarks>
 internal sealed class WhenReader
 {

@@ -41,11 +41,11 @@ public sealed class AssistantInterpreter
 
     /// <summary>Entiende una frase.</summary>
     /// <param name="text">Lo que escribió el operador.</param>
-    /// <param name="today">El día de hoy, el del reloj de quien llama: contra él se resuelven «mañana», «el jueves» o «20/11».</param>
+    /// <param name="today">El día de hoy, el del reloj de quien llama: contra él se resuelven «hoy», «el jueves» o «20/11».</param>
     /// <returns>Lo entendido. Con un texto vacío o de solo espacios, sin intención, sin teléfono, sin palabras y sin momentos.</returns>
     /// <exception cref="ArgumentNullException">Si <paramref name="text"/> es <see langword="null"/>.</exception>
     /// <remarks>Los momentos se leen antes que el teléfono: las palabras que forman un momento no pueden ser también un teléfono
-    /// («mañana 10» no es un número de teléfono).</remarks>
+    /// («hoy 10» no es un número de teléfono).</remarks>
     public Understanding Interpret(string text, DateOnly today)
     {
         ArgumentNullException.ThrowIfNull(text);

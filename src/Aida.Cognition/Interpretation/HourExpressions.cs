@@ -5,8 +5,8 @@ namespace Aida.Cognition.Interpretation;
 /// <summary>Las reglas de hora: una hora con su marcador, con sus minutos o con su parte del día, y una parte del día sola.</summary>
 /// <remarks>
 /// <para>Un número suelto no es una hora («llame al 300 555 1234» no tiene ninguna): hace falta un marcador («las 10»), una
-/// forma con minutos («10:30», «10 y media», «10 y cuarto») o una parte del día («3 de la tarde»).</para>
-/// <para>La parte del día aclara la hora: con la tarde, una hora menor de 12 suma 12; con la mañana, las 12 son las 0.</para>
+/// forma con minutos («10:30», «10 y media», «10 y cuarto») o una parte del día («3 de la noche»).</para>
+/// <para>La parte del día aclara la hora: con Afternoon, una hora menor de 12 suma 12; con Morning, las 12 son las 0.</para>
 /// </remarks>
 internal static class HourExpressions
 {
@@ -91,7 +91,7 @@ internal static class HourExpressions
         return new WhenMention(null, new TimeOnly(Resolve(hour, period), minute), period);
     }
 
-    /// <summary>La regla 6: una parte del día sola, como «en la tarde».</summary>
+    /// <summary>La regla 6: una parte del día sola, como «en la noche».</summary>
     /// <param name="scan">La frase.</param>
     /// <param name="at">La posición de la preposición.</param>
     /// <param name="consumed">Las posiciones usadas.</param>
@@ -112,7 +112,7 @@ internal static class HourExpressions
         return new WhenMention(null, null, period);
     }
 
-    // De la parte del día a la hora de 24: «3 de la tarde» es las 15:00; «12 de la mañana», las 0:00.
+    // De la parte del día a la hora de 24: Afternoon con 3 es las 15:00; Morning con 12, las 0:00.
     private static int Resolve(int hour, DayPeriod period) => period switch
     {
         DayPeriod.Afternoon when hour < 12 => hour + 12,

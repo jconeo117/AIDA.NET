@@ -37,7 +37,8 @@
         <div class="slots">
             @foreach (var slot in _slots)
             {
-                <button type="submit" name="Command.Slot" value="@AgendaLinks.Slot(slot.Resource, slot.Start)">
+                <button type="submit" name="Command.Slot" value="@AgendaLinks.Slot(slot.Resource, slot.Start)"
+                    class="@(IsPreferred(slot) ? "preferred" : null)" autofocus="@(slot == _firstPreferred)">
                     @slot.Start.ToString("HH:mm", CultureInfo.InvariantCulture) · @(View.Setup.Resource(slot.Resource)?.Label ?? slot.Resource)
                 </button>
             }
@@ -68,8 +69,19 @@
     [Parameter]
     public Client? Prefill { get; set; }
 
+    /// <summary>La hora que pidió la frase: el hueco de esa hora sale marcado, y el primero de ellos tiene el foco.</summary>
+    [Parameter]
+    public TimeOnly? Preferred { get; set; }
+
+    private FreeSlot? _firstPreferred;
+
     private string ServiceLabel => View.Setup.Service(ServiceId)?.Label ?? ServiceId;
 
-    protected override void OnParametersSet() =>
+    private bool IsPreferred(FreeSlot slot) => Preferred is { } hour && TimeOnly.FromDateTime(slot.Start.DateTime) == hour;
+
+    protected override void OnParametersSet()
+    {
         _slots = View.Free.TryGetValue(ServiceId, out var slots) ? slots : [];
+        _firstPreferred = _slots.FirstOrDefault(IsPreferred);
+    }
 }
