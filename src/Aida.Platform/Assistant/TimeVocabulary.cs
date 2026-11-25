@@ -54,6 +54,22 @@ public sealed class TimeVocabulary
     /// <remarks>Lo lee el lector de fechas: una de estas palabras sola es las 12:00.</remarks>
     public IReadOnlySet<string> Noon { get; private init; } = new HashSet<string>(StringComparer.Ordinal);
 
+    /// <summary>El artículo que puede ir delante de un día: «el» en «el martes».</summary>
+    /// <remarks>Lo lee el lector de fechas: un «el» delante de un día de la semana o de un número se consume con él.</remarks>
+    public IReadOnlySet<string> DayArticles { get; private init; } = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>La preposición que va entre un número y su mes: «de» en «5 de diciembre».</summary>
+    /// <remarks>Lo lee el lector de fechas para la forma <c>N de &lt;mes&gt;</c>.</remarks>
+    public IReadOnlySet<string> MonthLinks { get; private init; } = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>La preposición que va delante de una hora: «a» en «a las 10».</summary>
+    /// <remarks>Lo lee el lector de fechas: se consume solo cuando la sigue un marcador de hora.</remarks>
+    public IReadOnlySet<string> HourLinks { get; private init; } = new HashSet<string>(StringComparer.Ordinal);
+
+    /// <summary>Las preposiciones que unen una hora o una parte del día: «de», «en» y «por» en «3 de la tarde».</summary>
+    /// <remarks>Lo lee el lector de fechas, tanto para una hora con su parte del día como para una parte del día sola.</remarks>
+    public IReadOnlySet<string> PeriodLinks { get; private init; } = new HashSet<string>(StringComparer.Ordinal);
+
     /// <summary>Lee la sección <c>time</c> de un archivo de pack.</summary>
     /// <param name="path">La ruta de <c>time.yaml</c>.</param>
     /// <returns>El vocabulario.</returns>
@@ -72,6 +88,10 @@ public sealed class TimeVocabulary
         var quarter = TimeVocabularyReader.Set(time, "quarter", path);
         var and = TimeVocabularyReader.Set(time, "and", path);
         var hourMarkers = TimeVocabularyReader.Set(time, "hour_markers", path);
+        var dayArticles = TimeVocabularyReader.Set(time, "day_articles", path);
+        var monthLinks = TimeVocabularyReader.Set(time, "month_links", path);
+        var hourLinks = TimeVocabularyReader.Set(time, "hour_links", path);
+        var periodLinks = TimeVocabularyReader.Set(time, "period_links", path);
         var periodMarkers = TimeVocabularyReader.Set(time, "period_markers", path);
 
         var words = new HashSet<string>(StringComparer.Ordinal);
@@ -96,6 +116,10 @@ public sealed class TimeVocabulary
             Half = half,
             Quarter = quarter,
             Noon = noon,
+            DayArticles = dayArticles,
+            MonthLinks = monthLinks,
+            HourLinks = hourLinks,
+            PeriodLinks = periodLinks,
         };
     }
 }

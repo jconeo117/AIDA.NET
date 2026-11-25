@@ -70,7 +70,8 @@ internal sealed class WhenReader
         mentions[^1] = new WhenMention(
             last.Day ?? piece.Day,
             last.Time ?? piece.Time,
-            last.Period != DayPeriod.Unknown ? last.Period : piece.Period);
+            last.Period != DayPeriod.Unknown ? last.Period : piece.Period,
+            last.Weekday ?? piece.Weekday);
     }
 
     // Una pieza entra en el último momento solo si ninguna de sus partes ya está en él.

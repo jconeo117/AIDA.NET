@@ -25,7 +25,7 @@ internal static class HourExpressions
 
         var used = new List<int>();
         var index = at;
-        if (scan.Word(index) == "a" && scan.IsWord(index + 1, scan.Vocabulary.HourMarkers))
+        if (scan.IsWord(index, scan.Vocabulary.HourLinks) && scan.IsWord(index + 1, scan.Vocabulary.HourMarkers))
         {
             used.Add(index);
             index++;
@@ -75,7 +75,7 @@ internal static class HourExpressions
         }
 
         var period = DayPeriod.Unknown;
-        if (IsConnector(scan.Word(next)) && scan.IsWord(next + 1, scan.Vocabulary.PeriodMarkers)
+        if (scan.IsWord(next, scan.Vocabulary.PeriodLinks) && scan.IsWord(next + 1, scan.Vocabulary.PeriodMarkers)
             && scan.Vocabulary.Periods.TryGetValue(scan.Word(next + 2), out var found))
         {
             period = found;
@@ -98,7 +98,7 @@ internal static class HourExpressions
     /// <returns>El momento, con solo la parte del día, o <see langword="null"/>.</returns>
     internal static WhenMention? TryPeriod(WhenScan scan, int at, List<int> consumed)
     {
-        if (!IsConnector(scan.Word(at)) || !scan.IsWord(at + 1, scan.Vocabulary.PeriodMarkers))
+        if (!scan.IsWord(at, scan.Vocabulary.PeriodLinks) || !scan.IsWord(at + 1, scan.Vocabulary.PeriodMarkers))
         {
             return null;
         }
@@ -120,5 +120,4 @@ internal static class HourExpressions
         _ => hour,
     };
 
-    private static bool IsConnector(string word) => word is "de" or "en" or "por";
 }
