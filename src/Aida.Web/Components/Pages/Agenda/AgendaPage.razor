@@ -27,14 +27,14 @@
         <AntiforgeryToken />
         <input name="Search.Query" type="search" placeholder="@Text["search_placeholder"]" value="@Search.Query" />
     </EditForm>
-    @if (_canManage)
-    {
-        <EditForm Model="Assistant" FormName="agenda-assistant" method="post" OnSubmit="SubmitAssistant">
-            <AntiforgeryToken />
+    <EditForm Model="Assistant" FormName="agenda-assistant" method="post" OnSubmit="SubmitAssistant">
+        <AntiforgeryToken />
+        @if (_canManage)
+        {
             <input name="Assistant.Text" type="text" placeholder="@Text["assistant_placeholder"]" />
             <button type="submit">@Text["assistant_button"]</button>
-        </EditForm>
-    }
+        }
+    </EditForm>
 </div>
 <WeekStrip View="@_view" />
 

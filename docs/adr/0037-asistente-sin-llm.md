@@ -5,8 +5,7 @@
 - **Relacionados:** precisa el [0001](0001-el-motor-decide.md), el [0007](0007-autoridad-y-puerta-de-herramientas.md) y el [0035](0035-lo-que-declara-un-brazo.md); [0002](0002-agnosticismo-de-dominio.md), [0021](0021-local-primero-y-salidas-autorizadas.md), [0031](0031-yaml-en-la-plataforma.md), [0033](0033-packs-de-los-brazos.md)
 
 ## Contexto
-- **La queja del cliente** es que el programa antiguo es incómodo de usar. La
-  [ruta 130](../../.claude/workflow/rutas/130-ruta-suite-clinica.md) (decisión 5) pide un asistente dentro de la
+- **La queja del cliente** es que el programa antiguo es incómodo de usar. La ruta 130 (decisión 5) pide un asistente dentro de la
   aplicación: el operador escribe «cita para Ana mañana a las 10» y no recorre cuatro controles.
 - **La 0.1 sabe clasificar** una frase contra un catálogo cerrado, por bolsa de palabras y coseno
   (`intent/classify.py`, `textmatch.py`), pero solo para empujar una necesidad del bucle. Ningún brazo declaraba
