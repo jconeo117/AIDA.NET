@@ -61,7 +61,7 @@ public sealed class AssistantInterpreter
         var digits = phone is { } found
             ? string.Concat(spans.Skip(found.From).Take(found.To - found.From + 1).Select(span => span.Token))
             : null;
-        return new Aida.Platform.Assistant.Understanding(_classifier.Classify(text), digits, words);
+        return new Aida.Platform.Assistant.Understanding(_classifier.Classify(text), digits, words, []);
     }
 
     private WordRole RoleOf(string token, string folded)
