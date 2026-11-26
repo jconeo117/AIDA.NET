@@ -41,7 +41,7 @@ public sealed class ShellWording
         IdleLock = TimeSpan.FromMinutes(idleLockMinutes);
     }
 
-    /// <summary>Tras cuánto tiempo sin uso se bloquea el puesto. Lo decide cada cliente en su pack.</summary>
+    /// <summary>Tras cuánto tiempo sin uso se bloquea el puesto. Lo decide cada brazo en su pack.</summary>
     public TimeSpan IdleLock { get; }
 
     /// <summary>Un texto por su clave.</summary>
