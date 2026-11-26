@@ -6,6 +6,7 @@ using Aida.Engine.Actions;
 using Aida.Engine.Ontology;
 using Aida.Platform.Keys;
 using Aida.Platform.Packs;
+using Aida.Platform.People;
 using Aida.Platform.Sealing;
 using Aida.Platform.Storage;
 using Microsoft.Data.Sqlite;
@@ -52,34 +53,38 @@ public sealed class FreeSlotsTests
 
         public AgendaSetup Setup { get; }
 
+        public PersonCatalog Catalog { get; }
+
         public MachineKey Key { get; }
 
         public Sealer Sealer { get; }
 
-        public byte[] PhoneKey { get; }
+        public PersonKeys PersonKeys { get; }
 
         public Context()
         {
-            DirectoryPath = Path.Combine(Path.GetTempPath(), "aida-slots-" + Guid.NewGuid().ToString("n"));
-            Directory.CreateDirectory(DirectoryPath);
-            Database = new PlatformDatabase(Path.Combine(DirectoryPath, "aida.db"));
-            Database.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps);
-
-            Key = MachineKey.OpenOrCreate(Path.Combine(DirectoryPath, "machine.key"), new DevelopmentKeyProtector());
-            Sealer = new Sealer(Key);
-            PhoneKey = Key.Derive(AgendaStore.PhoneKeyPurpose);
-
             var repoRoot = FindRepoRoot();
             var consultorioPath = Path.Combine(repoRoot, "packs", "agenda", "consultorio", "agenda.yaml");
             Setup = AgendaSetupLoader.Parse(PlatformYaml.ReadRoot(consultorioPath), consultorioPath);
+            Catalog = PersonCatalog.Load(Path.Combine(repoRoot, "packs", "platform", "people.yaml"));
+
+            DirectoryPath = Path.Combine(Path.GetTempPath(), "aida-slots-" + Guid.NewGuid().ToString("n"));
+            Directory.CreateDirectory(DirectoryPath);
+            Database = new PlatformDatabase(Path.Combine(DirectoryPath, "aida.db"));
+
+            Key = MachineKey.OpenOrCreate(Path.Combine(DirectoryPath, "machine.key"), new DevelopmentKeyProtector());
+            Sealer = new Sealer(Key);
+            PersonKeys = PersonKeys.From(Key);
+
+            Database.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps(Sealer, PersonKeys));
         }
 
         public SlotsSession Begin(DateTimeOffset now)
         {
             var time = new ManualTime();
             time.Now = now;
-            var work = AgendaWork.Begin(Database, Sealer, PhoneKey);
-            var tool = new AgendaTool(work.Store, Setup, time);
+            var work = AgendaWork.Begin(Database, Sealer, PersonKeys);
+            var tool = new AgendaTool(work.Store, work.People, Setup, Catalog, time);
             return new SlotsSession(work, tool, time);
         }
 

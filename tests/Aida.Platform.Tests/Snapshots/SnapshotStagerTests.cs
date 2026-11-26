@@ -148,11 +148,11 @@ public sealed class SnapshotStagerTests
     {
         using var env = new ServerEnv("test-version", new DevelopmentKeyProtector());
 
-        // user_version = 3 (mayor a Schema.Version = 2)
+        // user_version = 4 (mayor a Schema.Version = 3)
         using var sTooNew = CreateTar(b =>
         {
             b.AddManifest(2);
-            b.AddCustomDatabase(conn => { using var c = conn.CreateCommand(); c.CommandText = "PRAGMA user_version = 3;"; c.ExecuteNonQuery(); });
+            b.AddCustomDatabase(conn => { using var c = conn.CreateCommand(); c.CommandText = "PRAGMA user_version = 4;"; c.ExecuteNonQuery(); });
             b.AddKey();
         });
         var stager = new SnapshotStager(env.Paths, env.Protector, new Dictionary<string, int>());

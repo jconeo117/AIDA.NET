@@ -4,6 +4,7 @@ using Aida.Arms.Agenda.Setup;
 using Aida.Arms.Agenda.Storage;
 using Aida.Platform.Keys;
 using Aida.Platform.Packs;
+using Aida.Platform.People;
 using Aida.Platform.Sealing;
 using Aida.Platform.Storage;
 using Microsoft.Data.Sqlite;
@@ -28,7 +29,7 @@ public sealed class WeekSummaryTests : IDisposable
     private readonly PlatformDatabase _db;
     private readonly MachineKey _key;
     private readonly Sealer _sealer;
-    private readonly byte[] _phoneKey;
+    private readonly PersonKeys _personKeys;
     private readonly AgendaSetup _setup;
     private readonly TimeSpan _offset = TimeSpan.FromHours(-5);
 
@@ -38,12 +39,12 @@ public sealed class WeekSummaryTests : IDisposable
         Directory.CreateDirectory(_dir);
         var dbPath = Path.Combine(_dir, "aida.db");
         _db = new PlatformDatabase(dbPath);
-        _db.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps);
 
         var keyPath = Path.Combine(_dir, "machine.key");
         _key = MachineKey.OpenOrCreate(keyPath, new DevelopmentKeyProtector());
         _sealer = new Sealer(_key);
-        _phoneKey = _key.Derive(AgendaStore.PhoneKeyPurpose);
+        _personKeys = PersonKeys.From(_key);
+        _db.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps(_sealer, _personKeys));
 
         var repoRoot = FindRepoRoot();
         var consultorioPath = Path.Combine(repoRoot, "packs", "agenda", "consultorio", "agenda.yaml");
@@ -69,7 +70,7 @@ public sealed class WeekSummaryTests : IDisposable
     public void Retorna_seis_dias_de_lunes_a_sabado()
     {
         var lunes = new DateOnly(2026, 11, 16);
-        using var work = AgendaWork.Begin(_db, _sealer, _phoneKey);
+        using var work = AgendaWork.Begin(_db, _sealer, _personKeys);
         var semana = WeekSummary.For(work.Store, _setup, lunes, _offset);
 
         Assert.Equal(6, semana.Count);
@@ -85,7 +86,7 @@ public sealed class WeekSummaryTests : IDisposable
     public void Bloqueo_especifico_solo_resta_a_su_recurso_y_bloqueo_en_borde_no_resta()
     {
         var lunes = new DateOnly(2026, 11, 16);
-        using var work = AgendaWork.Begin(_db, _sealer, _phoneKey);
+        using var work = AgendaWork.Begin(_db, _sealer, _personKeys);
 
         // Bloqueo de 08:00 a 09:00 en consultorio_1 (2 huecos de 30 min)
         var t08 = new DateTimeOffset(lunes.ToDateTime(new TimeOnly(8, 0)), _offset);
@@ -98,7 +99,7 @@ public sealed class WeekSummaryTests : IDisposable
 
         work.Commit();
 
-        using var queryWork = AgendaWork.Begin(_db, _sealer, _phoneKey);
+        using var queryWork = AgendaWork.Begin(_db, _sealer, _personKeys);
         var semana = WeekSummary.For(queryWork.Store, _setup, lunes, _offset);
 
         // Base de lunes sin bloqueos: consultorio_1 (10) + consultorio_2 (8) = 18.
@@ -111,7 +112,7 @@ public sealed class WeekSummaryTests : IDisposable
     {
         var lunes = new DateOnly(2026, 11, 16);
         var viernes = lunes.AddDays(4); // 2026-11-20
-        using var work = AgendaWork.Begin(_db, _sealer, _phoneKey);
+        using var work = AgendaWork.Begin(_db, _sealer, _personKeys);
 
         // Bloqueo general ("") de 08:00 a 13:00 el viernes
         var v08 = new DateTimeOffset(viernes.ToDateTime(new TimeOnly(8, 0)), _offset);
@@ -119,7 +120,7 @@ public sealed class WeekSummaryTests : IDisposable
         work.Store.AddBlock(string.Empty, v08, v13, "Festivo", "admin");
         work.Commit();
 
-        using var queryWork = AgendaWork.Begin(_db, _sealer, _phoneKey);
+        using var queryWork = AgendaWork.Begin(_db, _sealer, _personKeys);
         var semana = WeekSummary.For(queryWork.Store, _setup, lunes, _offset);
 
         // El viernes queda con capacidad 0
@@ -136,7 +137,7 @@ public sealed class WeekSummaryTests : IDisposable
         });
         var customSetup = new AgendaSetup("parcial", 30, "Cliente", [_setup.Services[0]], [parcial]);
 
-        using var work = AgendaWork.Begin(_db, _sealer, _phoneKey);
+        using var work = AgendaWork.Begin(_db, _sealer, _personKeys);
         var lunes = new DateOnly(2026, 11, 16);
         var semana = WeekSummary.For(work.Store, customSetup, lunes, _offset);
 
@@ -147,8 +148,8 @@ public sealed class WeekSummaryTests : IDisposable
     public void Citas_ocupadas_redondean_hacia_arriba_y_canceladas_no_cuentan()
     {
         var lunes = new DateOnly(2026, 11, 16);
-        using var work = AgendaWork.Begin(_db, _sealer, _phoneKey);
-        var c1 = work.Store.AddClient("Luis", "3100000000");
+        using var work = AgendaWork.Begin(_db, _sealer, _personKeys);
+        var c1 = work.People.Add("Luis", "3100000000");
 
         var t08 = new DateTimeOffset(lunes.ToDateTime(new TimeOnly(8, 0)), _offset);
         var t10 = new DateTimeOffset(lunes.ToDateTime(new TimeOnly(10, 0)), _offset);
@@ -162,7 +163,7 @@ public sealed class WeekSummaryTests : IDisposable
 
         work.Commit();
 
-        using var queryWork = AgendaWork.Begin(_db, _sealer, _phoneKey);
+        using var queryWork = AgendaWork.Begin(_db, _sealer, _personKeys);
         var semana = WeekSummary.For(queryWork.Store, _setup, lunes, _offset);
 
         Assert.Equal(2, semana[0].Booked);

@@ -6,9 +6,9 @@ namespace Aida.Arms.Agenda.Tests;
 public sealed class AgendaDeclarationsTests
 {
     [Fact]
-    public void Version_del_esquema_es_dos()
+    public void Version_del_esquema_es_tres()
     {
-        Assert.Equal(2, AgendaDeclarations.SchemaVersion);
+        Assert.Equal(3, AgendaDeclarations.SchemaVersion);
     }
 
     [Fact]

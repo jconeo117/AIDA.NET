@@ -5,6 +5,7 @@ using Aida.Arms.Agenda.Storage;
 using Aida.Engine.Actions;
 using Aida.Platform.Keys;
 using Aida.Platform.Packs;
+using Aida.Platform.People;
 using Aida.Platform.Sealing;
 using Aida.Platform.Storage;
 using Microsoft.Data.Sqlite;
@@ -29,7 +30,7 @@ public sealed class BlockActionsTests : IDisposable
     private readonly PlatformDatabase _db;
     private readonly MachineKey _key;
     private readonly Sealer _sealer;
-    private readonly byte[] _phoneKey;
+    private readonly PersonKeys _personKeys;
     private readonly AgendaSetup _setup;
 
     public BlockActionsTests()
@@ -38,12 +39,12 @@ public sealed class BlockActionsTests : IDisposable
         Directory.CreateDirectory(_dir);
         var dbPath = Path.Combine(_dir, "aida.db");
         _db = new PlatformDatabase(dbPath);
-        _db.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps);
 
         var keyPath = Path.Combine(_dir, "machine.key");
         _key = MachineKey.OpenOrCreate(keyPath, new DevelopmentKeyProtector());
         _sealer = new Sealer(_key);
-        _phoneKey = _key.Derive(AgendaStore.PhoneKeyPurpose);
+        _personKeys = PersonKeys.From(_key);
+        _db.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps(_sealer, _personKeys));
 
         var repoRoot = FindRepoRoot();
         var consultorioPath = Path.Combine(repoRoot, "packs", "agenda", "consultorio", "agenda.yaml");
@@ -65,7 +66,7 @@ public sealed class BlockActionsTests : IDisposable
         }
     }
 
-    private AgendaWork Begin() => AgendaWork.Begin(_db, _sealer, _phoneKey);
+    private AgendaWork Begin() => AgendaWork.Begin(_db, _sealer, _personKeys);
 
     [Fact]
     public void Block_Reglas_de_argumentos_recurso_y_pasado()
@@ -134,7 +135,7 @@ public sealed class BlockActionsTests : IDisposable
     {
         using var work = Begin();
         var now = DateTimeOffset.Parse("2026-11-16T05:00:00-05:00");
-        var client = work.Store.AddClient("Paciente", "3001112233");
+        var client = work.People.Add("Paciente", "3001112233");
 
         // Cita 1: de la víspera (15 nov 23:45 a 16 nov 00:15)
         var tVispera = DateTimeOffset.Parse("2026-11-15T23:45:00-05:00");

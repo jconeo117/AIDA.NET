@@ -1,5 +1,6 @@
 using Aida.Arms.Agenda.Desk;
 using Aida.Arms.Agenda.Storage;
+using Aida.Platform.People;
 using Xunit;
 
 namespace Aida.Arms.Agenda.Tests.Desk;
@@ -15,7 +16,7 @@ public sealed class ClientCardTests
     [Fact]
     public void Cifras_cuentan_proximas_atendidas_y_no_asistio_con_borde_de_now()
     {
-        var client = new Client(1, "Ana Pérez", "3005550142");
+        var person = new Person(1, "Ana Pérez", "3005550142", PersonDetails.None);
         var now = DateTimeOffset.Parse("2026-11-16T10:00:00-05:00");
 
         var appPasada = CreateView(1, now.AddHours(-2), AppointmentState.Booked);
@@ -25,7 +26,7 @@ public sealed class ClientCardTests
         var appNoShow = CreateView(5, now.AddHours(-4), AppointmentState.NoShow);
 
         var views = new List<AppointmentView> { appNoShow, appAtendida, appPasada, appBorde, appFutura };
-        var card = ClientCard.Build(client, views, now);
+        var card = ClientCard.Build(person, views, now);
 
         // Upcoming cuenta las Booked con Start >= now (appBorde y appFutura = 2)
         Assert.Equal(2, card.Upcoming);
@@ -36,7 +37,7 @@ public sealed class ClientCardTests
     [Fact]
     public void Citas_canceladas_no_suman_en_ninguna_cifra()
     {
-        var client = new Client(1, "Ana Pérez", "3005550142");
+        var person = new Person(1, "Ana Pérez", "3005550142", PersonDetails.None);
         var now = DateTimeOffset.Parse("2026-11-16T10:00:00-05:00");
 
         var canceladaPasada = CreateView(1, now.AddHours(-1), AppointmentState.Cancelled);
@@ -44,7 +45,7 @@ public sealed class ClientCardTests
         var canceladaFutura = CreateView(3, now.AddHours(2), AppointmentState.Cancelled);
 
         var views = new List<AppointmentView> { canceladaPasada, canceladaBorde, canceladaFutura };
-        var card = ClientCard.Build(client, views, now);
+        var card = ClientCard.Build(person, views, now);
 
         Assert.Equal(0, card.Upcoming);
         Assert.Equal(0, card.Attended);
@@ -55,7 +56,7 @@ public sealed class ClientCardTests
     [Fact]
     public void Citas_se_ordenan_de_la_mas_reciente_a_la_mas_antigua()
     {
-        var client = new Client(1, "Ana Pérez", "3005550142");
+        var person = new Person(1, "Ana Pérez", "3005550142", PersonDetails.None);
         var now = DateTimeOffset.Parse("2026-11-16T10:00:00-05:00");
 
         var v1 = CreateView(1, now.AddHours(-2), AppointmentState.Booked);
@@ -64,7 +65,7 @@ public sealed class ClientCardTests
 
         // Entrada en orden cronológico (de más antigua a más reciente)
         var views = new List<AppointmentView> { v1, v2, v3 };
-        var card = ClientCard.Build(client, views, now);
+        var card = ClientCard.Build(person, views, now);
 
         // Salida debe invertirse (de más reciente a más antigua)
         Assert.Equal(3, card.Appointments.Count);

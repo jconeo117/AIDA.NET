@@ -4,6 +4,7 @@ using Aida.Arms.Agenda.Setup;
 using Aida.Arms.Agenda.Storage;
 using Aida.Platform.Keys;
 using Aida.Platform.Packs;
+using Aida.Platform.People;
 using Aida.Platform.Sealing;
 using Aida.Platform.Storage;
 using Microsoft.Data.Sqlite;
@@ -28,7 +29,7 @@ public sealed class SlotRulesBlockedTests : IDisposable
     private readonly PlatformDatabase _db;
     private readonly MachineKey _key;
     private readonly Sealer _sealer;
-    private readonly byte[] _phoneKey;
+    private readonly PersonKeys _personKeys;
     private readonly AgendaSetup _setup;
     private readonly ResourceSpec _resource;
 
@@ -38,12 +39,12 @@ public sealed class SlotRulesBlockedTests : IDisposable
         Directory.CreateDirectory(_dir);
         var dbPath = Path.Combine(_dir, "aida.db");
         _db = new PlatformDatabase(dbPath);
-        _db.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps);
 
         var keyPath = Path.Combine(_dir, "machine.key");
         _key = MachineKey.OpenOrCreate(keyPath, new DevelopmentKeyProtector());
         _sealer = new Sealer(_key);
-        _phoneKey = _key.Derive(AgendaStore.PhoneKeyPurpose);
+        _personKeys = PersonKeys.From(_key);
+        _db.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps(_sealer, _personKeys));
 
         var repoRoot = FindRepoRoot();
         var consultorioPath = Path.Combine(repoRoot, "packs", "agenda", "consultorio", "agenda.yaml");
@@ -66,7 +67,7 @@ public sealed class SlotRulesBlockedTests : IDisposable
         }
     }
 
-    private AgendaWork Begin() => AgendaWork.Begin(_db, _sealer, _phoneKey);
+    private AgendaWork Begin() => AgendaWork.Begin(_db, _sealer, _personKeys);
 
     [Fact]
     public void Fuera_de_horario_gana_a_bloqueado()
@@ -89,7 +90,7 @@ public sealed class SlotRulesBlockedTests : IDisposable
     {
         using var work = Begin();
         var t8 = DateTimeOffset.Parse("2026-11-16T08:00:00-05:00");
-        var client = work.Store.AddClient("Paciente", "3001112233");
+        var client = work.People.Add("Paciente", "3001112233");
 
         // Hay una cita agendada a las 08:00
         work.Store.Add(client.Id, "control", "consultorio_1", t8, 30, "u1");

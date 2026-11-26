@@ -8,6 +8,7 @@ using Aida.Platform.Audit;
 using Aida.Platform.Identity;
 using Aida.Platform.Keys;
 using Aida.Platform.Packs;
+using Aida.Platform.People;
 using Aida.Platform.Roles;
 using Microsoft.Data.Sqlite;
 using Xunit;
@@ -73,10 +74,12 @@ public sealed class AgendaDeskBlockTests
             var armPath = Path.Combine(repoRoot, "packs", "agenda", "arm.yaml");
             Catalog = AgendaManifest.Load(armPath).Actions;
 
+            var people = PersonCatalog.Load(Path.Combine(repoRoot, "packs", "platform", "people.yaml"));
+
             var keyPath = Path.Combine(DirectoryPath, "machine.key");
             Key = MachineKey.OpenOrCreate(keyPath, new DevelopmentKeyProtector());
 
-            Desk = new AgendaDesk(Db.Database, Audit, Roles, Users, Setup, Catalog, Reversibility.Reversible, Key, Time);
+            Desk = new AgendaDesk(Db.Database, Audit, Roles, Users, Setup, people, Catalog, Reversibility.Reversible, Key, Time);
         }
 
         public void Dispose()

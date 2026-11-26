@@ -3,6 +3,7 @@ using Aida.Arms.Agenda.Actions;
 using Aida.Arms.Agenda.Desk;
 using Aida.Arms.Agenda.Storage;
 using Aida.Platform.Keys;
+using Aida.Platform.People;
 using Aida.Platform.Sealing;
 using Aida.Platform.Storage;
 using Microsoft.Data.Sqlite;
@@ -19,7 +20,7 @@ public sealed class AgendaBlockStoreTests
         public PlatformDatabase Database { get; }
         public MachineKey Key { get; }
         public Sealer Sealer { get; }
-        public byte[] PhoneKey { get; }
+        public PersonKeys PersonKeys { get; }
 
         public BlockTestContext(bool applyAllSteps = true)
         {
@@ -27,18 +28,19 @@ public sealed class AgendaBlockStoreTests
             Directory.CreateDirectory(DirectoryPath);
             DbPath = Path.Combine(DirectoryPath, "aida.db");
             Database = new PlatformDatabase(DbPath);
-            if (applyAllSteps)
-            {
-                Database.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps);
-            }
 
             var keyPath = Path.Combine(DirectoryPath, "machine.key");
             Key = MachineKey.OpenOrCreate(keyPath, new DevelopmentKeyProtector());
             Sealer = new Sealer(Key);
-            PhoneKey = Key.Derive(AgendaStore.PhoneKeyPurpose);
+            PersonKeys = PersonKeys.From(Key);
+
+            if (applyAllSteps)
+            {
+                Database.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps(Sealer, PersonKeys));
+            }
         }
 
-        public AgendaWork Begin() => AgendaWork.Begin(Database, Sealer, PhoneKey);
+        public AgendaWork Begin() => AgendaWork.Begin(Database, Sealer, PersonKeys);
 
         public void Dispose()
         {
@@ -151,20 +153,26 @@ public sealed class AgendaBlockStoreTests
         using var ctx = new BlockTestContext(applyAllSteps: false);
 
         // Aplicar solo Version1
-        ctx.Database.ApplyArmSchema(AgendaDeclarations.ArmId, [AgendaSchema.Version1]);
+        ctx.Database.ApplyArmSchema(AgendaDeclarations.ArmId, [ArmSchemaStep.Sql(AgendaSchema.Version1)]);
 
         long appId;
         var start = DateTimeOffset.Parse("2026-11-16T08:00:00-05:00");
         using (var workV1 = ctx.Begin())
         {
-            var client = workV1.Store.AddClient("Carlos", "3001234567");
-            var app = workV1.Store.Add(client.Id, "control", "c1", start, 30, "u1");
+            using var cmd = workV1.Connection.CreateCommand();
+            cmd.Transaction = workV1.Transaction;
+            cmd.CommandText = "INSERT INTO agenda_clients (id, name, phone, phone_index) VALUES (1, @name, @phone, 'idx');";
+            cmd.Parameters.AddWithValue("@name", ctx.Sealer.Seal("Carlos"));
+            cmd.Parameters.AddWithValue("@phone", ctx.Sealer.Seal("3001234567"));
+            cmd.ExecuteNonQuery();
+
+            var app = workV1.Store.Add(1, "control", "c1", start, 30, "u1");
             appId = app.Id;
             workV1.Commit();
         }
 
-        // Subir a Version2 aplicando todos los Steps
-        ctx.Database.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps);
+        // Subir a Version3 aplicando todos los Steps
+        ctx.Database.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps(ctx.Sealer, ctx.PersonKeys));
 
         // Verificar que la cita y cliente siguen intactos
         using (var workV2 = ctx.Begin())
@@ -174,7 +182,8 @@ public sealed class AgendaBlockStoreTests
             Assert.Equal("control", app.Service);
             Assert.Equal("c1", app.Resource);
 
-            var client = workV2.Store.GetClient(app.ClientId);
+            var client = workV2.People.Find(app.ClientId);
+            Assert.NotNull(client);
             Assert.Equal("Carlos", client.Name);
             Assert.Equal("3001234567", client.Phone);
 
@@ -198,7 +207,7 @@ public sealed class AgendaBlockStoreTests
         using var work = ctx.Begin();
 
         var start = DateTimeOffset.Parse("2026-11-16T08:00:00-05:00");
-        var client = work.Store.AddClient("Diana", "3009876543");
+        var client = work.People.Add("Diana", "3009876543");
         var app = work.Store.Add(client.Id, "control", "c1", start, 30, "u1");
 
         var updated = work.Store.Update(app.Id, "u2", service: "procedimiento", minutes: 60);
