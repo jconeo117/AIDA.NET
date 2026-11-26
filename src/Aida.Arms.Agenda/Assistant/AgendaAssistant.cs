@@ -1,5 +1,4 @@
 using Aida.Arms.Agenda.Desk;
-using Aida.Arms.Agenda.Setup;
 using Aida.Arms.Agenda.Storage;
 using Aida.Engine.Text;
 using Aida.Platform.Assistant;
@@ -9,14 +8,14 @@ namespace Aida.Arms.Agenda.Assistant;
 /// <summary>Convierte lo entendido en una propuesta para la pantalla de la agenda.</summary>
 /// <remarks>
 /// Solo lee: la configuración, la búsqueda, la ficha y el día del mostrador. El cambio lo hace el operador con el botón de
-/// siempre, que pasa por la puerta (ADR 0007, ADR 0037). Si encaja más de una persona, las devuelve para que elija el
-/// operador: nunca elige él. Las fechas y las horas solo se leen para agendar y para ver los huecos: cancelar y reprogramar
-/// abren la ficha de hoy (N014 lee su fecha).
+/// siempre, que pasa por la puerta (ADR 0007, ADR 0037). Si encaja más de una persona o más de una cita, las devuelve para que
+/// elija el operador: nunca elige él. Cancelar y reprogramar buscan la cita concreta entre las de las personas (N014).
 /// </remarks>
 public sealed class AgendaAssistant
 {
     private readonly AgendaDesk _desk;
     private readonly TimeProvider _time;
+    private readonly AppointmentResolver _appointments;
 
     /// <summary>Crea el asistente.</summary>
     /// <param name="desk">El mostrador.</param>
@@ -26,6 +25,7 @@ public sealed class AgendaAssistant
     {
         _desk = desk ?? throw new ArgumentNullException(nameof(desk));
         _time = time ?? throw new ArgumentNullException(nameof(time));
+        _appointments = new AppointmentResolver(desk);
     }
 
     /// <summary>Propone.</summary>
@@ -35,10 +35,11 @@ public sealed class AgendaAssistant
     public AgendaProposal Propose(Understanding understanding)
     {
         ArgumentNullException.ThrowIfNull(understanding);
-        var today = DateOnly.FromDateTime(_time.GetLocalNow().DateTime);
+        var now = _time.GetLocalNow();
+        var today = DateOnly.FromDateTime(now.DateTime);
         if (understanding.Intent is null)
         {
-            return new AgendaProposal(ProposalKind.NotUnderstood, today, null, null, false, null, []);
+            return Plain(ProposalKind.NotUnderstood, today);
         }
 
         var reads = understanding.Intent is "agendar" or "ver_huecos";
@@ -46,7 +47,7 @@ public sealed class AgendaAssistant
         var day = reads && mention?.Day is { } given ? given : today;
         if (day < today)
         {
-            return new AgendaProposal(ProposalKind.PastDay, day, null, null, false, null, []);
+            return Plain(ProposalKind.PastDay, day);
         }
 
         var words = understanding.Words;
@@ -59,15 +60,93 @@ public sealed class AgendaAssistant
         var clients = Lookup(understanding.Phone, restText, rest.Count > 0);
         if (understanding.Intent is "cancelar" or "reprogramar")
         {
-            return ProposeCard(today, clients);
+            return ProposeAppointment(understanding.Intent, understanding.When, clients, today, now);
         }
 
         var (time, taken) = ResolveTime(day, service, mention);
         return understanding.Intent switch
         {
             "agendar" => ProposeNew(day, service, time, taken, clients, understanding.Phone, restText, rest.Count > 0),
-            _ => new AgendaProposal(ProposalKind.FreeSlots, day, service, time, taken, null, []),
+            _ => new AgendaProposal(ProposalKind.FreeSlots, day, service, time, taken, null, [], [], null),
         };
+    }
+
+    // Cancelar: el primer momento es el origen. Reprogramar: con dos o más, el primero es el origen y el último el destino (D14);
+    // con uno, es el destino.
+    private static (WhenMention? Origin, WhenMention? Destination) Split(string intent, IReadOnlyList<WhenMention> mentions)
+    {
+        if (intent == "cancelar")
+        {
+            return (mentions.FirstOrDefault(), null);
+        }
+
+        return mentions.Count >= 2 ? (mentions[0], mentions[^1]) : (null, mentions.FirstOrDefault());
+    }
+
+    private AgendaProposal ProposeAppointment(string intent, IReadOnlyList<WhenMention> mentions, IReadOnlyList<Client> clients, DateOnly today, DateTimeOffset now)
+    {
+        var (origin, destination) = Split(intent, mentions);
+        if (clients.Count == 0)
+        {
+            return Plain(ProposalKind.NoClient, today);
+        }
+
+        var found = _appointments.Find(clients, origin, now);
+        if (destination?.Day is { } target && target < today)
+        {
+            return Plain(ProposalKind.PastDay, target);
+        }
+
+        if (found.Count == 0)
+        {
+            return clients.Count == 1
+                ? new AgendaProposal(ProposalKind.OpenCard, today, null, null, false, null, clients, [], null)
+                : Plain(ProposalKind.NoAppointment, today, clients);
+        }
+
+        if (found.Count > 1)
+        {
+            return intent == "cancelar"
+                ? new AgendaProposal(ProposalKind.PickToCancel, today, null, null, false, null, [], found, null)
+                : PickToMove(today, found, destination);
+        }
+
+        var appointment = found[0].Appointment;
+        var appointmentDay = DateOnly.FromDateTime(appointment.Start.DateTime);
+        if (intent == "cancelar")
+        {
+            return new AgendaProposal(ProposalKind.Cancel, appointmentDay, appointment.Service, null, false, null, [], found, null);
+        }
+
+        var moveDay = destination?.Day ?? appointmentDay;
+        var (time, taken) = destination is null ? (null, false) : ResolveTime(moveDay, appointment.Service, destination);
+        return new AgendaProposal(ProposalKind.Move, moveDay, appointment.Service, time, taken, null, [], found, destination?.Day);
+    }
+
+    // Varias citas para reprogramar: la hora se resuelve con el servicio y el día de la primera; cada panel la vuelve a mirar.
+    private AgendaProposal PickToMove(DateOnly today, IReadOnlyList<AppointmentView> found, WhenMention? destination)
+    {
+        var first = found[0].Appointment;
+        var time = destination is null
+            ? null
+            : ResolveTime(destination.Day ?? DateOnly.FromDateTime(first.Start.DateTime), first.Service, destination).Time;
+        return new AgendaProposal(ProposalKind.PickToMove, today, first.Service, time, false, null, [], found, destination?.Day);
+    }
+
+    private AgendaProposal ProposeNew(DateOnly day, string? service, TimeOnly? time, bool taken, IReadOnlyList<Client> clients, string? phone, string restText, bool hasRest)
+    {
+        if (clients.Count == 1)
+        {
+            return new AgendaProposal(ProposalKind.NewAppointment, day, service, time, taken, clients[0], clients, [], null);
+        }
+
+        if (clients.Count > 1)
+        {
+            return new AgendaProposal(ProposalKind.PickClientForNew, day, service, time, taken, null, clients, [], null);
+        }
+
+        var prefill = hasRest || phone is not null ? new Client(0, restText, phone ?? string.Empty) : null;
+        return new AgendaProposal(ProposalKind.NewAppointment, day, service, time, taken, prefill, [], [], null);
     }
 
     // La hora que se marca. Con una hora dicha, D12 (una hora menor de 12 que no cae en el horario, pero su +12 sí, es de la
@@ -179,27 +258,6 @@ public sealed class AgendaAssistant
         return hasRest ? _desk.Search(restText) : [];
     }
 
-    private static AgendaProposal ProposeNew(DateOnly day, string? service, TimeOnly? time, bool taken, IReadOnlyList<Client> clients, string? phone, string restText, bool hasRest)
-    {
-        if (clients.Count == 1)
-        {
-            return new AgendaProposal(ProposalKind.NewAppointment, day, service, time, taken, clients[0], clients);
-        }
-
-        if (clients.Count > 1)
-        {
-            return new AgendaProposal(ProposalKind.PickClientForNew, day, service, time, taken, null, clients);
-        }
-
-        var prefill = hasRest || phone is not null ? new Client(0, restText, phone ?? string.Empty) : null;
-        return new AgendaProposal(ProposalKind.NewAppointment, day, service, time, taken, prefill, []);
-    }
-
-    private static AgendaProposal ProposeCard(DateOnly day, IReadOnlyList<Client> clients) =>
-        clients.Count switch
-        {
-            0 => new AgendaProposal(ProposalKind.NoClient, day, null, null, false, null, []),
-            1 => new AgendaProposal(ProposalKind.OpenCard, day, null, null, false, null, clients),
-            _ => new AgendaProposal(ProposalKind.PickClientForCard, day, null, null, false, null, clients),
-        };
+    private static AgendaProposal Plain(ProposalKind kind, DateOnly day, IReadOnlyList<Client>? clients = null) =>
+        new(kind, day, null, null, false, null, clients ?? [], [], null);
 }

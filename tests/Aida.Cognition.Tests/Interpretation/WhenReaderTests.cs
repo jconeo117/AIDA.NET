@@ -109,6 +109,62 @@ public sealed class WhenReaderTests
         Assert.Equal(esperados.ToHashSet(), result.Consumed);
     }
 
+    [Theory]
+    [InlineData("el martes", "2026-12-01||Unknown|Tuesday")]
+    [InlineData("del martes al jueves a las 11", "2026-12-01||Unknown|Tuesday;2026-11-26|11:00|Unknown|Thursday")]
+    [InlineData("mañana", "2026-11-25||Unknown|")]
+    public void Read_resuelve_dia_de_la_semana_en_el_momento(string frase, string esperados)
+    {
+        var reader = CreateReader();
+        var spans = TextTokens.Spans(frase);
+        var result = reader.Read(frase, spans, Today);
+
+        var obtenido = string.Join(";", result.Mentions.Select(m =>
+            $"{(m.Day.HasValue ? m.Day.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) : string.Empty)}|" +
+            $"{(m.Time.HasValue ? m.Time.Value.ToString("HH:mm", CultureInfo.InvariantCulture) : string.Empty)}|" +
+            $"{m.Period}|" +
+            $"{(m.Weekday.HasValue ? m.Weekday.Value.ToString() : string.Empty)}"));
+
+        Assert.Equal(esperados, obtenido);
+    }
+
+    [Fact]
+    public void Los_conectores_salen_del_pack()
+    {
+        var repoRoot = FindRepoRoot();
+        var timePath = Path.Combine(repoRoot, "packs", "platform", "time.yaml");
+        var content = File.ReadAllText(timePath);
+        var customContent = content.Replace("hour_links: [\"a\"]", "hour_links: [\"hacia\"]");
+
+        var temp = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(temp, customContent);
+            var customVocab = TimeVocabulary.Load(temp);
+            var customReader = new WhenReader(customVocab);
+
+            // «hacia las 10» da 10:00 y consume «hacia»
+            var spansHacia = TextTokens.Spans("hacia las 10");
+            var resultHacia = customReader.Read("hacia las 10", spansHacia, Today);
+            Assert.Single(resultHacia.Mentions);
+            Assert.Equal(new TimeOnly(10, 0), resultHacia.Mentions[0].Time);
+            Assert.Equal(new HashSet<int> { 0, 1, 2 }, resultHacia.Consumed);
+
+            // «a las 10»: «a» ya no se consume
+            var spansA = TextTokens.Spans("a las 10");
+            var resultA = customReader.Read("a las 10", spansA, Today);
+            Assert.Single(resultA.Mentions);
+            Assert.Equal(new TimeOnly(10, 0), resultA.Mentions[0].Time);
+            Assert.DoesNotContain(0, resultA.Consumed);
+            Assert.Contains(1, resultA.Consumed);
+            Assert.Contains(2, resultA.Consumed);
+        }
+        finally
+        {
+            File.Delete(temp);
+        }
+    }
+
     private static string FormatMentions(IReadOnlyList<WhenMention> mentions)
     {
         if (mentions.Count == 0)

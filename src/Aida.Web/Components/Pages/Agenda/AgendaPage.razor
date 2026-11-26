@@ -53,7 +53,7 @@
         <aside class="side">
             <AgendaSide View="@_view" Day="@_day" Panel="@_panel" CanManage="@_canManage" CanBlock="@_canBlock"
                 ServiceId="@_serviceId" FirstService="@_firstService" Appointment="@_appointment" Block="@_block"
-                Card="@_card" Prefill="@_prefill" Found="@_found" Choices="@_choices" ChoicesForCard="@_choicesForCard"
+                Card="@_card" Prefill="@_prefill" Found="@_found" Choices="@_choices" Appointments="@_appointmentChoices" ChoicesToMove="@_choicesToMove" MoveTo="@_moveTo"
                 AssistantNote="@_assistantNote" Preferred="@_preferred" />
         </aside>
     </div>
@@ -75,7 +75,9 @@
     private Client? _prefill;
     private IReadOnlyList<Client>? _found;
     private IReadOnlyList<Client>? _choices;
-    private bool _choicesForCard;
+    private IReadOnlyList<AppointmentView>? _appointmentChoices;
+    private bool _choicesToMove;
+    private DateOnly? _moveTo;
     private string? _assistantNote;
     private TimeOnly? _preferred;
     private IReadOnlyList<AppointmentView> _conflicts = [];
@@ -166,7 +168,7 @@
 
     private AppointmentView? FindAppointment(string? target) =>
         target is not null && long.TryParse(target, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)
-            ? _view.Appointments.FirstOrDefault(appointment => appointment.Appointment.Id == id)
+            ? _view.Appointments.FirstOrDefault(appointment => appointment.Appointment.Id == id) ?? Desk.Appointment(id)
             : null;
 
     private BlockView? FindBlock(string? target) =>
@@ -251,8 +253,11 @@
             _preferred = outcome.Preferred;
             _prefill = outcome.Prefill;
             _card = outcome.Card;
+            _appointment = outcome.Appointment;
             _choices = outcome.Choices;
-            _choicesForCard = outcome.ChoicesForCard;
+            _appointmentChoices = outcome.AppointmentChoices;
+            _choicesToMove = outcome.ChoicesToMove;
+            _moveTo = outcome.MoveTo;
         }
 
         _message = outcome.MessageKey is null ? null : Text[outcome.MessageKey];

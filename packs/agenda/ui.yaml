@@ -109,3 +109,5 @@ agenda:
   assistant_pick_client: "Hay varias personas que encajan. Elija una:"
   assistant_time_taken: "A esa hora no hay hueco. Estos son los libres:"
   assistant_past_day: "Esa fecha ya pasó. Revise el día que quería."
+  assistant_no_appointment: "No encontré una cita próxima que encaje."
+  assistant_pick_appointment: "Hay varias citas que encajan. Elija una:"

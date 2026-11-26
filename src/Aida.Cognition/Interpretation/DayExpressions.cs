@@ -103,13 +103,13 @@ internal static class DayExpressions
             day = day.AddDays(1);
         }
 
-        if (scan.Word(at - 1) == "el" && !consumed.Contains(at - 1))
+        if (scan.IsWord(at - 1, scan.Vocabulary.DayArticles) && !consumed.Contains(at - 1))
         {
             consumed.Add(at - 1);
         }
 
         consumed.Add(at);
-        return new WhenMention(day, null, DayPeriod.Unknown);
+        return new WhenMention(day, null, DayPeriod.Unknown, weekday);
     }
 
     /// <summary>La regla 4, primera forma: <c>[el] N de &lt;mes&gt;</c>.</summary>
@@ -119,9 +119,9 @@ internal static class DayExpressions
     /// <returns>El momento, o <see langword="null"/>.</returns>
     internal static WhenMention? TryNamedMonth(WhenScan scan, int at, List<int> consumed)
     {
-        var offset = scan.Word(at) == "el" ? 1 : 0;
+        var offset = scan.IsWord(at, scan.Vocabulary.DayArticles) ? 1 : 0;
         var number = at + offset;
-        if (scan.Number(number) is not { } day || scan.Word(number + 1) != "de")
+        if (scan.Number(number) is not { } day || !scan.IsWord(number + 1, scan.Vocabulary.MonthLinks))
         {
             return null;
         }
@@ -149,7 +149,7 @@ internal static class DayExpressions
     /// <remarks>Con una barra o un guion justo detrás del número, «el 20/11» es una fecha de la regla 1, no un día del mes.</remarks>
     internal static WhenMention? TryDayOfMonth(WhenScan scan, int at, List<int> consumed)
     {
-        if (scan.Word(at) != "el" || scan.Number(at + 1) is not { } day || day is < 1 or > 31)
+        if (!scan.IsWord(at, scan.Vocabulary.DayArticles) || scan.Number(at + 1) is not { } day || day is < 1 or > 31)
         {
             return null;
         }

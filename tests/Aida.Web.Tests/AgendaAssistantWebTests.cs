@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Net;
 using System.Text.RegularExpressions;
 using Aida.Arms.Agenda.Desk;
@@ -8,105 +9,13 @@ namespace Aida.Web.Tests;
 
 public sealed class AgendaAssistantWebTests
 {
-    private static async Task<HttpClient> CreateFirstAdminAsync(ServerHarness harness)
-    {
-        var cookies = new CookieContainer();
-        var client = harness.CreateClient(cookies);
-
-        var getRes = await client.GetAsync("/primer-usuario");
-        var token = ServerHarness.ExtractAntiforgeryToken(await getRes.Content.ReadAsStringAsync());
-
-        var postContent = new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["_handler"] = "first",
-            ["Form.UserName"] = "admin",
-            ["Form.DisplayName"] = "Administradora",
-            ["Form.Password"] = "contrasena123",
-            ["Form.Password2"] = "contrasena123",
-            ["__RequestVerificationToken"] = token,
-        });
-
-        var postRes = await client.PostAsync("/primer-usuario", postContent);
-        Assert.Equal(HttpStatusCode.Redirect, postRes.StatusCode);
-        return client;
-    }
-
-    private static async Task CreateUserAsync(ServerHarness harness, HttpClient adminClient, string userName, string displayName, string roleId, string password)
-    {
-        var getRes = await adminClient.GetAsync("/usuarios");
-        var token = ServerHarness.ExtractAntiforgeryToken(await getRes.Content.ReadAsStringAsync());
-
-        var postContent = new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["_handler"] = "create",
-            ["NewUser.UserName"] = userName,
-            ["NewUser.DisplayName"] = displayName,
-            ["NewUser.RoleId"] = roleId,
-            ["NewUser.Password"] = password,
-            ["__RequestVerificationToken"] = token,
-        });
-
-        var postRes = await adminClient.PostAsync("/usuarios", postContent);
-        Assert.Equal(HttpStatusCode.OK, postRes.StatusCode);
-    }
-
-    private static async Task LoginAsync(HttpClient client, string userName, string password)
-    {
-        var getRes = await client.GetAsync("/entrar");
-        var token = ServerHarness.ExtractAntiforgeryToken(await getRes.Content.ReadAsStringAsync());
-
-        var postContent = new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["_handler"] = "login",
-            ["Form.UserName"] = userName,
-            ["Form.Password"] = password,
-            ["__RequestVerificationToken"] = token,
-        });
-
-        var postRes = await client.PostAsync("/entrar", postContent);
-        Assert.Equal(HttpStatusCode.Redirect, postRes.StatusCode);
-    }
-
-    private static async Task SeedClientsAsync(HttpClient client)
-    {
-        var getRes1 = await client.GetAsync("/agenda?dia=2026-11-24&nueva=control");
-        var token1 = ServerHarness.ExtractAntiforgeryToken(await getRes1.Content.ReadAsStringAsync());
-
-        var res1 = await client.PostAsync("/agenda?dia=2026-11-24&nueva=control", new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["_handler"] = "agenda-action",
-            ["Command.Action"] = "agendar",
-            ["Command.Service"] = "control",
-            ["Command.Name"] = "Ana Pérez",
-            ["Command.Phone"] = "3001111111",
-            ["Command.Slot"] = "consultorio_1|2026-11-24T10:00:00-05:00",
-            ["__RequestVerificationToken"] = token1,
-        }));
-        Assert.Equal(HttpStatusCode.Redirect, res1.StatusCode);
-
-        var getRes2 = await client.GetAsync("/agenda?dia=2026-11-24&nueva=control");
-        var token2 = ServerHarness.ExtractAntiforgeryToken(await getRes2.Content.ReadAsStringAsync());
-
-        var res2 = await client.PostAsync("/agenda?dia=2026-11-24&nueva=control", new FormUrlEncodedContent(new Dictionary<string, string>
-        {
-            ["_handler"] = "agenda-action",
-            ["Command.Action"] = "agendar",
-            ["Command.Service"] = "control",
-            ["Command.Name"] = "Ana Gómez",
-            ["Command.Phone"] = "3002222222",
-            ["Command.Slot"] = "consultorio_1|2026-11-24T10:30:00-05:00",
-            ["__RequestVerificationToken"] = token2,
-        }));
-        Assert.Equal(HttpStatusCode.Redirect, res2.StatusCode);
-    }
-
     [Fact]
     public async Task Con_agenda_manage_el_POST_del_asistente_abre_dia_y_marca_hueco_preferido_sin_Location()
     {
         await using var harness = await ServerHarness.CreateAsync();
         harness.Time.Now = DateTimeOffset.Parse("2026-11-24T09:00:00-05:00");
-        var adminClient = await CreateFirstAdminAsync(harness);
-        await SeedClientsAsync(adminClient);
+        var adminClient = await AgendaAssistantWebHelper.CreateFirstAdminAsync(harness);
+        await AgendaAssistantWebHelper.SeedClientsAsync(adminClient);
 
         var desk = harness.App.Services.GetRequiredService<AgendaDesk>();
         var eventsBefore = desk.EventLines().Count;
@@ -148,11 +57,99 @@ public sealed class AgendaAssistantWebTests
     }
 
     [Fact]
+    public async Task Con_agenda_manage_el_POST_de_cancelar_abre_panel_cancelar_sin_Location_y_no_cambia_eventos()
+    {
+        await using var harness = await ServerHarness.CreateAsync();
+        harness.Time.Now = DateTimeOffset.Parse("2026-11-24T09:00:00-05:00");
+        var adminClient = await AgendaAssistantWebHelper.CreateFirstAdminAsync(harness);
+        await AgendaAssistantWebHelper.SeedClientsAsync(adminClient);
+
+        var desk = harness.App.Services.GetRequiredService<AgendaDesk>();
+        var eventsBefore = desk.EventLines().Count;
+        var auditBefore = harness.Audit.Lines().Count;
+
+        var getRes = await adminClient.GetAsync("/agenda");
+        var token = ServerHarness.ExtractAntiforgeryToken(await getRes.Content.ReadAsStringAsync());
+
+        var postContent = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["_handler"] = "agenda-assistant",
+            ["Assistant.Text"] = "cancela la cita de Ana Pérez del martes",
+            ["__RequestVerificationToken"] = token,
+        });
+
+        var postRes = await adminClient.PostAsync("/agenda", postContent);
+        Assert.Equal(HttpStatusCode.OK, postRes.StatusCode);
+        Assert.Null(postRes.Headers.Location);
+
+        var postHtml = WebUtility.HtmlDecode(await postRes.Content.ReadAsStringAsync());
+        Assert.Contains("name=\"Command.Action\" value=\"cancelar\"", postHtml);
+
+        Assert.Equal(eventsBefore, desk.EventLines().Count);
+        Assert.Equal(auditBefore, harness.Audit.Lines().Count);
+    }
+
+    [Fact]
+    public async Task Query_string_mover_abre_cita_de_otro_dia_en_dia_de_destino()
+    {
+        await using var harness = await ServerHarness.CreateAsync();
+        harness.Time.Now = DateTimeOffset.Parse("2026-11-24T09:00:00-05:00");
+        var adminClient = await AgendaAssistantWebHelper.CreateFirstAdminAsync(harness);
+        var apptId = await AgendaAssistantWebHelper.SeedClientsAsync(adminClient);
+
+        var getRes = await adminClient.GetAsync($"/agenda?dia=2026-11-26&mover={apptId}");
+        Assert.Equal(HttpStatusCode.OK, getRes.StatusCode);
+
+        var html = WebUtility.HtmlDecode(await getRes.Content.ReadAsStringAsync());
+        Assert.Contains("name=\"Command.Action\" value=\"reprogramar\"", html);
+        Assert.Contains($"value=\"{apptId}\"", html);
+    }
+
+    [Fact]
+    public async Task PickToMove_enlaces_solo_llevan_mover_dia_y_hora_sin_nombres()
+    {
+        await using var harness = await ServerHarness.CreateAsync();
+        harness.Time.Now = DateTimeOffset.Parse("2026-11-24T09:00:00-05:00");
+        var adminClient = await AgendaAssistantWebHelper.CreateFirstAdminAsync(harness);
+        await AgendaAssistantWebHelper.SeedClientsAsync(adminClient);
+
+        var getRes = await adminClient.GetAsync("/agenda");
+        var token = ServerHarness.ExtractAntiforgeryToken(await getRes.Content.ReadAsStringAsync());
+
+        var postContent = new FormUrlEncodedContent(new Dictionary<string, string>
+        {
+            ["_handler"] = "agenda-assistant",
+            ["Assistant.Text"] = "mueve la cita de Ana al jueves a las 11",
+            ["__RequestVerificationToken"] = token,
+        });
+
+        var postRes = await adminClient.PostAsync("/agenda", postContent);
+        Assert.Equal(HttpStatusCode.OK, postRes.StatusCode);
+
+        var postHtml = WebUtility.HtmlDecode(await postRes.Content.ReadAsStringAsync());
+        var moveLinks = Regex.Matches(postHtml, @"href=""([^""]*mover=[^""]*)""")
+            .Cast<Match>()
+            .Select(m => m.Groups[1].Value)
+            .ToList();
+
+        Assert.True(moveLinks.Count >= 2);
+        foreach (var link in moveLinks)
+        {
+            Assert.Contains("dia=2026-11-26", link);
+            Assert.Contains("hora=11:00", link);
+            Assert.Matches(@"mover=\d+", link);
+            Assert.DoesNotContain("Ana", link, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Gómez", link, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("Pérez", link, StringComparison.OrdinalIgnoreCase);
+        }
+    }
+
+    [Fact]
     public async Task Parametro_hora_en_query_string_marca_hueco_y_hora_invalida_se_ignora()
     {
         await using var harness = await ServerHarness.CreateAsync();
         harness.Time.Now = DateTimeOffset.Parse("2026-11-24T09:00:00-05:00");
-        var adminClient = await CreateFirstAdminAsync(harness);
+        var adminClient = await AgendaAssistantWebHelper.CreateFirstAdminAsync(harness);
 
         // Con hora válida HH:mm marca el hueco con class="preferred"
         var getResValid = await adminClient.GetAsync("/agenda?dia=2026-11-25&nueva=control&hora=10:00");
@@ -172,7 +169,7 @@ public sealed class AgendaAssistantWebTests
     {
         await using var harness = await ServerHarness.CreateAsync();
         harness.Time.Now = DateTimeOffset.Parse("2026-11-24T09:00:00-05:00");
-        var adminClient = await CreateFirstAdminAsync(harness);
+        var adminClient = await AgendaAssistantWebHelper.CreateFirstAdminAsync(harness);
 
         var getRes = await adminClient.GetAsync("/agenda");
         var token = ServerHarness.ExtractAntiforgeryToken(await getRes.Content.ReadAsStringAsync());
@@ -204,11 +201,11 @@ public sealed class AgendaAssistantWebTests
     public async Task Sin_agenda_manage_caja_no_ve_caja_y_POST_da_403()
     {
         await using var harness = await ServerHarness.CreateAsync();
-        var adminClient = await CreateFirstAdminAsync(harness);
-        await CreateUserAsync(harness, adminClient, "cajero", "Cajero 1", "caja", "contrasena123");
+        var adminClient = await AgendaAssistantWebHelper.CreateFirstAdminAsync(harness);
+        await AgendaAssistantWebHelper.CreateUserAsync(harness, adminClient, "cajero", "Cajero 1", "caja", "contrasena123");
 
         var cashierClient = harness.CreateClient();
-        await LoginAsync(cashierClient, "cajero", "contrasena123");
+        await AgendaAssistantWebHelper.LoginAsync(cashierClient, "cajero", "contrasena123");
 
         var desk = harness.App.Services.GetRequiredService<AgendaDesk>();
         var eventsBefore = desk.EventLines().Count;
@@ -239,8 +236,8 @@ public sealed class AgendaAssistantWebTests
     {
         await using var harness = await ServerHarness.CreateAsync();
         harness.Time.Now = DateTimeOffset.Parse("2026-11-24T09:00:00-05:00");
-        var adminClient = await CreateFirstAdminAsync(harness);
-        await SeedClientsAsync(adminClient);
+        var adminClient = await AgendaAssistantWebHelper.CreateFirstAdminAsync(harness);
+        await AgendaAssistantWebHelper.SeedClientsAsync(adminClient);
 
         var getRes = await adminClient.GetAsync("/agenda");
         var token = ServerHarness.ExtractAntiforgeryToken(await getRes.Content.ReadAsStringAsync());

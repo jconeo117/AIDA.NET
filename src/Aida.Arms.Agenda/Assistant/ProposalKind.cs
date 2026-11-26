@@ -18,12 +18,24 @@ public enum ProposalKind
     /// <summary>Varias personas encajan para una cita nueva: elige el operador.</summary>
     PickClientForNew = 4,
 
-    /// <summary>Varias personas encajan para cancelar o reprogramar: elige el operador y se abre su ficha.</summary>
-    PickClientForCard = 5,
-
-    /// <summary>La ficha de la persona, para cancelar o mover una cita suya con los botones de siempre.</summary>
+    /// <summary>Una sola persona encaja y ninguna cita suya: su ficha, con el aviso (D23).</summary>
     OpenCard = 6,
 
     /// <summary>La fecha que se dijo ya pasó (D19): no se abre nada.</summary>
     PastDay = 7,
+
+    /// <summary>Una sola cita encaja para cancelar: se abre su confirmación (D22).</summary>
+    Cancel = 8,
+
+    /// <summary>Una sola cita encaja para reprogramar: se abre «mover» en el día de destino (D22).</summary>
+    Move = 9,
+
+    /// <summary>Varias citas encajan para cancelar: elige el operador.</summary>
+    PickToCancel = 10,
+
+    /// <summary>Varias citas encajan para reprogramar: elige el operador.</summary>
+    PickToMove = 11,
+
+    /// <summary>Varias personas encajan, pero ninguna tiene una cita que encaje.</summary>
+    NoAppointment = 12,
 }
