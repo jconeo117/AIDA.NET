@@ -194,6 +194,27 @@ public sealed class AgendaDesk
         }
     }
 
+    /// <summary>Las personas que ya tienen el teléfono de una cita nueva, tras un rechazo <c>phone_known</c>.</summary>
+    /// <param name="result">Lo que devolvió <see cref="Submit"/>.</param>
+    /// <returns>Las personas, en el orden del rechazo; ninguna si el rechazo es otro.</returns>
+    /// <remarks>Para que el operador diga si es una de ellas o una persona nueva (N015-fix). Solo lee.</remarks>
+    public IReadOnlyList<Person> SamePhone(ToolResult result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+        if (result.Reason != "phone_known" || !result.Data.TryGetValue("people", out var ids))
+        {
+            return [];
+        }
+
+        lock (_sync)
+        {
+            using var work = AgendaWork.Begin(_database, _sealer, _personKeys);
+            return [.. ids.Split(',')
+                .Select(text => long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) ? work.People.Find(id) : null)
+                .OfType<Person>()];
+        }
+    }
+
     /// <summary>Busca contactos por nombre o por teléfono.</summary>
     /// <param name="query">Lo tecleado.</param>
     /// <returns>Hasta 20 contactos, por nombre sin tildes y luego por id; ninguno si la búsqueda está vacía.</returns>

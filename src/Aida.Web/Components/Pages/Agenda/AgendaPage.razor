@@ -6,6 +6,7 @@
 @using Aida.Arms.Agenda.Wording
 @using Aida.Cognition.Interpretation
 @using Aida.Engine.Actions
+@using Aida.Platform.People
 @inject AgendaDesk Desk
 @inject AgendaWording Text
 @inject AssistantInterpreter Interpreter
@@ -54,7 +55,7 @@
             <AgendaSide View="@_view" Day="@_day" Panel="@_panel" CanManage="@_canManage" CanBlock="@_canBlock"
                 ServiceId="@_serviceId" FirstService="@_firstService" Appointment="@_appointment" Block="@_block"
                 Card="@_card" Prefill="@_prefill" Found="@_found" Choices="@_choices" Appointments="@_appointmentChoices" ChoicesToMove="@_choicesToMove" MoveTo="@_moveTo"
-                AssistantNote="@_assistantNote" Preferred="@_preferred" />
+                AssistantNote="@_assistantNote" Preferred="@_preferred" SamePhone="@_samePhone" Command="@Command" />
         </aside>
     </div>
 </EditForm>
@@ -75,6 +76,7 @@
     private Client? _prefill;
     private IReadOnlyList<Client>? _found;
     private IReadOnlyList<Client>? _choices;
+    private IReadOnlyList<Person>? _samePhone;
     private IReadOnlyList<AppointmentView>? _appointmentChoices;
     private bool _choicesToMove;
     private DateOnly? _moveTo;
@@ -203,6 +205,15 @@
         {
             Http.Response.StatusCode = StatusCodes.Status403Forbidden;
             _message = Text["reason_forbidden"];
+            return;
+        }
+
+        if (result.Reason == "phone_known")
+        {
+            // Sin redirigir: el operador dice si es una de estas personas o una nueva (N015-fix, F3).
+            _samePhone = Desk.SamePhone(result);
+            _panel = "mismo_telefono";
+            _message = Text.Reason("phone_known");
             return;
         }
 
