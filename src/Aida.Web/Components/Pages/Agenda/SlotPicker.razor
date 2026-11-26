@@ -23,6 +23,7 @@
         </p>
         <input type="hidden" name="Command.Action" value="agendar" />
         <input type="hidden" name="Command.Service" value="@ServiceId" />
+        <input type="hidden" name="Command.Client" value="@(Prefill is { Id: > 0 } p ? p.Id.ToString(CultureInfo.InvariantCulture) : "new")" />
         <label>@Text["field_name"] <input name="Command.Name" value="@Prefill?.Name" required /></label>
         <label>@Text["field_phone"] <input name="Command.Phone" value="@Prefill?.Phone" required /></label>
     }

@@ -39,6 +39,18 @@ public sealed class AgendaCommandForm
     /// <summary>El motivo del bloqueo, para <c>bloquear</c>; solo lo ve el personal.</summary>
     public string? Reason { get; set; }
 
-    /// <summary>El contacto, para <c>editar_contacto</c>: su id, que va en la URL de la ficha y en este campo.</summary>
+    /// <summary>La persona: para <c>editar_contacto</c>, su id; para <c>agendar</c>, su id, o <c>new</c> para una persona nueva.</summary>
     public string? Client { get; set; }
+
+    /// <summary>El tipo de documento, para <c>editar_contacto</c>. Vacío lo borra; si el formulario no lo trae, no se toca.</summary>
+    public string? DocumentType { get; set; }
+
+    /// <summary>El número de documento, para <c>editar_contacto</c>. Va con el tipo: los dos o ninguno.</summary>
+    public string? DocumentNumber { get; set; }
+
+    /// <summary>La fecha de nacimiento, para <c>editar_contacto</c>, como <c>yyyy-MM-dd</c>. Vacía la borra.</summary>
+    public string? BirthDate { get; set; }
+
+    /// <summary>El sexo, para <c>editar_contacto</c>. Vacío lo borra.</summary>
+    public string? Sex { get; set; }
 }

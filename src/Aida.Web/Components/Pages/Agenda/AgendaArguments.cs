@@ -33,6 +33,10 @@ internal static class AgendaArguments
             Add(arguments, "phone", command.Phone);
         }
 
+        AddPresent(arguments, "document_type", command.DocumentType);
+        AddPresent(arguments, "document_number", command.DocumentNumber);
+        AddPresent(arguments, "birth_date", command.BirthDate);
+        AddPresent(arguments, "sex", command.Sex);
         AddMoment(arguments, "start", command.From, offset);
         AddMoment(arguments, "end", command.Until, offset);
         if (!string.IsNullOrWhiteSpace(command.Slot))
@@ -64,6 +68,15 @@ internal static class AgendaArguments
     private static void Add(Dictionary<string, string> arguments, string key, string? value)
     {
         if (!string.IsNullOrWhiteSpace(value))
+        {
+            arguments[key] = value.Trim();
+        }
+    }
+
+    /// <summary>Un campo que el formulario trae, aunque venga vacío: vacío significa borrar, y no llegar significa no tocar.</summary>
+    private static void AddPresent(Dictionary<string, string> arguments, string key, string? value)
+    {
+        if (value is not null)
         {
             arguments[key] = value.Trim();
         }
