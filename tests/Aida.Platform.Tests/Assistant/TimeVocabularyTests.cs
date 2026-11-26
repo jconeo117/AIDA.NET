@@ -46,6 +46,40 @@ public sealed class TimeVocabularyTests
         Assert.Contains("y", vocabulary.And);
         Assert.Contains("las", vocabulary.HourMarkers);
         Assert.Contains("la", vocabulary.PeriodMarkers);
+
+        // Listas nuevas leídas del pack real (N014, D27)
+        Assert.Contains("el", vocabulary.DayArticles);
+        Assert.Contains("de", vocabulary.MonthLinks);
+        Assert.Contains("a", vocabulary.HourLinks);
+        Assert.Contains("de", vocabulary.PeriodLinks);
+        Assert.Contains("en", vocabulary.PeriodLinks);
+        Assert.Contains("por", vocabulary.PeriodLinks);
+    }
+
+    [Theory]
+    [InlineData("day_articles")]
+    [InlineData("month_links")]
+    [InlineData("hour_links")]
+    [InlineData("period_links")]
+    public void Sin_alguna_de_las_listas_nuevas_Load_falla_con_la_ruta(string listName)
+    {
+        var repoRoot = FindRepoRoot();
+        var timePath = Path.Combine(repoRoot, "packs", "platform", "time.yaml");
+        var content = File.ReadAllText(timePath);
+        var withoutList = content.Replace($"  {listName}:", $"  ignored_{listName}:");
+
+        var temp = Path.GetTempFileName();
+        try
+        {
+            File.WriteAllText(temp, withoutList);
+            var ex = Assert.Throws<InvalidDataException>(() => TimeVocabulary.Load(temp));
+            Assert.StartsWith(temp, ex.Message);
+            Assert.Contains($"'time.{listName}' tiene que ser una lista", ex.Message);
+        }
+        finally
+        {
+            File.Delete(temp);
+        }
     }
 
     [Fact]

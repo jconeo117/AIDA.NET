@@ -1,156 +1,104 @@
-using Aida.Arms.Agenda.Actions;
 using Aida.Arms.Agenda.Assistant;
-using Aida.Arms.Agenda.Desk;
-using Aida.Arms.Agenda.Setup;
-using Aida.Arms.Agenda.Storage;
-using Aida.Cognition.Interpretation;
-using Aida.Engine.Actions;
-using Aida.Engine.Ontology;
-using Aida.Platform.Assistant;
-using Aida.Platform.Audit;
-using Aida.Platform.Identity;
-using Aida.Platform.Keys;
-using Aida.Platform.Packs;
-using Aida.Platform.Roles;
-using Microsoft.Data.Sqlite;
 using Xunit;
 
 namespace Aida.Arms.Agenda.Tests.Assistant;
 
 public sealed class AgendaAssistantTests
 {
-    private static string FindRepoRoot()
+    [Fact]
+    public void Valida_las_trece_frases_de_cancelar_y_reprogramar_sobre_la_cita_concreta()
     {
-        var dir = new DirectoryInfo(AppContext.BaseDirectory);
-        while (dir is not null && !File.Exists(Path.Combine(dir.FullName, "Aida.slnx")))
-        {
-            dir = dir.Parent;
-        }
+        using var ctx = new AgendaAssistantContext();
+        var today = DateOnly.FromDateTime(ctx.Time.Now.DateTime);
 
-        return dir?.FullName ?? throw new InvalidOperationException("No se encontró la raíz del repositorio.");
-    }
+        // 1. cancela la cita de Juan del martes -> Cancel, la de hoy a las 11:00 (Weekday, 08:00 ya pasó)
+        var p1 = ctx.Assistant.Propose(ctx.Interpreter.Interpret("cancela la cita de Juan del martes", today));
+        Assert.Equal(ProposalKind.Cancel, p1.Kind);
+        Assert.Single(p1.Appointments);
+        Assert.Equal(new TimeOnly(11, 0), TimeOnly.FromDateTime(p1.Appointments[0].Appointment.Start.DateTime));
 
-    private sealed class Context : IDisposable
-    {
-        public string DirectoryPath { get; }
-        public TestDatabase Db { get; }
-        public ManualTime Time { get; }
-        public AuditLog Audit { get; }
-        public RoleCatalog Roles { get; }
-        public UserStore Users { get; }
-        public AgendaSetup Setup { get; }
-        public ActionCatalog Catalog { get; }
-        public MachineKey Key { get; }
-        public AgendaDesk Desk { get; }
-        public UserAccount Admin { get; }
-        public UserAccount Reception { get; }
-        public AssistantInterpreter Interpreter { get; }
-        public AgendaAssistant Assistant { get; }
+        // 2. cancela la cita de Juan -> PickToCancel: la de hoy a las 11:00 y la del jueves
+        var p2 = ctx.Assistant.Propose(ctx.Interpreter.Interpret("cancela la cita de Juan", today));
+        Assert.Equal(ProposalKind.PickToCancel, p2.Kind);
+        Assert.Equal(2, p2.Appointments.Count);
+        Assert.Equal(new TimeOnly(11, 0), TimeOnly.FromDateTime(p2.Appointments[0].Appointment.Start.DateTime));
+        Assert.Equal(new DateOnly(2026, 11, 26), DateOnly.FromDateTime(p2.Appointments[1].Appointment.Start.DateTime));
 
-        public Context()
-        {
-            var repoRoot = FindRepoRoot();
-            DirectoryPath = Path.Combine(Path.GetTempPath(), "aida-asistente-test-" + Guid.NewGuid().ToString("n"));
-            Directory.CreateDirectory(DirectoryPath);
+        // 3. cancela la cita de Juan de las 11 -> Cancel, la de las 11:00
+        var p3 = ctx.Assistant.Propose(ctx.Interpreter.Interpret("cancela la cita de Juan de las 11", today));
+        Assert.Equal(ProposalKind.Cancel, p3.Kind);
+        Assert.Single(p3.Appointments);
+        Assert.Equal(new TimeOnly(11, 0), TimeOnly.FromDateTime(p3.Appointments[0].Appointment.Start.DateTime));
 
-            Db = new TestDatabase();
-            Time = new ManualTime();
-            Time.Now = DateTimeOffset.Parse("2026-11-24T07:30:00-05:00");
+        // 4. cancela la cita de Ana -> PickToCancel: la de Ana Pérez (11-25) y la de Ana Gómez (11-27) (D24)
+        var p4 = ctx.Assistant.Propose(ctx.Interpreter.Interpret("cancela la cita de Ana", today));
+        Assert.Equal(ProposalKind.PickToCancel, p4.Kind);
+        Assert.Equal(2, p4.Appointments.Count);
+        Assert.Equal("Ana Pérez", p4.Appointments[0].ClientName);
+        Assert.Equal("Ana Gómez", p4.Appointments[1].ClientName);
 
-            Audit = new AuditLog(Db.Database, Time, AgendaDeclarations.AuditKinds);
+        // 5. cancela la cita de Ana de las 3 -> Cancel, la de Ana Gómez a las 15:00 (D26)
+        var p5 = ctx.Assistant.Propose(ctx.Interpreter.Interpret("cancela la cita de Ana de las 3", today));
+        Assert.Equal(ProposalKind.Cancel, p5.Kind);
+        Assert.Single(p5.Appointments);
+        Assert.Equal("Ana Gómez", p5.Appointments[0].ClientName);
+        Assert.Equal(new TimeOnly(15, 0), TimeOnly.FromDateTime(p5.Appointments[0].Appointment.Start.DateTime));
 
-            var rolesPath = Path.Combine(repoRoot, "packs", "platform", "roles.yaml");
-            Roles = RoleCatalog.Load(rolesPath, AgendaDeclarations.Permissions);
+        // 6. cancela la cita de Ana en la tarde -> Cancel, la de Ana Gómez
+        var p6 = ctx.Assistant.Propose(ctx.Interpreter.Interpret("cancela la cita de Ana en la tarde", today));
+        Assert.Equal(ProposalKind.Cancel, p6.Kind);
+        Assert.Single(p6.Appointments);
+        Assert.Equal("Ana Gómez", p6.Appointments[0].ClientName);
 
-            var hasher = new PasswordHasher(1);
-            Users = new UserStore(Db.Database, Audit, Roles, hasher, Time);
+        // 7. cancela la cita de Pedro -> OpenCard con Pedro (D23: su única cita está cancelada)
+        var p7 = ctx.Assistant.Propose(ctx.Interpreter.Interpret("cancela la cita de Pedro", today));
+        Assert.Equal(ProposalKind.OpenCard, p7.Kind);
+        Assert.Single(p7.Clients);
+        Assert.Equal("Pedro Díaz", p7.Clients[0].Name);
 
-            Admin = Users.CreateFirstAdministrator("admin", "Administradora", "PassAdmin123!", "127.0.0.1");
-            Reception = Users.Create(Admin.Id, "127.0.0.1", "recep", "Recepcionista", "recepcion", "PassRecep123!");
+        // 8. cancela la cita de Carlos -> NoClient
+        var p8 = ctx.Assistant.Propose(ctx.Interpreter.Interpret("cancela la cita de Carlos", today));
+        Assert.Equal(ProposalKind.NoClient, p8.Kind);
 
-            var consultorioPath = Path.Combine(repoRoot, "packs", "agenda", "consultorio", "agenda.yaml");
-            var baseSetup = AgendaSetupLoader.Parse(PlatformYaml.ReadRoot(consultorioPath), consultorioPath);
-            var tardeResource = new ResourceSpec(
-                "tarde",
-                "Profesional Tarde",
-                "Consultorio Tarde",
-                baseSetup.Services.Select(s => s.Id).ToList(),
-                new Dictionary<DayOfWeek, IReadOnlyList<TimeRange>>
-                {
-                    [DayOfWeek.Tuesday] = [new TimeRange(new TimeOnly(14, 0), new TimeOnly(18, 0))],
-                    [DayOfWeek.Thursday] = [new TimeRange(new TimeOnly(14, 0), new TimeOnly(18, 0))],
-                });
-            Setup = new AgendaSetup(
-                baseSetup.Sector,
-                baseSetup.SlotMinutes,
-                baseSetup.ClientLabel,
-                baseSetup.Services,
-                [.. baseSetup.Resources, tardeResource]);
+        // 9. mueve la cita de Ana Pérez al jueves a las 11 -> Move, la del 11-25, MoveTo = 11-26, 11:00
+        var p9 = ctx.Assistant.Propose(ctx.Interpreter.Interpret("mueve la cita de Ana Pérez al jueves a las 11", today));
+        Assert.Equal(ProposalKind.Move, p9.Kind);
+        Assert.Single(p9.Appointments);
+        Assert.Equal("Ana Pérez", p9.Appointments[0].ClientName);
+        Assert.Equal(new DateOnly(2026, 11, 26), p9.MoveTo);
+        Assert.Equal(new TimeOnly(11, 0), p9.Time);
 
-            var armPath = Path.Combine(repoRoot, "packs", "agenda", "arm.yaml");
-            Catalog = AgendaManifest.Load(armPath).Actions;
+        // 10. mueve la cita de Juan del martes al jueves a las 11 -> Move, la de hoy, MoveTo = 11-26, 11:00
+        var p10 = ctx.Assistant.Propose(ctx.Interpreter.Interpret("mueve la cita de Juan del martes al jueves a las 11", today));
+        Assert.Equal(ProposalKind.Move, p10.Kind);
+        Assert.Single(p10.Appointments);
+        Assert.Equal(new TimeOnly(11, 0), TimeOnly.FromDateTime(p10.Appointments[0].Appointment.Start.DateTime));
+        Assert.Equal(new DateOnly(2026, 11, 26), p10.MoveTo);
+        Assert.Equal(new TimeOnly(11, 0), p10.Time);
 
-            var keyPath = Path.Combine(DirectoryPath, "machine.key");
-            Key = MachineKey.OpenOrCreate(keyPath, new DevelopmentKeyProtector());
+        // 11. mueve la cita de Ana Pérez para las 9 -> Move, MoveTo = null, 09:00 sobre su propio día
+        var p11 = ctx.Assistant.Propose(ctx.Interpreter.Interpret("mueve la cita de Ana Pérez para las 9", today));
+        Assert.Equal(ProposalKind.Move, p11.Kind);
+        Assert.Single(p11.Appointments);
+        Assert.Equal("Ana Pérez", p11.Appointments[0].ClientName);
+        Assert.Null(p11.MoveTo);
+        Assert.Equal(new TimeOnly(9, 0), p11.Time);
 
-            Desk = new AgendaDesk(Db.Database, Audit, Roles, Users, Setup, Catalog, Reversibility.Reversible, Key, Time);
+        // 12. mueve la cita de Ana Pérez al 20/11 -> PastDay
+        var p12 = ctx.Assistant.Propose(ctx.Interpreter.Interpret("mueve la cita de Ana Pérez al 20/11", today));
+        Assert.Equal(ProposalKind.PastDay, p12.Kind);
 
-            var catalogPath = Path.Combine(repoRoot, "packs", "agenda", "intents.yaml");
-            var intentCatalog = IntentCatalog.Load(catalogPath, AgendaDeclarations.Intents);
-            var timePath = Path.Combine(repoRoot, "packs", "platform", "time.yaml");
-            var timeVocab = TimeVocabulary.Load(timePath);
-
-            Interpreter = new AssistantInterpreter(intentCatalog, timeVocab);
-            Assistant = new AgendaAssistant(Desk, Time);
-
-            // Contactos iniciales según contrato: Ana Pérez, Ana Gómez y Juan Ruiz
-            Desk.Submit(Reception, "127.0.0.1", "agendar", new Dictionary<string, string>
-            {
-                ["name"] = "Ana Pérez",
-                ["phone"] = "3001111111",
-                ["service"] = "control",
-                ["start"] = "2026-11-24T08:00:00-05:00",
-            });
-            Desk.Submit(Reception, "127.0.0.1", "agendar", new Dictionary<string, string>
-            {
-                ["name"] = "Ana Gómez",
-                ["phone"] = "3002222222",
-                ["service"] = "control",
-                ["start"] = "2026-11-24T08:30:00-05:00",
-            });
-            Desk.Submit(Reception, "127.0.0.1", "agendar", new Dictionary<string, string>
-            {
-                ["name"] = "Juan Ruiz",
-                ["phone"] = "3005551234",
-                ["service"] = "control",
-                ["start"] = "2026-11-24T09:00:00-05:00",
-            });
-
-            // Reloj fijado a las 09:00 para la ejecución de los tests
-            Time.Now = DateTimeOffset.Parse("2026-11-24T09:00:00-05:00");
-        }
-
-        public void Dispose()
-        {
-            Db.Dispose();
-            SqliteConnection.ClearAllPools();
-            try
-            {
-                if (Directory.Exists(DirectoryPath))
-                {
-                    Directory.Delete(DirectoryPath, true);
-                }
-            }
-            catch
-            {
-            }
-        }
+        // 13. mueve la cita de Juan al viernes -> PickToMove, sus dos citas futuras, MoveTo = 11-27
+        var p13 = ctx.Assistant.Propose(ctx.Interpreter.Interpret("mueve la cita de Juan al viernes", today));
+        Assert.Equal(ProposalKind.PickToMove, p13.Kind);
+        Assert.Equal(2, p13.Appointments.Count);
+        Assert.Equal(new DateOnly(2026, 11, 27), p13.MoveTo);
     }
 
     [Fact]
     public void Valida_las_nueve_frases_del_contrato_segun_especificacion()
     {
-        using var ctx = new Context();
+        using var ctx = new AgendaAssistantContext();
         var today = DateOnly.FromDateTime(ctx.Time.Now.DateTime);
 
         // 1. cita para Juan Ruiz mañana a las 10, control -> NewAppointment, 11-25, control, 10:00, TimeTaken = false
@@ -191,7 +139,6 @@ public sealed class AgendaAssistantTests
         Assert.True(p4.TimeTaken);
 
         // 5. qué hay libre el jueves en la tarde -> FreeSlots, 11-26, primer servicio, 14:00 (D18)
-        // Se bloquea el tramo 12:00-13:00 de consultorio_1 para que la tarde libre comience en el recurso de tarde (14:00)
         ctx.Desk.Submit(ctx.Reception, "127.0.0.1", "bloquear", new Dictionary<string, string>
         {
             ["start"] = "2026-11-26T12:00:00-05:00",
@@ -235,19 +182,17 @@ public sealed class AgendaAssistantTests
         Assert.Null(p8.Time);
         Assert.False(p8.TimeTaken);
 
-        // 9. cancela la cita de Juan mañana -> OpenCard (N013 no lee fechas para cancelar)
+        // 9. cancela la cita de Juan mañana -> OpenCard (D23: Juan no tiene citas mañana)
         var p9 = ctx.Assistant.Propose(ctx.Interpreter.Interpret("cancela la cita de Juan mañana", today));
         Assert.Equal(ProposalKind.OpenCard, p9.Kind);
         Assert.Single(p9.Clients);
         Assert.Equal("Juan Ruiz", p9.Clients[0].Name);
-        Assert.Null(p9.Time);
-        Assert.False(p9.TimeTaken);
     }
 
     [Fact]
     public void Valida_intenciones_y_busqueda_de_contactos_del_asistente()
     {
-        using var ctx = new Context();
+        using var ctx = new AgendaAssistantContext();
         var today = DateOnly.FromDateTime(ctx.Time.Now.DateTime);
 
         // cita para Carlos Díaz -> NewAppointment, Prefill = (0, Carlos Díaz, "")
@@ -271,13 +216,13 @@ public sealed class AgendaAssistantTests
         Assert.Equal("Ana Gómez", p3.Clients[0].Name);
         Assert.Equal("Ana Pérez", p3.Clients[1].Name);
 
-        // mueve la cita de Ana -> PickClientForCard, las dos
+        // mueve la cita de Ana -> PickToMove, las dos citas futuras (D24)
         var p4 = ctx.Assistant.Propose(ctx.Interpreter.Interpret("mueve la cita de Ana", today));
-        Assert.Equal(ProposalKind.PickClientForCard, p4.Kind);
-        Assert.Equal(2, p4.Clients.Count);
+        Assert.Equal(ProposalKind.PickToMove, p4.Kind);
+        Assert.Equal(2, p4.Appointments.Count);
 
-        // cancela la cita de Pedro -> NoClient
-        var p5 = ctx.Assistant.Propose(ctx.Interpreter.Interpret("cancela la cita de Pedro", today));
+        // cancela la cita de Carlos -> NoClient
+        var p5 = ctx.Assistant.Propose(ctx.Interpreter.Interpret("cancela la cita de Carlos", today));
         Assert.Equal(ProposalKind.NoClient, p5.Kind);
         Assert.Empty(p5.Clients);
 
