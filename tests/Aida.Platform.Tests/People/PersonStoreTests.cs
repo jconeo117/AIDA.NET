@@ -145,7 +145,7 @@ public sealed class PersonStoreTests : IDisposable
     [Fact]
     public void Sellado_ningun_dato_personal_aparece_en_claro_en_la_tabla_people()
     {
-        const string name = "Paciente Ultra Confidencial";
+        const string name = "Persona Ultra Confidencial";
         const string phone = "3159998877";
         const string docNum = "987654321";
         const string birthStr = "1992-07-24";
