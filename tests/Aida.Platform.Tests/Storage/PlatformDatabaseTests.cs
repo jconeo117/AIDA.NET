@@ -20,7 +20,7 @@ public sealed class PlatformDatabaseTests
                 using var cmdVer = conn.CreateCommand();
                 cmdVer.CommandText = "PRAGMA user_version;";
                 var ver = (long)cmdVer.ExecuteScalar()!;
-                Assert.Equal(2, ver);
+                Assert.Equal(3, ver);
 
                 using var cmdTables = conn.CreateCommand();
                 cmdTables.CommandText = "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;";
@@ -34,6 +34,7 @@ public sealed class PlatformDatabaseTests
                 Assert.Contains("users", tables);
                 Assert.Contains("ledger", tables);
                 Assert.Contains("arm_schema", tables);
+                Assert.Contains("people", tables);
             }
         }
         finally
@@ -90,17 +91,17 @@ public sealed class PlatformDatabaseTests
         var dbPath = Path.Combine(tempDir, "aida.db");
         try
         {
-            // Creamos un archivo SQLite con versión 3
-            using (var conn = new SqliteConnection($"Data Source={dbPath}"))
+            // Creamos un archivo SQLite con versión 4
+            using (var conn = new SqliteConnection($"Data Source={dbPath};Pooling=False"))
             {
                 conn.Open();
                 using var cmd = conn.CreateCommand();
-                cmd.CommandText = "PRAGMA user_version = 3;";
+                cmd.CommandText = "PRAGMA user_version = 4;";
                 cmd.ExecuteNonQuery();
             }
 
             var ex = Assert.Throws<InvalidOperationException>(() => new PlatformDatabase(dbPath));
-            Assert.Contains("la base de datos es de la versión 3 y este AIDA solo conoce hasta la 2", ex.Message);
+            Assert.Contains("la base de datos es de la versión 4 y este AIDA solo conoce hasta la 3", ex.Message);
         }
         finally
         {
@@ -113,14 +114,14 @@ public sealed class PlatformDatabaseTests
     }
 
     [Fact]
-    public void Un_archivo_de_la_version_1_sube_a_la_2()
+    public void Un_archivo_de_la_version_1_sube_a_la_3()
     {
         var tempDir = Path.Combine(Path.GetTempPath(), "aida-migrate-" + Guid.NewGuid().ToString("n"));
         Directory.CreateDirectory(tempDir);
         var dbPath = Path.Combine(tempDir, "aida.db");
         try
         {
-            using (var conn = new SqliteConnection($"Data Source={dbPath}"))
+            using (var conn = new SqliteConnection($"Data Source={dbPath};Pooling=False"))
             {
                 conn.Open();
                 using var cmd = conn.CreateCommand();
@@ -152,7 +153,7 @@ public sealed class PlatformDatabaseTests
             {
                 using var cmdVer = conn.CreateCommand();
                 cmdVer.CommandText = "PRAGMA user_version;";
-                Assert.Equal(2L, (long)cmdVer.ExecuteScalar()!);
+                Assert.Equal(3L, (long)cmdVer.ExecuteScalar()!);
 
                 using var cmdTables = conn.CreateCommand();
                 cmdTables.CommandText = "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;";
@@ -166,6 +167,7 @@ public sealed class PlatformDatabaseTests
                 Assert.Contains("arm_schema", tables);
                 Assert.Contains("users", tables);
                 Assert.Contains("ledger", tables);
+                Assert.Contains("people", tables);
 
                 using var cmdUser = conn.CreateCommand();
                 cmdUser.CommandText = "SELECT count(*) FROM users WHERE user_name = 'u1';";

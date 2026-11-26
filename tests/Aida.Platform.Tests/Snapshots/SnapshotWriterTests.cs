@@ -135,7 +135,7 @@ public sealed class SnapshotWriterTests
         using var reader = read.ExecuteReader();
         Assert.True(reader.Read());
         Assert.Equal("pendiente", reader.GetString(0));
-        Assert.Equal(2L, reader.GetInt64(1)); // la versión del esquema de la plataforma (Schema.Version)
+        Assert.Equal(3L, reader.GetInt64(1)); // la versión del esquema de la plataforma (Schema.Version)
     }
 
     private sealed class FailingStream : MemoryStream

@@ -9,6 +9,7 @@ using Aida.Engine.Events;
 using Aida.Engine.Ontology;
 using Aida.Platform.Keys;
 using Aida.Platform.Packs;
+using Aida.Platform.People;
 using Aida.Platform.Sealing;
 using Aida.Platform.Storage;
 using Microsoft.Data.Sqlite;
@@ -59,19 +60,20 @@ public sealed class AgendaGoldenTests
 
         var setup = AgendaSetupLoader.Parse(PlatformYaml.ReadRoot(setupPath), setupPath);
         var manifest = AgendaManifest.Load(armPath);
+        var peopleCatalog = PersonCatalog.Load(Path.Combine(repoRoot, "packs", "platform", "people.yaml"));
 
         var tempDir = Path.Combine(Path.GetTempPath(), "aida-golden-" + Guid.NewGuid().ToString("n"));
         Directory.CreateDirectory(tempDir);
         try
         {
-            var dbPath = Path.Combine(tempDir, "aida.db");
-            var db = new PlatformDatabase(dbPath);
-            db.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps);
-
             var keyPath = Path.Combine(tempDir, "machine.key");
             var machineKey = MachineKey.OpenOrCreate(keyPath, new DevelopmentKeyProtector());
             var sealer = new Sealer(machineKey);
-            var phoneKey = machineKey.Derive(AgendaStore.PhoneKeyPurpose);
+            var personKeys = PersonKeys.From(machineKey);
+
+            var dbPath = Path.Combine(tempDir, "aida.db");
+            var db = new PlatformDatabase(dbPath);
+            db.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps(sealer, personKeys));
 
             var time = new ManualTime();
             var log = new EventLog();
@@ -93,8 +95,8 @@ public sealed class AgendaGoldenTests
                     args[prop.Name] = prop.Value.GetString()!;
                 }
 
-                using var work = AgendaWork.Begin(db, sealer, phoneKey);
-                var tool = new AgendaTool(work.Store, setup, time);
+                using var work = AgendaWork.Begin(db, sealer, personKeys);
+                var tool = new AgendaTool(work.Store, work.People, setup, peopleCatalog, time);
                 var gate = new ActionGate(manifest.Actions, Reversibility.Reversible, tool, log, new AgentId("agenda"), NextTick);
                 gate.Submit(new ActionRequest(new ActionId(action), args, "u1"));
                 work.Commit();
@@ -115,14 +117,14 @@ public sealed class AgendaGoldenTests
             var day = DateOnly.Parse(targetCase.GetProperty("day").GetString()!, CultureInfo.InvariantCulture);
             var dayStart = new DateTimeOffset(day.ToDateTime(TimeOnly.MinValue), time.LocalTimeZone.BaseUtcOffset);
 
-            using var queryWork = AgendaWork.Begin(db, sealer, phoneKey);
+            using var queryWork = AgendaWork.Begin(db, sealer, personKeys);
             var actualAppointments = queryWork.Store.Between(dayStart.AddDays(-7), dayStart.AddDays(7));
             var expectedAppointments = targetCase.GetProperty("appointments").EnumerateArray().ToList();
             Assert.Equal(expectedAppointments.Count, actualAppointments.Count);
             for (var i = 0; i < expectedAppointments.Count; i++)
             {
                 var app = actualAppointments[i];
-                var client = queryWork.Store.GetClient(app.ClientId);
+                var client = queryWork.People.Find(app.ClientId) ?? throw new KeyNotFoundException($"No se encontró la persona {app.ClientId}");
                 var exp = expectedAppointments[i];
 
                 Assert.True(exp.GetProperty("id").GetInt64() == app.Id, $"Caso '{caseName}', cita {i + 1} id distinto");
@@ -199,7 +201,7 @@ public sealed class AgendaGoldenTests
                 {
                     var query = searchProp.Name;
                     var expClients = searchProp.Value.EnumerateArray().ToList();
-                    var actualClients = ClientSearch.Find(queryWork.Store, query);
+                    var actualClients = ClientSearch.Find(queryWork.People, query);
 
                     Assert.True(expClients.Count == actualClients.Count,
                         $"Caso '{caseName}', búsqueda '{query}': cantidad distinta ({expClients.Count} vs {actualClients.Count})");

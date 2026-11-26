@@ -9,6 +9,7 @@ using Aida.Engine.Ontology;
 using Aida.Platform.Audit;
 using Aida.Platform.Identity;
 using Aida.Platform.Keys;
+using Aida.Platform.People;
 using Aida.Platform.Roles;
 using Aida.Platform.Sealing;
 using Aida.Platform.Storage;
@@ -42,7 +43,7 @@ public sealed class AgendaDesk
     private readonly Reversibility _ceiling;
     private readonly TimeProvider _time;
     private readonly Sealer _sealer;
-    private readonly byte[] _phoneKey;
+    private readonly PersonKeys _personKeys;
     private readonly EventLog _log = new();
     private readonly Lock _sync = new();
     private long _tick;
@@ -53,12 +54,13 @@ public sealed class AgendaDesk
     /// <param name="roles">Los roles, para el permiso de cambiar y el de bloquear.</param>
     /// <param name="users">Los usuarios, para los nombres de quien agendó.</param>
     /// <param name="setup">La configuración de la clínica.</param>
+    /// <param name="people">Los tipos de documento y los sexos, de <c>people.yaml</c>.</param>
     /// <param name="catalog">Las acciones y su reversibilidad, de <c>arm.yaml</c>.</param>
     /// <param name="ceiling">El techo de la puerta; lo fija la composición.</param>
     /// <param name="machineKey">La clave del equipo, de la que salen la que sella y la de la huella del teléfono.</param>
     /// <param name="time">El reloj.</param>
     /// <exception cref="InvalidOperationException">Si la base tiene un esquema de la agenda más nuevo que este código.</exception>
-    public AgendaDesk(PlatformDatabase database, AuditLog audit, RoleCatalog roles, UserStore users, AgendaSetup setup, ActionCatalog catalog, Reversibility ceiling, MachineKey machineKey, TimeProvider time)
+    public AgendaDesk(PlatformDatabase database, AuditLog audit, RoleCatalog roles, UserStore users, AgendaSetup setup, PersonCatalog people, ActionCatalog catalog, Reversibility ceiling, MachineKey machineKey, TimeProvider time)
     {
         ArgumentNullException.ThrowIfNull(database);
         ArgumentNullException.ThrowIfNull(machineKey);
@@ -67,16 +69,22 @@ public sealed class AgendaDesk
         _roles = roles;
         _users = users;
         Setup = setup;
+        People = people;
         _catalog = catalog;
         _ceiling = ceiling;
         _time = time;
         _sealer = new Sealer(machineKey);
-        _phoneKey = machineKey.Derive(AgendaStore.PhoneKeyPurpose);
-        database.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps);
+        _personKeys = PersonKeys.From(machineKey);
+        database.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps(_sealer, _personKeys));
     }
 
     /// <summary>La configuración de la clínica.</summary>
     public AgendaSetup Setup { get; }
+
+    /// <summary>Los tipos de documento y los sexos que acepta una persona.</summary>
+    /// <remarks>Lo lee la ficha para pintar los selectores, y la puerta para validar lo que llega. Viene del pack, no del código
+    /// (ADR 0038).</remarks>
+    public PersonCatalog People { get; }
 
     /// <summary>Si un usuario puede cambiar la agenda.</summary>
     /// <param name="user">El usuario.</param>
@@ -96,11 +104,11 @@ public sealed class AgendaDesk
         var names = UserNames();
         lock (_sync)
         {
-            using var work = AgendaWork.Begin(_database, _sealer, _phoneKey);
+            using var work = AgendaWork.Begin(_database, _sealer, _personKeys);
             var now = _time.GetLocalNow();
             var start = new DateTimeOffset(day.ToDateTime(TimeOnly.MinValue), now.Offset);
             var appointments = work.Store.Between(start, start.AddDays(1))
-                .Select(appointment => AppointmentViews.Of(work.Store, Setup, names, appointment))
+                .Select(appointment => AppointmentViews.Of(work.People, Setup, names, appointment))
                 .ToList();
             var blocks = work.Store.BlocksBetween(start, start.AddDays(1))
                 .Select(block => new BlockView(block, names.GetValueOrDefault(block.CreatedBy, block.CreatedBy)))
@@ -135,8 +143,8 @@ public sealed class AgendaDesk
         var withAuthor = new Dictionary<string, string>(arguments, StringComparer.Ordinal) { ["by"] = by };
         lock (_sync)
         {
-            using var work = AgendaWork.Begin(_database, _sealer, _phoneKey);
-            var gate = new ActionGate(_catalog, _ceiling, new AgendaTool(work.Store, Setup, _time), _log, _owner, () => ++_tick);
+            using var work = AgendaWork.Begin(_database, _sealer, _personKeys);
+            var gate = new ActionGate(_catalog, _ceiling, new AgendaTool(work.Store, work.People, Setup, People, _time), _log, _owner, () => ++_tick);
             var result = gate.Submit(new ActionRequest(new ActionId(action), withAuthor, by));
             if (result.Status == ToolStatus.Done)
             {
@@ -178,11 +186,11 @@ public sealed class AgendaDesk
         var names = UserNames();
         lock (_sync)
         {
-            using var work = AgendaWork.Begin(_database, _sealer, _phoneKey);
+            using var work = AgendaWork.Begin(_database, _sealer, _personKeys);
             return [.. ids.Split(',')
                 .Select(text => long.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id) ? work.Store.Get(id) : null)
                 .OfType<Appointment>()
-                .Select(appointment => AppointmentViews.Of(work.Store, Setup, names, appointment))];
+                .Select(appointment => AppointmentViews.Of(work.People, Setup, names, appointment))];
         }
     }
 
@@ -194,8 +202,8 @@ public sealed class AgendaDesk
     {
         lock (_sync)
         {
-            using var work = AgendaWork.Begin(_database, _sealer, _phoneKey);
-            return ClientSearch.Find(work.Store, query);
+            using var work = AgendaWork.Begin(_database, _sealer, _personKeys);
+            return ClientSearch.Find(work.People, query);
         }
     }
 
@@ -208,14 +216,14 @@ public sealed class AgendaDesk
         var names = UserNames();
         lock (_sync)
         {
-            using var work = AgendaWork.Begin(_database, _sealer, _phoneKey);
-            if (work.Store.FindClient(client) is not { } found)
+            using var work = AgendaWork.Begin(_database, _sealer, _personKeys);
+            if (work.People.Find(client) is not { } found)
             {
                 return null;
             }
 
             var views = work.Store.AppointmentsFor(found.Id)
-                .Select(appointment => AppointmentViews.Of(work.Store, Setup, names, appointment))
+                .Select(appointment => AppointmentViews.Of(work.People, Setup, names, appointment))
                 .ToList();
             return ClientCard.Build(found, views, _time.GetLocalNow());
         }
@@ -231,9 +239,9 @@ public sealed class AgendaDesk
         var names = UserNames();
         lock (_sync)
         {
-            using var work = AgendaWork.Begin(_database, _sealer, _phoneKey);
+            using var work = AgendaWork.Begin(_database, _sealer, _personKeys);
             return work.Store.Get(appointment) is { } found
-                ? AppointmentViews.Of(work.Store, Setup, names, found)
+                ? AppointmentViews.Of(work.People, Setup, names, found)
                 : null;
         }
     }

@@ -21,7 +21,9 @@ public sealed class AgendaWording
         "edit_button", "save_button", "block_button", "block_title", "block_lead", "field_who", "all_resources", "field_from",
         "field_until", "field_reason", "block_save", "blocked_label", "blocked_by", "unblock_button", "conflicts_title",
         "search_placeholder", "search_empty", "card_link", "card_upcoming", "card_attended", "card_no_show", "card_appointments",
-        "card_edit",
+        "card_edit", "field_document_type", "field_document_number", "field_birth_date", "field_sex",
+        "reason_client_ambiguous", "reason_incomplete_document", "reason_unknown_document_type", "reason_bad_document",
+        "reason_document_taken", "reason_bad_birth_date", "reason_unknown_sex",
         "assistant_placeholder", "assistant_button", "assistant_not_understood", "assistant_no_client", "assistant_pick_client",
         "assistant_time_taken", "assistant_past_day", "assistant_no_appointment", "assistant_pick_appointment",
     ];

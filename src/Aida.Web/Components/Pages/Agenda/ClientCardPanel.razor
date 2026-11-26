@@ -2,7 +2,9 @@
 @using Aida.Arms.Agenda.Desk
 @using Aida.Arms.Agenda.Setup
 @using Aida.Arms.Agenda.Wording
+@using Aida.Platform.People
 @inject AgendaWording Text
+@inject PersonCatalog People
 
 <div class="panel-card">
     <h3>@Card.Client.Name</h3>
@@ -14,6 +16,14 @@
         <dd>@Card.Attended</dd>
         <dt>@Text["card_no_show"]</dt>
         <dd>@Card.NoShow</dd>
+        <dt>@Text["field_document_type"]</dt>
+        <dd>@DocumentTypeLabel</dd>
+        <dt>@Text["field_document_number"]</dt>
+        <dd>@(Card.Details.DocumentNumber ?? "—")</dd>
+        <dt>@Text["field_birth_date"]</dt>
+        <dd>@(Card.Details.BirthDate?.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) ?? "—")</dd>
+        <dt>@Text["field_sex"]</dt>
+        <dd>@SexLabel</dd>
     </dl>
     <h4>@Text["card_appointments"]</h4>
     <ul>
@@ -41,6 +51,15 @@
 @code {
     [Parameter, EditorRequired]
     public ClientCard Card { get; set; } = null!;
+
+    /// <summary>El nombre del tipo de documento, de <c>people.yaml</c>; si no está en el pack, su código.</summary>
+    private string DocumentTypeLabel => Card.Details.DocumentType is { } id
+        ? People.DocumentTypes.Where(entry => entry.Id == id).Select(entry => entry.Label).FirstOrDefault() ?? id
+        : "—";
+
+    private string SexLabel => Card.Details.Sex is { } id
+        ? People.Sexes.Where(entry => entry.Id == id).Select(entry => entry.Label).FirstOrDefault() ?? id
+        : "—";
 
     [Parameter, EditorRequired]
     public AgendaSetup Setup { get; set; } = null!;

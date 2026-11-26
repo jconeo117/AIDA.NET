@@ -3,6 +3,7 @@ using Aida.Arms.Agenda.Actions;
 using Aida.Arms.Agenda.Desk;
 using Aida.Arms.Agenda.Storage;
 using Aida.Platform.Keys;
+using Aida.Platform.People;
 using Aida.Platform.Sealing;
 using Aida.Platform.Storage;
 using Microsoft.Data.Sqlite;
@@ -24,7 +25,7 @@ public sealed class AgendaStoreTests
 
         public Sealer Sealer { get; }
 
-        public byte[] PhoneKey { get; }
+        public PersonKeys PersonKeys { get; }
 
         public TestContext(MachineKey? customKey = null)
         {
@@ -32,15 +33,15 @@ public sealed class AgendaStoreTests
             Directory.CreateDirectory(DirectoryPath);
             DbPath = Path.Combine(DirectoryPath, "aida.db");
             Database = new PlatformDatabase(DbPath);
-            Database.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps);
 
             var keyPath = Path.Combine(DirectoryPath, "machine.key");
             Key = customKey ?? MachineKey.OpenOrCreate(keyPath, new DevelopmentKeyProtector());
             Sealer = new Sealer(Key);
-            PhoneKey = Key.Derive(AgendaStore.PhoneKeyPurpose);
+            PersonKeys = PersonKeys.From(Key);
+            Database.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps(Sealer, PersonKeys));
         }
 
-        public AgendaWork Begin() => AgendaWork.Begin(Database, Sealer, PhoneKey);
+        public AgendaWork Begin() => AgendaWork.Begin(Database, Sealer, PersonKeys);
 
         public void Dispose()
         {
@@ -68,7 +69,7 @@ public sealed class AgendaStoreTests
 
         using (var work = ctx.Begin())
         {
-            var client = work.Store.AddClient("María Pérez", "3005550142");
+            var client = work.People.Add("María Pérez", "3005550142");
             clientId = client.Id;
             var appointment = work.Store.Add(clientId, "control", "consultorio_1", start, 30, "prof-1");
             appointmentId = appointment.Id;
@@ -77,7 +78,8 @@ public sealed class AgendaStoreTests
 
         using (var work = ctx.Begin())
         {
-            var client = work.Store.GetClient(clientId);
+            var client = work.People.Find(clientId);
+            Assert.NotNull(client);
             Assert.Equal("María Pérez", client.Name);
             Assert.Equal("3005550142", client.Phone);
 
@@ -99,15 +101,15 @@ public sealed class AgendaStoreTests
         using var ctx = new TestContext();
         using (var work = ctx.Begin())
         {
-            work.Store.AddClient("Juan Gómez", "300 555 0142");
+            work.People.Add("Juan Gómez", "300 555 0142");
             work.Commit();
         }
 
         using (var work = ctx.Begin())
         {
-            var c1 = work.Store.ClientByPhone("3005550142");
-            var c2 = work.Store.ClientByPhone("300-555-0142");
-            var c3 = work.Store.ClientByPhone("300.555.0142");
+            var c1 = work.People.ByPhone("3005550142").FirstOrDefault();
+            var c2 = work.People.ByPhone("300-555-0142").FirstOrDefault();
+            var c3 = work.People.ByPhone("300.555.0142").FirstOrDefault();
 
             Assert.NotNull(c1);
             Assert.NotNull(c2);
@@ -134,7 +136,7 @@ public sealed class AgendaStoreTests
 
         using (var work = ctx.Begin())
         {
-            var client = work.Store.AddClient("Cliente", "123");
+            var client = work.People.Add("Cliente", "123");
             var a2 = work.Store.Add(client.Id, "s", "r2", tSameUtc1, 30, "u");
             var a1 = work.Store.Add(client.Id, "s", "r1", tEarlier, 30, "u");
             var a3 = work.Store.Add(client.Id, "s", "r1", tSameUtc2, 30, "u");
@@ -167,7 +169,7 @@ public sealed class AgendaStoreTests
 
         using (var work = ctx.Begin())
         {
-            work.Store.AddClient(name, phone);
+            work.People.Add(name, phone);
             work.Commit();
         }
 
@@ -195,7 +197,7 @@ public sealed class AgendaStoreTests
         using var ctx = new TestContext();
         using (var work = ctx.Begin())
         {
-            work.Store.AddClient("Lucía", "3120001122");
+            work.People.Add("Lucía", "3120001122");
             work.Commit();
         }
 
@@ -203,10 +205,10 @@ public sealed class AgendaStoreTests
         var otherKeyPath = Path.Combine(ctx.DirectoryPath, "other.key");
         var otherKey = MachineKey.OpenOrCreate(otherKeyPath, new DevelopmentKeyProtector());
         var otherSealer = new Sealer(otherKey);
-        var otherPhoneKey = otherKey.Derive(AgendaStore.PhoneKeyPurpose);
+        var otherPersonKeys = PersonKeys.From(otherKey);
 
-        using var workOther = AgendaWork.Begin(ctx.Database, otherSealer, otherPhoneKey);
-        Assert.Null(workOther.Store.ClientByPhone("3120001122"));
+        using var workOther = AgendaWork.Begin(ctx.Database, otherSealer, otherPersonKeys);
+        Assert.Empty(workOther.People.ByPhone("3120001122"));
     }
 
     [Fact]
@@ -217,9 +219,12 @@ public sealed class AgendaStoreTests
         {
             var machineKey = MachineKey.OpenOrCreate(tempKeyPath, new DevelopmentKeyProtector());
             var sealKey = machineKey.Derive(Sealer.Purpose);
-            var phoneKey = machineKey.Derive(AgendaStore.PhoneKeyPurpose);
+            var phoneKey = machineKey.Derive(PersonKeys.PhonePurpose);
+            var docKey = machineKey.Derive(PersonKeys.DocumentPurpose);
 
             Assert.NotEqual(sealKey, phoneKey);
+            Assert.NotEqual(sealKey, docKey);
+            Assert.NotEqual(phoneKey, docKey);
         }
         finally
         {
@@ -236,14 +241,14 @@ public sealed class AgendaStoreTests
         using var ctx = new TestContext();
         using (var work = ctx.Begin())
         {
-            var client = work.Store.AddClient("Fantasma", "999999");
+            var client = work.People.Add("Fantasma", "999999");
             work.Store.Add(client.Id, "control", "consultorio_1", DateTimeOffset.Parse("2026-11-16T10:00:00-05:00"), 30, "u1");
             // No hacemos work.Commit()
         }
 
         using (var work = ctx.Begin())
         {
-            Assert.Null(work.Store.ClientByPhone("999999"));
+            Assert.Empty(work.People.ByPhone("999999"));
             var appointments = work.Store.Between(DateTimeOffset.Parse("2026-11-16T00:00:00-05:00"), DateTimeOffset.Parse("2026-11-16T23:59:59-05:00"));
             Assert.Empty(appointments);
         }

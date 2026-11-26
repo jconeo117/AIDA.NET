@@ -6,6 +6,7 @@ using Aida.Engine.Actions;
 using Aida.Engine.Ontology;
 using Aida.Platform.Keys;
 using Aida.Platform.Packs;
+using Aida.Platform.People;
 using Aida.Platform.Sealing;
 using Aida.Platform.Storage;
 using Microsoft.Data.Sqlite;
@@ -49,28 +50,32 @@ public sealed class AgendaToolTests
 
         public AgendaSetup Setup { get; }
 
+        public PersonCatalog Catalog { get; }
+
         public ManualTime Time { get; }
 
         public MachineKey Key { get; }
 
         public Sealer Sealer { get; }
 
-        public byte[] PhoneKey { get; }
+        public PersonKeys PersonKeys { get; }
 
         public ToolContext(AgendaSetup? setup = null, DateTimeOffset? initialTime = null)
         {
-            DirectoryPath = Path.Combine(Path.GetTempPath(), "aida-tool-" + Guid.NewGuid().ToString("n"));
-            Directory.CreateDirectory(DirectoryPath);
-            Database = new PlatformDatabase(Path.Combine(DirectoryPath, "aida.db"));
-            Database.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps);
-
-            Key = MachineKey.OpenOrCreate(Path.Combine(DirectoryPath, "machine.key"), new DevelopmentKeyProtector());
-            Sealer = new Sealer(Key);
-            PhoneKey = Key.Derive(AgendaStore.PhoneKeyPurpose);
-
             var repoRoot = FindRepoRoot();
             var consultorioPath = Path.Combine(repoRoot, "packs", "agenda", "consultorio", "agenda.yaml");
             Setup = setup ?? AgendaSetupLoader.Parse(PlatformYaml.ReadRoot(consultorioPath), consultorioPath);
+            Catalog = PersonCatalog.Load(Path.Combine(repoRoot, "packs", "platform", "people.yaml"));
+
+            DirectoryPath = Path.Combine(Path.GetTempPath(), "aida-tool-" + Guid.NewGuid().ToString("n"));
+            Directory.CreateDirectory(DirectoryPath);
+            Database = new PlatformDatabase(Path.Combine(DirectoryPath, "aida.db"));
+
+            Key = MachineKey.OpenOrCreate(Path.Combine(DirectoryPath, "machine.key"), new DevelopmentKeyProtector());
+            Sealer = new Sealer(Key);
+            PersonKeys = PersonKeys.From(Key);
+
+            Database.ApplyArmSchema(AgendaDeclarations.ArmId, AgendaSchema.Steps(Sealer, PersonKeys));
 
             Time = new ManualTime();
             Time.Now = initialTime ?? DateTimeOffset.Parse("2026-11-16T07:30:00-05:00");
@@ -78,8 +83,8 @@ public sealed class AgendaToolTests
 
         public ToolSession Begin()
         {
-            var work = AgendaWork.Begin(Database, Sealer, PhoneKey);
-            var tool = new AgendaTool(work.Store, Setup, Time);
+            var work = AgendaWork.Begin(Database, Sealer, PersonKeys);
+            var tool = new AgendaTool(work.Store, work.People, Setup, Catalog, Time);
             return new ToolSession(work, tool);
         }
 
@@ -518,7 +523,7 @@ public sealed class AgendaToolTests
             ["by"] = "u1",
         });
 
-        var client = session.Work.Store.ClientByPhone("3005550142");
+        var client = session.Work.People.ByPhone("3005550142").FirstOrDefault();
         Assert.NotNull(client);
         Assert.Equal("Ana P.", client.Name);
         Assert.Equal("3005550142", client.Phone);

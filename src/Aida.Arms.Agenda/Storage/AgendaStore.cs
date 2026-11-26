@@ -1,23 +1,18 @@
 using System.Globalization;
-using System.Security.Cryptography;
-using System.Text;
 using Aida.Platform.Sealing;
 using Microsoft.Data.Sqlite;
 
 namespace Aida.Arms.Agenda.Storage;
 
-/// <summary>Las citas, las personas y los bloqueos de la agenda, dentro de una transacción.</summary>
+/// <summary>Las citas y los bloqueos de la agenda, dentro de una transacción.</summary>
 /// <remarks>
-/// <para>Es <c>SqliteAgendaStore</c> de la 0.1 (<c>store.py:147-305</c>), con sus bloqueos y las consultas de la ficha.
-/// Trabaja dentro de la transacción de quien lo crea: el cambio y su hecho de auditoría se confirman juntos
-/// (ADR 0032).</para>
-/// <para>El nombre y el teléfono van sellados (ADR 0029). El teléfono lleva además una huella HMAC con una clave derivada
-/// distinta de la que sella, para buscarlo exacto sin abrir a todos (<c>store.py:150, 163-166</c>). El motivo de un bloqueo
-/// va sellado por la misma razón: es texto libre y puede nombrar a un paciente.</para>
+/// <para>Es <c>SqliteAgendaStore</c> de la 0.1 (<c>store.py:147-305</c>), con sus bloqueos. Trabaja dentro de la transacción de
+/// quien lo crea: el cambio y su hecho de auditoría se confirman juntos (ADR 0032).</para>
+/// <para>Las personas no viven aquí: están en la plataforma y se piden por <c>PersonStore</c> (ADR 0038). Una cita guarda solo
+/// su id. El motivo de un bloqueo va sellado (ADR 0029), porque es texto libre y puede nombrar a una persona atendida.</para>
 /// </remarks>
 internal sealed class AgendaStore
 {
-    internal const string PhoneKeyPurpose = "aida-agenda-phone";
     internal const string StartFormat = "yyyy-MM-dd'T'HH:mm:sszzz";
 
     private const string _select = "SELECT id, client, service, resource, start, minutes, state, created_by, updated_by FROM agenda_appointments";
@@ -25,75 +20,16 @@ internal sealed class AgendaStore
     private readonly SqliteConnection _connection;
     private readonly SqliteTransaction _transaction;
     private readonly Sealer _sealer;
-    private readonly byte[] _phoneKey;
 
-    internal AgendaStore(SqliteConnection connection, SqliteTransaction transaction, Sealer sealer, byte[] phoneKey)
+    internal AgendaStore(SqliteConnection connection, SqliteTransaction transaction, Sealer sealer)
     {
         _connection = connection;
         _transaction = transaction;
         _sealer = sealer;
-        _phoneKey = phoneKey;
     }
 
-    internal Client? ClientByPhone(string phone)
-    {
-        using var command = Command("SELECT id, name, phone FROM agenda_clients WHERE phone_index = $index;");
-        command.Parameters.AddWithValue("$index", Index(phone));
-        using var reader = command.ExecuteReader();
-        return reader.Read() ? ReadClient(reader) : null;
-    }
-
-    internal Client AddClient(string name, string phone)
-    {
-        using var command = Command("INSERT INTO agenda_clients (name, phone, phone_index) VALUES ($name, $phone, $index) RETURNING id;");
-        command.Parameters.AddWithValue("$name", _sealer.Seal(name));
-        command.Parameters.AddWithValue("$phone", _sealer.Seal(phone));
-        command.Parameters.AddWithValue("$index", Index(phone));
-        return new Client((long)command.ExecuteScalar()!, name, phone);
-    }
-
-    internal void UpdateClient(long client, string name, string phone)
-    {
-        using var command = Command("UPDATE agenda_clients SET name = $name, phone = $phone, phone_index = $index WHERE id = $id;");
-        command.Parameters.AddWithValue("$name", _sealer.Seal(name));
-        command.Parameters.AddWithValue("$phone", _sealer.Seal(phone));
-        command.Parameters.AddWithValue("$index", Index(phone));
-        command.Parameters.AddWithValue("$id", client);
-        if (command.ExecuteNonQuery() == 0)
-        {
-            throw new KeyNotFoundException($"no hay contacto {client}");
-        }
-    }
-
-    /// <summary>Un contacto por su id, o <see langword="null"/> si no existe.</summary>
-    internal Client? FindClient(long client)
-    {
-        using var command = Command("SELECT id, name, phone FROM agenda_clients WHERE id = $id;");
-        command.Parameters.AddWithValue("$id", client);
-        using var reader = command.ExecuteReader();
-        return reader.Read() ? ReadClient(reader) : null;
-    }
-
-    internal Client GetClient(long client) => FindClient(client) ?? throw new KeyNotFoundException($"no hay contacto {client}");
-
-    /// <summary>Todos los contactos, ya abiertos, por id (<c>store.py:316-319</c>).</summary>
-    /// <remarks>Los nombres van sellados: buscar por nombre es abrirlos todos. A la escala de un mostrador cabe en memoria,
-    /// como en la 0.1.</remarks>
-    internal IReadOnlyList<Client> Clients()
-    {
-        using var command = Command("SELECT id, name, phone FROM agenda_clients ORDER BY id;");
-        using var reader = command.ExecuteReader();
-        var found = new List<Client>();
-        while (reader.Read())
-        {
-            found.Add(ReadClient(reader));
-        }
-
-        return found;
-    }
-
-    /// <summary>Las citas de un contacto, en orden de inicio y, a igualdad, de id (<c>store.py:321-327</c>).</summary>
-    /// <param name="client">El contacto.</param>
+    /// <summary>Las citas de una persona, en orden de inicio y, a igualdad, de id (<c>store.py:321-327</c>).</summary>
+    /// <param name="client">La persona.</param>
     /// <returns>Todas sus citas, también las canceladas.</returns>
     internal IReadOnlyList<Appointment> AppointmentsFor(long client)
     {
@@ -238,9 +174,6 @@ internal sealed class AgendaStore
         reader.GetString(7),
         reader.GetString(8));
 
-    private Client ReadClient(SqliteDataReader reader) =>
-        new(reader.GetInt64(0), _sealer.Open((byte[])reader[1]), _sealer.Open((byte[])reader[2]));
-
     private Block ReadBlock(SqliteDataReader reader) => new(
         reader.GetInt64(0),
         reader.GetString(1),
@@ -248,9 +181,6 @@ internal sealed class AgendaStore
         DateTimeOffset.ParseExact(reader.GetString(3), StartFormat, CultureInfo.InvariantCulture),
         _sealer.Open((byte[])reader[4]),
         reader.GetString(5));
-
-    private string Index(string phone) =>
-        Convert.ToHexStringLower(HMACSHA256.HashData(_phoneKey, Encoding.UTF8.GetBytes(PhoneNumbers.Normalize(phone))));
 
     private SqliteCommand Command(string sql)
     {

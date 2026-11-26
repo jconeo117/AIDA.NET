@@ -20,7 +20,9 @@
     No ejecuta nada. N013 le añade las fechas y las horas. **N014** resuelve la cita concreta para cancelar o
     reprogramar (por persona, día de la semana, fecha u hora), y el mostrador abre una cita por su id, sea del día que
     sea (`AgendaDesk.Appointment`), para moverla a otro día.
-- **ADR:** [0007](../adr/0007-autoridad-y-puerta-de-herramientas.md), [0011](../adr/0011-brazos-y-comunicacion.md), [0013](../adr/0013-python-como-oraculo.md), [0029](../adr/0029-que-se-sella.md), [0032](../adr/0032-sql-de-cada-brazo.md), [0033](../adr/0033-packs-de-los-brazos.md), [0034](../adr/0034-clave-del-equipo.md), [0035](../adr/0035-lo-que-declara-un-brazo.md), [0037](../adr/0037-asistente-sin-llm.md)
+  - **N015** lleva a sus contactos a la persona de la plataforma (esquema 3, con migración al arrancar): la ficha
+    muestra y edita el documento, la fecha de nacimiento y el sexo, y el teléfono se puede compartir.
+- **ADR:** [0007](../adr/0007-autoridad-y-puerta-de-herramientas.md), [0011](../adr/0011-brazos-y-comunicacion.md), [0013](../adr/0013-python-como-oraculo.md), [0029](../adr/0029-que-se-sella.md), [0032](../adr/0032-sql-de-cada-brazo.md), [0033](../adr/0033-packs-de-los-brazos.md), [0034](../adr/0034-clave-del-equipo.md), [0035](../adr/0035-lo-que-declara-un-brazo.md), [0037](../adr/0037-asistente-sin-llm.md), [0038](../adr/0038-la-persona-en-la-plataforma.md)
 
 ## Responsabilidad
 - **Las citas de la clínica:** quién viene, a qué servicio, con qué recurso y a qué hora, y en qué estado está cada
@@ -38,7 +40,8 @@
 
 ## Depende de
 `Aida.Platform` (y, a través de ella, `Aida.Engine`).
-- Usa la conexión de la plataforma para sus tablas `agenda_clients`, `agenda_appointments` y `agenda_blocks`
+- Usa la conexión de la plataforma para sus tablas `agenda_appointments` y `agenda_blocks` (desde N015, las personas son
+  de la plataforma: `PersonStore`, en la misma transacción)
   ([0032](../adr/0032-sql-de-cada-brazo.md)).
 - Lee su pack con `PlatformYaml` ([0033](../adr/0033-packs-de-los-brazos.md)).
 - Pliega el texto de la búsqueda con `Aida.Engine.Text.TextFold`.
@@ -56,15 +59,17 @@ No referencia ningún paquete directamente.
 | `Aida.Arms.Agenda.Assistant` | `AgendaAssistant`, `AgendaProposal`, `ProposalKind` | De lo entendido a una propuesta para la pantalla. Solo lee (el día, la búsqueda y la ficha); si encaja más de una persona, las lista ([0037](../adr/0037-asistente-sin-llm.md)). Sus intenciones están en `AgendaDeclarations.Intents` y sus ejemplos en `packs/agenda/intents.yaml` |
 
 Son internos (visibles para `Aida.Arms.Agenda.Tests`):
-- `AgendaStore` y `AgendaSchema`: el SQL, en dos versiones;
-- `AgendaWork`: una conexión y una transacción por petición;
+- `AgendaStore` y `AgendaSchema`: el SQL de las citas y los bloqueos, en tres versiones (la tercera migra los contactos a
+  la persona de la plataforma);
+- `AgendaWork`: una conexión y una transacción por petición, con el almacén de la agenda y el de las personas;
 - `AgendaTool`: implementa `IToolPort` y despacha las nueve acciones;
 - `ActionArguments`, `EditAction` y `BlockActions`: las reglas de cada acción;
 - `SlotRules` y `FreeSlots`: las reglas del hueco;
 - `WeekSummary` y `ClientSearch`: la semana y la búsqueda;
 - `AppointmentViews`: una cita como la pinta la pantalla;
-- `StartArgument`: la forma aceptada de una fecha;
-- `PhoneNumbers`.
+- `StartArgument`: la forma aceptada de una fecha.
+
+`PhoneNumbers` pasa a la plataforma en N015, con la persona.
 
 ## Lo que no hace
 - No referencia `Aida.Arms.Health` ni ningún otro brazo.

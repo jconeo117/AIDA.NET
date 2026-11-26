@@ -2,6 +2,7 @@ using Aida.Arms.Agenda.Setup;
 using Aida.Arms.Agenda.Storage;
 using Aida.Engine.Actions;
 using Aida.Engine.Ontology;
+using Aida.Platform.People;
 
 namespace Aida.Arms.Agenda.Actions;
 
@@ -12,17 +13,23 @@ namespace Aida.Arms.Agenda.Actions;
 /// que no se devuelve como rechazo, no se lanza.</para>
 /// <para>El orden de las reglas importa, porque la primera que falla es la que se explica a quien pidió: es el de la 0.1,
 /// regla por regla. Quién pide llega en el argumento <c>by</c>, que pone <c>AgendaDesk</c> a partir de la sesión.</para>
+/// <para>Las personas están en la plataforma: se leen y se cambian por <see cref="PersonStore"/>, dentro de la misma
+/// transacción que la cita (ADR 0038).</para>
 /// </remarks>
 internal sealed class AgendaTool : IToolPort
 {
     private readonly AgendaStore _store;
+    private readonly PersonStore _people;
     private readonly AgendaSetup _setup;
+    private readonly PersonCatalog _catalog;
     private readonly TimeProvider _time;
 
-    internal AgendaTool(AgendaStore store, AgendaSetup setup, TimeProvider time)
+    internal AgendaTool(AgendaStore store, PersonStore people, AgendaSetup setup, PersonCatalog catalog, TimeProvider time)
     {
         _store = store;
+        _people = people;
         _setup = setup;
+        _catalog = catalog;
         _time = time;
     }
 
@@ -30,14 +37,14 @@ internal sealed class AgendaTool : IToolPort
     public ToolResult Execute(ActionId action, IReadOnlyDictionary<string, string> arguments) => action.Value switch
     {
         "agendar" => Book(arguments),
-        "editar" => EditAction.Run(_store, _setup, arguments),
+        "editar" => EditAction.Run(_store, _people, _setup, arguments),
         "reprogramar" => Reschedule(arguments),
         "cancelar" => Close(arguments, AppointmentState.Cancelled, onlyAfterStart: false),
         "atendida" => Close(arguments, AppointmentState.Attended, onlyAfterStart: true),
         "no_asistio" => Close(arguments, AppointmentState.NoShow, onlyAfterStart: true),
         "bloquear" => BlockActions.Block(_store, _setup, _time.GetLocalNow(), arguments),
         "desbloquear" => BlockActions.Unblock(_store, arguments),
-        "editar_contacto" => EditAction.Contact(_store, arguments),
+        "editar_contacto" => EditAction.Contact(_people, _catalog, DateOnly.FromDateTime(_time.GetLocalNow().DateTime), arguments),
         _ =>ToolResult.Rejected("unknown_action"),
     };
 
@@ -48,6 +55,12 @@ internal sealed class AgendaTool : IToolPort
         if (name.Length == 0 || phone.Length == 0)
         {
             return ToolResult.Rejected("missing_client");
+        }
+
+        var client = ActionArguments.Text(arguments, "client").Trim();
+        if (!BookPerson.IsKnown(_people, client))
+        {
+            return ToolResult.Rejected("unknown_client");
         }
 
         var service = _setup.Service(ActionArguments.Text(arguments, "service"));
@@ -86,7 +99,7 @@ internal sealed class AgendaTool : IToolPort
             var reason = SlotRules.Rejection(_store, resource, start, service.Minutes, null);
             if (reason is null)
             {
-                return Create(arguments["by"], name, phone, service, resource, start);
+                return Create(arguments["by"], client, name, phone, service, resource, start);
             }
 
             firstReason ??= reason;
@@ -95,19 +108,14 @@ internal sealed class AgendaTool : IToolPort
         return ToolResult.Rejected(firstReason ?? "outside_hours");
     }
 
-    private ToolResult Create(string by, string name, string phone, ServiceSpec service, ResourceSpec resource, DateTimeOffset start)
+    private ToolResult Create(string by, string client, string name, string phone, ServiceSpec service, ResourceSpec resource, DateTimeOffset start)
     {
-        var client = _store.ClientByPhone(phone);
-        if (client is null)
+        if (BookPerson.Resolve(_people, client, name, phone, out var personId) is { } rejection)
         {
-            client = _store.AddClient(name, phone);
-        }
-        else if (client.Name != name)
-        {
-            _store.UpdateClient(client.Id, name, phone);
+            return rejection;
         }
 
-        return ActionArguments.AppointmentDone(_store.Add(client.Id, service.Id, resource.Id, start, service.Minutes, by).Id);
+        return ActionArguments.AppointmentDone(_store.Add(personId, service.Id, resource.Id, start, service.Minutes, by).Id);
     }
 
     private ToolResult Reschedule(IReadOnlyDictionary<string, string> arguments)

@@ -11,6 +11,12 @@ internal static partial class ArmSchema
     internal static void Apply(SqliteConnection connection, string armId, IReadOnlyList<string> steps)
     {
         ArgumentNullException.ThrowIfNull(steps);
+        ApplySteps(connection, armId, steps.Select(ArmSchemaStep.Sql).ToList());
+    }
+
+    internal static void ApplySteps(SqliteConnection connection, string armId, IReadOnlyList<ArmSchemaStep> steps)
+    {
+        ArgumentNullException.ThrowIfNull(steps);
         if (armId is null || !IdPattern().IsMatch(armId))
         {
             throw new ArgumentException($"«{armId}» no es un identificador de brazo válido", nameof(armId));
@@ -38,10 +44,11 @@ internal static partial class ArmSchema
 
         if (current < steps.Count)
         {
-            using var apply = connection.CreateCommand();
-            apply.Transaction = transaction;
-            apply.CommandText = string.Concat(steps.Skip((int)current));
-            apply.ExecuteNonQuery();
+            for (var index = (int)current; index < steps.Count; index++)
+            {
+                steps[index].Run(connection, transaction);
+            }
+
             using var write = connection.CreateCommand();
             write.Transaction = transaction;
             write.CommandText = "INSERT INTO arm_schema (arm, version) VALUES ($arm, $version) ON CONFLICT (arm) DO UPDATE SET version = excluded.version;";
