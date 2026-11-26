@@ -59,15 +59,17 @@ No referencia ningún paquete directamente.
 | `Aida.Arms.Agenda.Assistant` | `AgendaAssistant`, `AgendaProposal`, `ProposalKind` | De lo entendido a una propuesta para la pantalla. Solo lee (el día, la búsqueda y la ficha); si encaja más de una persona, las lista ([0037](../adr/0037-asistente-sin-llm.md)). Sus intenciones están en `AgendaDeclarations.Intents` y sus ejemplos en `packs/agenda/intents.yaml` |
 
 Son internos (visibles para `Aida.Arms.Agenda.Tests`):
-- `AgendaStore` y `AgendaSchema`: el SQL, en dos versiones;
-- `AgendaWork`: una conexión y una transacción por petición;
+- `AgendaStore` y `AgendaSchema`: el SQL de las citas y los bloqueos, en tres versiones (la tercera migra los contactos a
+  la persona de la plataforma);
+- `AgendaWork`: una conexión y una transacción por petición, con el almacén de la agenda y el de las personas;
 - `AgendaTool`: implementa `IToolPort` y despacha las nueve acciones;
 - `ActionArguments`, `EditAction` y `BlockActions`: las reglas de cada acción;
 - `SlotRules` y `FreeSlots`: las reglas del hueco;
 - `WeekSummary` y `ClientSearch`: la semana y la búsqueda;
 - `AppointmentViews`: una cita como la pinta la pantalla;
-- `StartArgument`: la forma aceptada de una fecha;
-- `PhoneNumbers`.
+- `StartArgument`: la forma aceptada de una fecha.
+
+`PhoneNumbers` pasa a la plataforma en N015, con la persona.
 
 ## Lo que no hace
 - No referencia `Aida.Arms.Health` ni ningún otro brazo.
