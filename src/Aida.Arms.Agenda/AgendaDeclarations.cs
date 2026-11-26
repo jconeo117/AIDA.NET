@@ -29,7 +29,7 @@ public static class AgendaDeclarations
     public static IReadOnlyList<AuditKind> AuditKinds { get; } = [Changed];
 
     /// <summary>La versión de esquema que conoce este código; la lee la restauración para no aceptar una copia más nueva.</summary>
-    public static int SchemaVersion => AgendaSchema.Steps.Count;
+    public static int SchemaVersion => AgendaSchema.Version;
 
     /// <summary>Las intenciones que entiende el asistente de la agenda (ADR 0037).</summary>
     /// <remarks>Es la lista cerrada: <c>packs/agenda/intents.yaml</c> no puede declarar otra, y la composición lo comprueba

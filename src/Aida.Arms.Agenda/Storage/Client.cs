@@ -1,3 +1,5 @@
+using Aida.Platform.People;
+
 namespace Aida.Arms.Agenda.Storage;
 
 /// <summary>Quien viene a la cita, ya abierto: nombre y teléfono.</summary>
@@ -6,4 +8,10 @@ namespace Aida.Arms.Agenda.Storage;
 /// <param name="Id">El identificador.</param>
 /// <param name="Name">El nombre, tal como se escribió.</param>
 /// <param name="Phone">El teléfono, tal como se escribió.</param>
-public sealed record Client(long Id, string Name, string Phone);
+public sealed record Client(long Id, string Name, string Phone)
+{
+    /// <summary>La vista de la agenda de una persona de la plataforma.</summary>
+    /// <param name="person">La persona.</param>
+    /// <returns>Su id, su nombre y su teléfono.</returns>
+    internal static Client From(Person person) => new(person.Id, person.Name, person.Phone);
+}

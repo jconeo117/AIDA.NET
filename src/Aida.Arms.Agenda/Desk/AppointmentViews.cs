@@ -1,5 +1,6 @@
 using Aida.Arms.Agenda.Setup;
 using Aida.Arms.Agenda.Storage;
+using Aida.Platform.People;
 
 namespace Aida.Arms.Agenda.Desk;
 
@@ -8,14 +9,14 @@ namespace Aida.Arms.Agenda.Desk;
 internal static class AppointmentViews
 {
     /// <summary>La vista de una cita.</summary>
-    /// <param name="store">El almacén de la petición, para leer a la persona.</param>
+    /// <param name="people">El almacén de las personas de la petición, para leer a quien viene.</param>
     /// <param name="setup">La configuración, para el nombre del servicio.</param>
     /// <param name="names">Los nombres de los usuarios, por identificador.</param>
     /// <param name="appointment">La cita.</param>
     /// <returns>La vista.</returns>
-    internal static AppointmentView Of(AgendaStore store, AgendaSetup setup, IReadOnlyDictionary<string, string> names, Appointment appointment)
+    internal static AppointmentView Of(PersonStore people, AgendaSetup setup, IReadOnlyDictionary<string, string> names, Appointment appointment)
     {
-        var client = store.GetClient(appointment.ClientId);
+        var client = people.Find(appointment.ClientId) ?? throw new KeyNotFoundException($"no hay persona {appointment.ClientId}");
         return new AppointmentView(
             appointment,
             client.Name,

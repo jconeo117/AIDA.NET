@@ -10,6 +10,7 @@ using Aida.Platform.Assistant;
 using Aida.Platform.Audit;
 using Aida.Platform.Identity;
 using Aida.Platform.Keys;
+using Aida.Platform.People;
 using Aida.Platform.Paths;
 using Aida.Platform.Roles;
 using Aida.Platform.Sessions;
@@ -67,6 +68,7 @@ public static class AidaWebApp
         builder.Services.AddSingleton(_ => AgendaManifest.Load(Path.Combine(agendaPack, "arm.yaml")));
         builder.Services.AddSingleton(_ => AgendaWording.Load(Path.Combine(agendaPack, "ui.yaml")));
         builder.Services.AddSingleton(_ => TimeVocabulary.Load(paths.PlatformPackFile("time.yaml")));
+        builder.Services.AddSingleton(_ => PersonCatalog.Load(paths.PlatformPackFile("people.yaml")));
         builder.Services.AddSingleton(_ => IntentCatalog.Load(Path.Combine(agendaPack, "intents.yaml"), AgendaDeclarations.Intents));
         builder.Services.AddSingleton(provider => new AssistantInterpreter(provider.GetRequiredService<IntentCatalog>(), provider.GetRequiredService<TimeVocabulary>()));
         builder.Services.AddSingleton(provider => new AgendaAssistant(provider.GetRequiredService<AgendaDesk>(), provider.GetRequiredService<TimeProvider>()));
@@ -79,6 +81,7 @@ public static class AidaWebApp
                 provider.GetRequiredService<RoleCatalog>(),
                 provider.GetRequiredService<UserStore>(),
                 AgendaSetupLoader.Load(paths.ConfigFile("agenda.yaml"), agendaPack, manifest.DefaultSector),
+                provider.GetRequiredService<PersonCatalog>(),
                 manifest.Actions,
                 Reversibility.Reversible,
                 provider.GetRequiredService<MachineKey>(),

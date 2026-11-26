@@ -2,25 +2,27 @@ using System.Globalization;
 using Aida.Arms.Agenda.Setup;
 using Aida.Arms.Agenda.Storage;
 using Aida.Engine.Actions;
+using Aida.Platform.People;
 
 namespace Aida.Arms.Agenda.Actions;
 
 /// <summary>Cambiar los datos de una cita sin mover su hora: la persona, el servicio o quién atiende.</summary>
 /// <remarks>
-/// <para>Es <c>_edit</c> de la 0.1 (<c>tool.py:225-271</c>), regla por regla. Mover la hora es <c>reprogramar</c>. Un nombre
-/// o un teléfono que vienen vacíos se rechazan; los que no vienen no se tocan. Se guardan como se escribieron, sin recortar,
-/// como en la 0.1.</para>
+/// <para>Es <c>_edit</c> de la 0.1 (<c>tool.py:225-271</c>), regla por regla, salvo el teléfono: ya no se rechaza el de otra
+/// persona (N015, D5), porque el teléfono se comparte. Mover la hora es <c>reprogramar</c>. Un nombre o un teléfono que vienen
+/// vacíos se rechazan; los que no vienen no se tocan. Se guardan como se escribieron, sin recortar, como en la 0.1.</para>
 /// <para>El hueco se repasa solo si cambian el recurso o los minutos: con los mismos, la cita no ocupa nada nuevo. Cambiar
-/// el teléfono de una cita cambia el del contacto, y con él el de todas sus citas.</para>
+/// el teléfono de una cita cambia el de la persona, y con él el de todas sus citas.</para>
 /// </remarks>
 internal static class EditAction
 {
     /// <summary>Aplica un cambio de datos a una cita agendada.</summary>
-    /// <param name="store">El almacén de la petición.</param>
+    /// <param name="store">El almacén de la petición, para las citas.</param>
+    /// <param name="people">El almacén de las personas de la petición, para su nombre y su teléfono.</param>
     /// <param name="setup">La configuración: servicios y recursos que se pueden poner.</param>
     /// <param name="arguments">Los argumentos, con <c>by</c> de quien pide.</param>
     /// <returns>La cita hecha, o el primer rechazo de la lista en su orden.</returns>
-    internal static ToolResult Run(AgendaStore store, AgendaSetup setup, IReadOnlyDictionary<string, string> arguments)
+    internal static ToolResult Run(AgendaStore store, PersonStore people, AgendaSetup setup, IReadOnlyDictionary<string, string> arguments)
     {
         if (ActionArguments.Booked(store, arguments, out var appointment) is { } rejection)
         {
@@ -72,31 +74,29 @@ internal static class EditAction
             return ToolResult.Rejected(reason);
         }
 
-        if (hasPhone && PhoneRejection(store, appointment.ClientId, phone!) is { } taken)
-        {
-            return ToolResult.Rejected(taken);
-        }
-
         if (hasName || hasPhone)
         {
-            var current = store.GetClient(appointment.ClientId);
-            store.UpdateClient(appointment.ClientId, hasName ? name! : current.Name, hasPhone ? phone! : current.Phone);
+            var current = people.Find(appointment.ClientId) ?? throw new KeyNotFoundException($"no hay persona {appointment.ClientId}");
+            people.UpdateContact(appointment.ClientId, hasName ? name! : current.Name, hasPhone ? phone! : current.Phone);
         }
 
         store.Update(appointment.Id, arguments["by"], resource: resourceId, service: service, minutes: minutes);
         return ActionArguments.AppointmentDone(appointment.Id);
     }
 
-    /// <summary>Corregir el nombre o el teléfono de un contacto, desde su ficha.</summary>
-    /// <param name="store">El almacén de la petición.</param>
-    /// <param name="arguments">Los argumentos: <c>client</c>, <c>name</c> y <c>phone</c>.</param>
-    /// <returns>El contacto hecho, o el primer rechazo en su orden.</returns>
-    /// <remarks>Es <c>_edit_client</c> de la 0.1 (<c>tool.py:351-364</c>). A diferencia de <see cref="Run"/>, los dos campos se
-    /// piden y se guardan recortados. Cambia el contacto de todas sus citas.</remarks>
-    internal static ToolResult Contact(AgendaStore store, IReadOnlyDictionary<string, string> arguments)
+    /// <summary>Corregir el nombre, el teléfono y los datos opcionales de una persona, desde su ficha.</summary>
+    /// <param name="people">El almacén de las personas de la petición.</param>
+    /// <param name="catalog">Los tipos de documento y los sexos aceptados.</param>
+    /// <param name="today">La fecha de hoy: una fecha de nacimiento no puede ser posterior.</param>
+    /// <param name="arguments">Los argumentos: <c>client</c>, <c>name</c> y <c>phone</c>, y los opcionales de <see cref="ContactDetails"/>.</param>
+    /// <returns>La persona hecha, o el primer rechazo en su orden.</returns>
+    /// <remarks>Es <c>_edit_client</c> de la 0.1 (<c>tool.py:351-364</c>), con los datos de N015 (D6). A diferencia de
+    /// <see cref="Run"/>, los dos campos se piden y se guardan recortados. Cambia la persona en todas sus citas, porque las
+    /// citas apuntan a ella. El contacto y sus datos van en la misma transacción: no se guarda uno sin el otro.</remarks>
+    internal static ToolResult Contact(PersonStore people, PersonCatalog catalog, DateOnly today, IReadOnlyDictionary<string, string> arguments)
     {
         if (!long.TryParse(ActionArguments.Text(arguments, "client"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)
-            || store.FindClient(id) is not { } current)
+            || people.Find(id) is not { } current)
         {
             return ToolResult.Rejected("unknown_client");
         }
@@ -108,22 +108,13 @@ internal static class EditAction
             return ToolResult.Rejected("missing_client");
         }
 
-        if (PhoneRejection(store, current.Id, phone) is { } taken)
+        if (ContactDetails.Merge(people, catalog, today, current, arguments, out var details) is { } detailsRejection)
         {
-            return ToolResult.Rejected(taken);
+            return detailsRejection;
         }
 
-        store.UpdateClient(current.Id, name, phone);
+        people.UpdateContact(current.Id, name, phone);
+        people.UpdateDetails(current.Id, details);
         return ToolResult.Done(new Dictionary<string, string> { ["client"] = current.Id.ToString(CultureInfo.InvariantCulture) });
     }
-
-    /// <summary>El teléfono es la llave del contacto: dos contactos no lo comparten (<c>tool.py:122-130</c>).</summary>
-    /// <param name="store">El almacén de la petición.</param>
-    /// <param name="clientId">El contacto al que pertenece la cita.</param>
-    /// <param name="phone">El teléfono nuevo.</param>
-    /// <returns><c>phone_taken</c>, o <see langword="null"/> si el teléfono es libre o ya era de ese contacto.</returns>
-    /// <remarks>Sin esta regla, la base lo impide igual con su índice único, pero la puerta lo convertiría en un fallo y a
-    /// quien pidió no se le explicaría nada.</remarks>
-    internal static string? PhoneRejection(AgendaStore store, long clientId, string phone) =>
-        store.ClientByPhone(phone) is { } other && other.Id != clientId ? "phone_taken" : null;
 }
