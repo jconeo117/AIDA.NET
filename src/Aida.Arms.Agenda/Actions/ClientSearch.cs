@@ -1,5 +1,6 @@
 using Aida.Arms.Agenda.Storage;
 using Aida.Engine.Text;
+using Aida.Platform.People;
 
 namespace Aida.Arms.Agenda.Actions;
 

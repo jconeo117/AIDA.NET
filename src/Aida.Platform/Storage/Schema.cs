@@ -8,7 +8,7 @@ namespace Aida.Platform.Storage;
 /// mal leído es peor que no leerlo (<c>persistence.py:33-35</c> de la 0.1 lo dice del guardado).</remarks>
 internal static class Schema
 {
-    internal const int Version = 2;
+    internal const int Version = 3;
 
     private const string _version1 = """
         CREATE TABLE users (
@@ -33,7 +33,23 @@ internal static class Schema
         ) STRICT;
         """;
 
-    private static readonly ImmutableArray<string> _steps = [_version1, _version2];
+    private const string _version3 = """
+        CREATE TABLE people (
+            id INTEGER PRIMARY KEY,
+            name BLOB NOT NULL,
+            phone BLOB NOT NULL,
+            phone_index TEXT NOT NULL,
+            document_type TEXT,
+            document_number BLOB,
+            document_index TEXT UNIQUE,
+            birth_date BLOB,
+            sex BLOB,
+            CHECK ((document_type IS NULL) = (document_number IS NULL) AND (document_number IS NULL) = (document_index IS NULL))
+        ) STRICT;
+        CREATE INDEX people_phone ON people(phone_index);
+        """;
+
+    private static readonly ImmutableArray<string> _steps = [_version1, _version2, _version3];
 
     internal static void Apply(SqliteConnection connection)
     {

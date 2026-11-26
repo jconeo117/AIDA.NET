@@ -1,0 +1,15 @@
+# Los datos de una persona que cambian con el país y con la norma (ADR 0038). Propuesta para Colombia, a confirmar con
+# el asesor (ruta 141, B2): los tipos de documento y el sexo que piden los RIPS.
+people:
+  document_types:
+    - {id: "CC", label: "Cédula de ciudadanía"}
+    - {id: "TI", label: "Tarjeta de identidad"}
+    - {id: "RC", label: "Registro civil"}
+    - {id: "CE", label: "Cédula de extranjería"}
+    - {id: "PA", label: "Pasaporte"}
+    - {id: "PPT", label: "Permiso por protección temporal"}
+    - {id: "PE", label: "Permiso especial de permanencia"}
+  sexes:
+    - {id: "M", label: "Mujer"}
+    - {id: "H", label: "Hombre"}
+    - {id: "I", label: "Indeterminado"}

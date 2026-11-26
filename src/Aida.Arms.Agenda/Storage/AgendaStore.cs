@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
+using Aida.Platform.People;
 using Aida.Platform.Sealing;
 using Microsoft.Data.Sqlite;
 
