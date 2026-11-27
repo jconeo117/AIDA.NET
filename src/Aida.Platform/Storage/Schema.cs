@@ -8,7 +8,7 @@ namespace Aida.Platform.Storage;
 /// mal leído es peor que no leerlo (<c>persistence.py:33-35</c> de la 0.1 lo dice del guardado).</remarks>
 internal static class Schema
 {
-    internal const int Version = 3;
+    internal const int Version = 4;
 
     private const string _version1 = """
         CREATE TABLE users (
@@ -49,7 +49,31 @@ internal static class Schema
         CREATE INDEX people_phone ON people(phone_index);
         """;
 
-    private static readonly ImmutableArray<string> _steps = [_version1, _version2, _version3];
+    private const string _version4 = """
+        CREATE TABLE records (
+            id INTEGER PRIMARY KEY,
+            kind TEXT NOT NULL,
+            person INTEGER NOT NULL REFERENCES people(id),
+            status TEXT NOT NULL CHECK (status IN ('draft', 'signed')),
+            content BLOB NOT NULL,
+            content_hash TEXT,
+            author TEXT NOT NULL,
+            reference TEXT,
+            created_at TEXT NOT NULL,
+            updated_at TEXT NOT NULL,
+            signed_at TEXT,
+            signed_workstation TEXT,
+            CHECK ((status = 'signed') = (content_hash IS NOT NULL)),
+            CHECK ((status = 'signed') = (signed_at IS NOT NULL))
+        ) STRICT;
+        CREATE INDEX records_person ON records(person, kind);
+        CREATE TRIGGER records_signed_no_update BEFORE UPDATE ON records WHEN OLD.status = 'signed'
+        BEGIN SELECT RAISE(ABORT, 'records: lo firmado no se cambia'); END;
+        CREATE TRIGGER records_signed_no_delete BEFORE DELETE ON records WHEN OLD.status = 'signed'
+        BEGIN SELECT RAISE(ABORT, 'records: lo firmado no se borra'); END;
+        """;
+
+    private static readonly ImmutableArray<string> _steps = [_version1, _version2, _version3, _version4];
 
     internal static void Apply(SqliteConnection connection)
     {
