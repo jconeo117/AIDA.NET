@@ -8,4 +8,6 @@ namespace Aida.Engine.Actions;
 /// <param name="Action">La acción.</param>
 /// <param name="Arguments">Sus argumentos, todos texto.</param>
 /// <param name="RequestedBy">El identificador de la persona que la pide.</param>
-public sealed record ActionRequest(ActionId Action, IReadOnlyDictionary<string, string> Arguments, string RequestedBy);
+/// <param name="AuthorizedBy">Quién confirmó la petición en este momento, verificada su credencial por quien la arma; o
+/// <see langword="null"/>. Solo con ella pasa una acción por encima del techo (ADR 0039).</param>
+public sealed record ActionRequest(ActionId Action, IReadOnlyDictionary<string, string> Arguments, string RequestedBy, string? AuthorizedBy = null);

@@ -3,11 +3,19 @@
 @using Aida.Arms.Agenda.Setup
 @using Aida.Arms.Agenda.Storage
 @using Aida.Arms.Agenda.Wording
+@using Aida.Arms.Health.Desk
+@using Aida.Arms.Health.Setup
 @inject AgendaWording Text
+@inject HealthDesk Health
+@inject EncounterTemplate HealthTemplate
 
 <div class="panel-card">
     <h3>@View.ClientName</h3>
     <p><a href="@AgendaLinks.Panel(Day, "ficha", View.Appointment.ClientId.ToString(CultureInfo.InvariantCulture))">@Text["card_link"]</a></p>
+    @if (View.Appointment.State == AppointmentState.Attended && CanReadHistory)
+    {
+        <p><a href="/historia/@(View.Appointment.ClientId)?cita=@(View.Appointment.Id)">@HealthTemplate["card_link"]</a></p>
+    }
     <p>@Range()</p>
     <dl class="kv">
         <dt>@Text["detail_service"]</dt>
@@ -45,6 +53,13 @@
 
     [Parameter, EditorRequired]
     public DateOnly Day { get; set; }
+
+    [CascadingParameter]
+    private HttpContext Http { get; set; } = default!;
+
+    /// <summary>Si quien mira puede abrir la historia: el enlace de una cita atendida solo aparece entonces.</summary>
+    /// <remarks>Como en la ficha, la agenda no decide permisos de salud: lo pregunta al mostrador de la historia.</remarks>
+    private bool CanReadHistory => SessionGate.CurrentUser(Http) is { } user && Health.CanRead(user);
 
     private string Range() =>
         $"{View.Appointment.Start.ToString("HH:mm", CultureInfo.InvariantCulture)}–{View.Appointment.End.ToString("HH:mm", CultureInfo.InvariantCulture)}";

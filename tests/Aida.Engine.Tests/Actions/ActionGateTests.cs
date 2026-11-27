@@ -10,43 +10,25 @@ public sealed class ActionGateTests
     private sealed class SpyTool : IToolPort
     {
         public List<(ActionId Action, IReadOnlyDictionary<string, string> Arguments)> Calls { get; } = [];
-
         public ToolResult Result { get; set; } = ToolResult.Done(new Dictionary<string, string> { ["appointment"] = "1" });
-
         public Exception? Exception { get; set; }
-
         public EventLog? Log { get; set; }
-
         public int EventsBeforeExecution { get; set; }
 
         public ToolResult Execute(ActionId action, IReadOnlyDictionary<string, string> arguments)
         {
-            if (Log is not null)
-            {
-                EventsBeforeExecution = Log.Count();
-            }
-
+            if (Log is not null) EventsBeforeExecution = Log.Count();
             Calls.Add((action, arguments));
-            if (Exception is not null)
-            {
-                throw Exception;
-            }
-
+            if (Exception is not null) throw Exception;
             return Result;
         }
     }
 
     private static (ActionGate Gate, EventLog Log, Func<long> Tick) CreateGate(
-        IToolPort tool,
-        ActionCatalog? catalog = null,
-        Reversibility ceiling = Reversibility.Reversible)
+        IToolPort tool, ActionCatalog? catalog = null, Reversibility ceiling = Reversibility.Reversible)
     {
         var log = new EventLog();
-        if (tool is SpyTool spy)
-        {
-            spy.Log = log;
-        }
-
+        if (tool is SpyTool spy) spy.Log = log;
         long tickCounter = 0;
         long NextTick() => ++tickCounter;
 
@@ -55,8 +37,7 @@ public sealed class ActionGateTests
             KeyValuePair.Create("cancelar", "reversible"),
         ], "test");
 
-        var gate = new ActionGate(cat, ceiling, tool, log, new AgentId("agenda"), NextTick);
-        return (gate, log, NextTick);
+        return (new ActionGate(cat, ceiling, tool, log, new AgentId("agenda"), NextTick), log, NextTick);
     }
 
     [Fact]
@@ -65,15 +46,12 @@ public sealed class ActionGateTests
         var spy = new SpyTool { Result = ToolResult.Done(new Dictionary<string, string> { ["appointment"] = "42" }) };
         var (gate, log, _) = CreateGate(spy);
 
-        var req = new ActionRequest(
-            new ActionId("agendar"),
-            new Dictionary<string, string>
-            {
-                ["phone"] = "3001234567",
-                ["name"] = "Ana",
-                ["service"] = "consulta",
-            },
-            "prof-1");
+        var req = new ActionRequest(new ActionId("agendar"), new Dictionary<string, string>
+        {
+            ["phone"] = "3001234567",
+            ["name"] = "Ana",
+            ["service"] = "consulta",
+        }, "prof-1");
 
         var res = gate.Submit(req);
 
@@ -108,11 +86,7 @@ public sealed class ActionGateTests
         var catalog = ActionCatalog.Parse([KeyValuePair.Create("agendar", "reversible")], "test");
         var (gate, log, _) = CreateGate(spy, catalog);
 
-        var req = new ActionRequest(
-            new ActionId("accion_inexistente"),
-            new Dictionary<string, string> { ["foo"] = "bar" },
-            "prof-1");
-
+        var req = new ActionRequest(new ActionId("accion_inexistente"), new Dictionary<string, string> { ["foo"] = "bar" }, "prof-1");
         var res = gate.Submit(req);
 
         Assert.Equal(ToolStatus.Rejected, res.Status);
@@ -132,11 +106,7 @@ public sealed class ActionGateTests
         var spy = new SpyTool { Exception = new InvalidOperationException("fallo de disco simulado") };
         var (gate, log, _) = CreateGate(spy);
 
-        var req = new ActionRequest(
-            new ActionId("agendar"),
-            new Dictionary<string, string> { ["name"] = "Carlos" },
-            "prof-1");
-
+        var req = new ActionRequest(new ActionId("agendar"), new Dictionary<string, string> { ["name"] = "Carlos" }, "prof-1");
         var res = gate.Submit(req);
 
         Assert.Equal(ToolStatus.Failed, res.Status);
@@ -161,11 +131,7 @@ public sealed class ActionGateTests
         var spy = new SpyTool();
         var (gate, log, _) = CreateGate(spy);
 
-        var req = new ActionRequest(
-            new ActionId("agendar"),
-            new Dictionary<string, string> { ["name"] = "Sin Autor" },
-            string.Empty);
-
+        var req = new ActionRequest(new ActionId("agendar"), new Dictionary<string, string> { ["name"] = "Sin Autor" }, string.Empty);
         Assert.Throws<ArgumentException>(() => gate.Submit(req));
         Assert.Empty(spy.Calls);
         Assert.Empty(log);
@@ -177,15 +143,12 @@ public sealed class ActionGateTests
         var spy = new SpyTool();
         var (gate, log, _) = CreateGate(spy);
 
-        var req = new ActionRequest(
-            new ActionId("agendar"),
-            new Dictionary<string, string>
-            {
-                ["z_arg"] = "ultimo",
-                ["a_arg"] = "primero",
-                ["m_arg"] = "medio",
-            },
-            "prof-1");
+        var req = new ActionRequest(new ActionId("agendar"), new Dictionary<string, string>
+        {
+            ["z_arg"] = "ultimo",
+            ["a_arg"] = "primero",
+            ["m_arg"] = "medio",
+        }, "prof-1");
 
         gate.Submit(req);
 
@@ -231,6 +194,44 @@ public sealed class ActionGateTests
     }
 
     [Fact]
+    public void Por_encima_del_techo_con_autorizacion_emite_requested_authorized_y_completed_en_orden()
+    {
+        var spy = new SpyTool();
+        var catalog = ActionCatalog.Parse([KeyValuePair.Create("accion_irr", "irreversible")], "test");
+        var (gate, log, _) = CreateGate(spy, catalog, ceiling: Reversibility.Reversible);
+
+        var req = new ActionRequest(new ActionId("accion_irr"), new Dictionary<string, string>(), "u1", AuthorizedBy: "admin-1");
+        var res = gate.Submit(req);
+
+        Assert.Equal(ToolStatus.Done, res.Status);
+        Assert.Single(spy.Calls);
+        var events = log.ToList();
+        Assert.Equal(3, events.Count);
+        Assert.Equal(EventKind.ActionRequested, events[0].Kind);
+        Assert.Equal(EventKind.ActionAuthorized, events[1].Kind);
+        Assert.Equal(EventValue.Of("admin-1"), events[1].Data!["by"]);
+        Assert.Equal(EventKind.ActionCompleted, events[2].Kind);
+    }
+
+    [Fact]
+    public void Dentro_del_techo_con_autorizacion_no_emite_action_authorized()
+    {
+        var spy = new SpyTool();
+        var catalog = ActionCatalog.Parse([KeyValuePair.Create("accion_rev", "reversible")], "test");
+        var (gate, log, _) = CreateGate(spy, catalog, ceiling: Reversibility.Reversible);
+
+        var req = new ActionRequest(new ActionId("accion_rev"), new Dictionary<string, string>(), "u1", AuthorizedBy: "admin-1");
+        var res = gate.Submit(req);
+
+        Assert.Equal(ToolStatus.Done, res.Status);
+        Assert.Single(spy.Calls);
+        var events = log.ToList();
+        Assert.Equal(2, events.Count);
+        Assert.Equal(EventKind.ActionRequested, events[0].Kind);
+        Assert.Equal(EventKind.ActionCompleted, events[1].Kind);
+    }
+
+    [Fact]
     public void En_el_techo_se_ejecuta()
     {
         var spy = new SpyTool();
@@ -239,12 +240,10 @@ public sealed class ActionGateTests
             KeyValuePair.Create("accion_rwc", "reversible_with_cost"),
         ], "test");
 
-        // 1. Reversible con techo Reversible
         var (gate1, _, _) = CreateGate(spy, catalog, ceiling: Reversibility.Reversible);
         var res1 = gate1.Submit(new ActionRequest(new ActionId("accion_rev"), new Dictionary<string, string>(), "u1"));
         Assert.Equal(ToolStatus.Done, res1.Status);
 
-        // 2. ReversibleWithCost con techo ReversibleWithCost
         var (gate2, _, _) = CreateGate(spy, catalog, ceiling: Reversibility.ReversibleWithCost);
         var res2 = gate2.Submit(new ActionRequest(new ActionId("accion_rwc"), new Dictionary<string, string>(), "u1"));
         Assert.Equal(ToolStatus.Done, res2.Status);
@@ -257,28 +256,16 @@ public sealed class ActionGateTests
     {
         var spy = new SpyTool
         {
-            Result = new ToolResult(
-                ToolStatus.Done,
-                "base_reason",
-                new Dictionary<string, string> { ["reason"] = "custom_reason" }),
+            Result = new ToolResult(ToolStatus.Done, "base_reason", new Dictionary<string, string> { ["reason"] = "custom_reason" }),
         };
 
         var (gate, log, _) = CreateGate(spy);
-
-        var req = new ActionRequest(
-            new ActionId("agendar"),
-            new Dictionary<string, string> { ["by"] = "override_by" },
-            "u1");
-
+        var req = new ActionRequest(new ActionId("agendar"), new Dictionary<string, string> { ["by"] = "override_by" }, "u1");
         gate.Submit(req);
 
         var events = log.ToList();
         Assert.Equal(2, events.Count);
-
-        // Los argumentos sobrescriben 'by'
         Assert.Equal(EventValue.Of("override_by"), events[0].Data!["by"]);
-
-        // Los datos del resultado sobrescriben 'reason'
         Assert.Equal(EventValue.Of("custom_reason"), events[1].Data!["reason"]);
     }
 
@@ -288,11 +275,8 @@ public sealed class ActionGateTests
         var spy = new SpyTool();
         var (gate, log, _) = CreateGate(spy);
 
-        var req1 = new ActionRequest(new ActionId("agendar"), new Dictionary<string, string>(), "u1");
-        gate.Submit(req1);
-
-        var req2 = new ActionRequest(new ActionId("cancelar"), new Dictionary<string, string>(), "u1");
-        gate.Submit(req2);
+        gate.Submit(new ActionRequest(new ActionId("agendar"), new Dictionary<string, string>(), "u1"));
+        gate.Submit(new ActionRequest(new ActionId("cancelar"), new Dictionary<string, string>(), "u1"));
 
         var events = log.ToList();
         Assert.Equal(4, events.Count);

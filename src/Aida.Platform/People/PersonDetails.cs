@@ -5,7 +5,7 @@ namespace Aida.Platform.People;
 /// <param name="DocumentNumber">El número, tal como se escribió (recortado).</param>
 /// <param name="BirthDate">La fecha de nacimiento.</param>
 /// <param name="Sex">El id del sexo, de <c>people.yaml</c>.</param>
-/// <remarks>Son opcionales porque el día a día no los pide: la historia y el cobro los piden después, y una
+/// <remarks>Son opcionales porque el día a día no los pide: los documentos y el cobro los piden después, y una
 /// persona sin ellos sigue siendo la misma persona. El tipo y el número van juntos o no van (la base lo exige).</remarks>
 public sealed record PersonDetails(string? DocumentType, string? DocumentNumber, DateOnly? BirthDate, string? Sex)
 {

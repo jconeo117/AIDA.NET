@@ -1,0 +1,127 @@
+@page "/historia/{Person:long}"
+@using System.Globalization
+@using Aida.Arms.Health.Desk
+@using Aida.Arms.Health.Setup
+@using Aida.Engine.Actions
+@using Aida.Platform.Identity
+@using Aida.Platform.Records
+@using Aida.Web.Components.Pages.Agenda
+@inject HealthDesk Desk
+@inject EncounterTemplate Template
+@inject TimeProvider Time
+@inject NavigationManager Navigation
+
+@if (_list is not null)
+{
+    <PageTitle>@Template["title"]</PageTitle>
+    <div class="agenda-head">
+        <h1>@Template["title"] · @_list.PersonName</h1>
+    </div>
+    <EditForm Model="Creation" FormName="health-create" method="post" OnSubmit="SubmitCreate">
+        @if (_canRecord)
+        {
+            <button type="submit">@Template["new_button"]</button>
+        }
+        @if (_message is not null)
+        {
+            <p role="status">@_message</p>
+        }
+        @if (_incomplete)
+        {
+            <p><a href="@AgendaLinks.Panel(_today, "contacto", Person.ToString(CultureInfo.InvariantCulture))">@Template["complete_link"]</a></p>
+        }
+    </EditForm>
+    @if (_list.Lines.Count == 0)
+    {
+        <p>@Template["empty_list"]</p>
+    }
+    <ul>
+        @foreach (var line in _list.Lines)
+        {
+            <li>
+                @if (line.Mine || line.Status == RecordStatus.Signed)
+                {
+                    <a href="/historia/atencion/@line.Id">@Describe(line)</a>
+                }
+                else
+                {
+                    <span>@Describe(line)</span>
+                }
+            </li>
+        }
+    </ul>
+}
+
+@code {
+    /// <summary>La persona cuya historia se abre.</summary>
+    [Parameter]
+    public long Person { get; set; }
+
+    /// <summary>La cita atendida de la que viene la consulta, si llegó; el texto opaco <c>agenda:&lt;id&gt;</c> lo lleva el documento.</summary>
+    [SupplyParameterFromQuery(Name = "cita")]
+    public string? Cita { get; set; }
+
+    [CascadingParameter]
+    private HttpContext Http { get; set; } = default!;
+
+    [SupplyParameterFromForm(FormName = "health-create", Name = "Creation")]
+    private EncounterForm? PostedCreation { get; set; }
+
+    private EncounterForm Creation => PostedCreation ??= new();
+
+    private EncounterList? _list;
+    private UserAccount? _user;
+    private DateOnly _today;
+    private bool _canRecord;
+    private bool _incomplete;
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        _user = SessionGate.CurrentUser(Http);
+        _today = DateOnly.FromDateTime(Time.GetLocalNow().DateTime);
+        if (_user is null || !Desk.CanRead(_user))
+        {
+            Http.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return;
+        }
+
+        _list = Desk.List(_user, AidaWebApp.Workstation(Http), Person);
+        if (_list is null)
+        {
+            Http.Response.StatusCode = StatusCodes.Status404NotFound;
+            return;
+        }
+
+        _canRecord = Desk.CanRecord(_user);
+    }
+
+    private void SubmitCreate()
+    {
+        if (_user is null || !_canRecord)
+        {
+            return;
+        }
+
+        var result = Desk.Create(_user, AidaWebApp.Workstation(Http), Person, Reference());
+        if (result.Status == ToolStatus.Done)
+        {
+            Navigation.NavigateTo($"/historia/atencion/{result.Data["record"]}");
+            return;
+        }
+
+        _incomplete = result.Reason == "incomplete_person";
+        _message = Template.Reason(result.Reason);
+    }
+
+    private string? Reference() =>
+        Cita is not null && long.TryParse(Cita, NumberStyles.Integer, CultureInfo.InvariantCulture, out var id)
+            ? $"agenda:{id.ToString(CultureInfo.InvariantCulture)}"
+            : null;
+
+    private string Describe(EncounterLine line) => line.Status == RecordStatus.Signed
+        ? string.Format(CultureInfo.CurrentCulture, Template["signed_by"], line.AuthorName, Stamp(line.SignedAt ?? line.CreatedAt))
+        : string.Format(CultureInfo.CurrentCulture, Template["draft_of"], line.AuthorName, Stamp(line.CreatedAt));
+
+    private static string Stamp(DateTimeOffset at) => at.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+}

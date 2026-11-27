@@ -13,6 +13,9 @@ namespace Aida.Engine.Actions;
 /// <para>Cambia una cosa (ADR 0035): compara la reversibilidad de la acción con el techo que le da la composición, y lo
 /// que queda por encima se rechaza con <c>needs_authorization</c> sin llamar a la herramienta (ADR 0007). Proponer y
 /// autorizar entran con la primera acción irreversible.</para>
+/// <para>Una acción por encima del techo pasa solo con <see cref="ActionRequest.AuthorizedBy"/> (ADR 0039). Antes de
+/// ejecutarla queda el hecho <c>action_authorized</c> con quién autorizó, para que el permiso y la ejecución se vean por
+/// separado. La puerta confía en quien arma la petición: por eso solo un mostrador la pone, tras verificar la contraseña.</para>
 /// </remarks>
 public sealed class ActionGate
 {
@@ -72,12 +75,18 @@ public sealed class ActionGate
         {
             result = ToolResult.Rejected("unknown_action");
         }
-        else if (ReversibilityRank.Exceeds(reversibility, _ceiling))
+        else if (ReversibilityRank.Exceeds(reversibility, _ceiling) && string.IsNullOrEmpty(request.AuthorizedBy))
         {
             result = ToolResult.Rejected("needs_authorization");
         }
         else
         {
+            if (ReversibilityRank.Exceeds(reversibility, _ceiling))
+            {
+                _log.Emit(_tick(), EventKind.ActionAuthorized, _owner, request.Action,
+                    new Dictionary<string, EventValue>(StringComparer.Ordinal) { ["by"] = EventValue.Of(request.AuthorizedBy!) });
+            }
+
             try
             {
                 result = _tool.Execute(request.Action, arguments);

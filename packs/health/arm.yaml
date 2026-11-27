@@ -7,3 +7,9 @@ version: "1"
 arm: "aida.run:health_arm"
 # El símbolo que lo representa en el lanzador.
 icon: "stetho"
+# Las acciones de la historia clínica (N016, ADR 0039). Firmar es irreversible: solo pasa la puerta con la contraseña
+# de quien firma.
+actions:
+  - {id: "crear_atencion", reversibility: "reversible"}
+  - {id: "guardar_atencion", reversibility: "reversible"}
+  - {id: "firmar_atencion", reversibility: "irreversible"}

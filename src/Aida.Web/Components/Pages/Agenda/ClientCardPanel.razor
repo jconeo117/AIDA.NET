@@ -2,12 +2,20 @@
 @using Aida.Arms.Agenda.Desk
 @using Aida.Arms.Agenda.Setup
 @using Aida.Arms.Agenda.Wording
+@using Aida.Arms.Health.Desk
+@using Aida.Arms.Health.Setup
 @using Aida.Platform.People
 @inject AgendaWording Text
 @inject PersonCatalog People
+@inject HealthDesk Health
+@inject EncounterTemplate HealthTemplate
 
 <div class="panel-card">
     <h3>@Card.Client.Name</h3>
+    @if (CanReadHistory)
+    {
+        <p><a href="/historia/@Card.Client.Id">@HealthTemplate["card_link"]</a></p>
+    }
     <p>@Text["field_phone"]: @Card.Client.Phone</p>
     <dl class="kv">
         <dt>@Text["card_upcoming"]</dt>
@@ -72,4 +80,11 @@
 
     [Parameter]
     public string? FirstService { get; set; }
+
+    [CascadingParameter]
+    private HttpContext Http { get; set; } = default!;
+
+    /// <summary>Si quien mira puede abrir la historia: el enlace solo aparece entonces.</summary>
+    /// <remarks>La ficha es de la agenda y no decide permisos de salud: pregunta al mostrador de la historia, que es quien los conoce.</remarks>
+    private bool CanReadHistory => SessionGate.CurrentUser(Http) is { } user && Health.CanRead(user);
 }

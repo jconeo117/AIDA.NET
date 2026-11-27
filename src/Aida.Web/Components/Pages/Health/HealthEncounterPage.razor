@@ -1,0 +1,169 @@
+@page "/historia/atencion/{Id:long}"
+@using System.Globalization
+@using Aida.Arms.Health.Desk
+@using Aida.Arms.Health.Setup
+@using Aida.Engine.Actions
+@using Aida.Platform.Identity
+@using Aida.Platform.Records
+@inject HealthDesk Desk
+@inject EncounterTemplate Template
+@inject NavigationManager Navigation
+
+@if (_view is not null)
+{
+    <PageTitle>@Template["title"]</PageTitle>
+    <div class="agenda-head">
+        <h1>@Template["title"] · @_view.PersonName</h1>
+        <p><a href="/historia/@_view.Person">@Template["back_link"]</a></p>
+        <p>@Header()</p>
+    </div>
+    <EditForm Model="Encounter" FormName="health-encounter" method="post" OnSubmit="Submit">
+        @if (_message is not null)
+        {
+            <p role="status">@_message</p>
+        }
+        @if (_view.CanEdit && !_reviewing)
+        {
+            @foreach (var pair in _view.Fields)
+            {
+                <label>
+                    @pair.Key.Label
+                    <textarea name="Encounter.Fields[@pair.Key.Id]">@pair.Value</textarea>
+                </label>
+            }
+            <div class="side-actions">
+                <button type="submit" name="Encounter.Step" value="save">@Template["save_button"]</button>
+                <button type="submit" name="Encounter.Step" value="review">@Template["review_button"]</button>
+            </div>
+        }
+        else if (_view.CanEdit)
+        {
+            @if (_view.Missing.Count > 0)
+            {
+                <p>@Template["missing_warning"]</p>
+                <ul>
+                    @foreach (var missing in _view.Missing)
+                    {
+                        <li>@missing.Label</li>
+                    }
+                </ul>
+            }
+            @foreach (var pair in _view.Fields)
+            {
+                <h3>@pair.Key.Label</h3>
+                <p>@Shown(pair)</p>
+                <input type="hidden" name="Encounter.Fields[@pair.Key.Id]" value="@pair.Value" />
+            }
+            <label>
+                @Template["password_label"]
+                <input type="password" name="Encounter.Password" autocomplete="current-password" />
+            </label>
+            <div class="side-actions">
+                <button type="submit" name="Encounter.Step" value="sign">@Template["sign_button"]</button>
+            </div>
+        }
+        else
+        {
+            @foreach (var pair in _view.Fields)
+            {
+                <h3>@pair.Key.Label</h3>
+                <p>@Shown(pair)</p>
+            }
+            @if (_view.ContentHash is not null)
+            {
+                <p>@Template["hash_label"]: <code>@_view.ContentHash</code></p>
+            }
+        }
+    </EditForm>
+}
+
+@code {
+    /// <summary>El documento que se abre.</summary>
+    [Parameter]
+    public long Id { get; set; }
+
+    [CascadingParameter]
+    private HttpContext Http { get; set; } = default!;
+
+    [SupplyParameterFromForm(FormName = "health-encounter", Name = "Encounter")]
+    private EncounterForm? PostedEncounter { get; set; }
+
+    private EncounterForm Encounter => PostedEncounter ??= new();
+
+    private EncounterView? _view;
+    private UserAccount? _user;
+    private bool _reviewing;
+    private string? _message;
+
+    protected override void OnInitialized()
+    {
+        _user = SessionGate.CurrentUser(Http);
+        if (_user is null || !Desk.CanRead(_user))
+        {
+            Http.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return;
+        }
+
+        _view = Desk.Open(_user, AidaWebApp.Workstation(Http), Id);
+        if (_view is null)
+        {
+            Http.Response.StatusCode = StatusCodes.Status404NotFound;
+        }
+    }
+
+    /// <summary>Un solo manejador para los tres pasos: guardar, revisar y firmar.</summary>
+    /// <remarks>Firmar guarda antes lo que llegó y luego pide la contraseña, así lo firmado es lo que se ve en la vista previa. Si
+    /// la firma falla, la vista previa se queda y la contraseña sale vacía: no se vuelve a pintar.</remarks>
+    private void Submit()
+    {
+        if (_user is null || _view is null)
+        {
+            return;
+        }
+
+        var workstation = AidaWebApp.Workstation(Http);
+        switch (Encounter.Step)
+        {
+            case "save":
+                _message = Outcome(Desk.Save(_user, workstation, Id, Encounter.Fields));
+                break;
+            case "review":
+                var reviewed = Desk.Save(_user, workstation, Id, Encounter.Fields);
+                _reviewing = reviewed.Status == ToolStatus.Done;
+                _message = Outcome(reviewed);
+                break;
+            case "sign":
+                var kept = Desk.Save(_user, workstation, Id, Encounter.Fields);
+                if (kept.Status != ToolStatus.Done)
+                {
+                    _reviewing = true;
+                    _message = Outcome(kept);
+                    break;
+                }
+
+                var signed = Desk.Sign(_user, workstation, Id, Encounter.Password ?? string.Empty);
+                if (signed.Status == ToolStatus.Done)
+                {
+                    Navigation.NavigateTo($"/historia/atencion/{Id.ToString(CultureInfo.InvariantCulture)}", forceLoad: true);
+                    return;
+                }
+
+                _reviewing = true;
+                _message = Template.Reason(signed.Reason);
+                break;
+        }
+
+        _view = Desk.Open(_user, workstation, Id);
+    }
+
+    private string? Outcome(ToolResult result) => result.Status == ToolStatus.Done ? null : Template.Reason(result.Reason);
+
+    private string Shown(KeyValuePair<EncounterSection, string> pair) =>
+        pair.Key.Required && pair.Value.Trim().Length == 0 ? Template.NotRecorded : pair.Value;
+
+    private string Header() => _view!.Status == RecordStatus.Signed
+        ? string.Format(CultureInfo.CurrentCulture, Template["signed_by"], _view.AuthorName, Stamp(_view.SignedAt ?? _view.CreatedAt))
+        : string.Format(CultureInfo.CurrentCulture, Template["draft_of"], _view.AuthorName, Stamp(_view.CreatedAt));
+
+    private static string Stamp(DateTimeOffset at) => at.ToString("yyyy-MM-dd HH:mm", CultureInfo.InvariantCulture);
+}

@@ -70,7 +70,7 @@ public sealed class AgendaDeskConsultaTests
             Audit = new AuditLog(Db.Database, Time, AgendaDeclarations.AuditKinds);
 
             var rolesPath = Path.Combine(repoRoot, "packs", "platform", "roles.yaml");
-            Roles = RoleCatalog.Load(rolesPath, AgendaDeclarations.Permissions);
+            Roles = RoleCatalog.Load(rolesPath, [.. AgendaDeclarations.Permissions, "health.read", "health.record", "health.sign"]);
 
             var hasher = new PasswordHasher(1);
             Users = new UserStore(Db.Database, Audit, Roles, hasher, Time);

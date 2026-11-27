@@ -41,9 +41,18 @@ public sealed partial record AuditKind
     /// <summary>Se aplicó una copia restaurada, firmada por quien entró primero después.</summary>
     public static AuditKind SnapshotRestored { get; } = new("snapshot_restored");
 
-    /// <summary>Las clases de la plataforma: las de N007, y al final las de la copia de seguridad (N011).</summary>
+    /// <summary>Se abrió la lista de documentos de una persona.</summary>
+    /// <remarks>Quien mira la lista deja huella: sin ella no se sabe quién vio los datos de una persona (ley de confidencialidad).
+    /// Nunca lleva el contenido del documento.</remarks>
+    public static AuditKind RecordsListed { get; } = new("records_listed");
+
+    /// <summary>Se abrió un documento.</summary>
+    /// <remarks>Cada apertura queda, no solo la primera: el registro de accesos se pide por acceso. Nunca lleva el contenido.</remarks>
+    public static AuditKind RecordViewed { get; } = new("record_viewed");
+
+    /// <summary>Las clases de la plataforma: las de N007, las de la copia de seguridad (N011), y al final las de los documentos (N016).</summary>
     public static IReadOnlyList<AuditKind> Platform { get; } =
-        [SessionOpened, SessionClosed, Locked, Unlocked, UserCreated, UserDisabled, PasswordReset, SnapshotCreated, SnapshotRestored];
+        [SessionOpened, SessionClosed, Locked, Unlocked, UserCreated, UserDisabled, PasswordReset, SnapshotCreated, SnapshotRestored, RecordsListed, RecordViewed];
 
     /// <summary>El nombre que se escribe en el campo <c>kind</c> de la línea.</summary>
     public string Name { get; }
