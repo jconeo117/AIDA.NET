@@ -1,6 +1,7 @@
 @using Aida.Arms.Agenda.Desk
 @using Aida.Arms.Agenda.Storage
 @using Aida.Arms.Agenda.Wording
+@using Aida.Platform.People
 @inject AgendaWording Text
 
 @if (AssistantNote is not null)
@@ -47,6 +48,10 @@ else if (Panel == "bloquear" && CanBlock)
 else if (Panel == "elegir" && (Choices is not null || Appointments is not null))
 {
     <AssistantChoices Choices="@Choices" Appointments="@Appointments" ToMove="@ChoicesToMove" MoveTo="@MoveTo" Day="@Day" ServiceId="@(ServiceId ?? string.Empty)" Preferred="@Preferred" />
+}
+else if (Panel == "mismo_telefono" && SamePhone is { Count: > 0 })
+{
+    <SamePhoneChoice People="@SamePhone" Command="@Command" />
 }
 else if (Panel == "nueva" && CanManage && ServiceId is not null)
 {
@@ -118,4 +123,12 @@ else
 
     [Parameter]
     public TimeOnly? Preferred { get; set; }
+
+    /// <summary>Las personas que ya tienen el teléfono, tras un rechazo <c>phone_known</c>.</summary>
+    [Parameter]
+    public IReadOnlyList<Person>? SamePhone { get; set; }
+
+    /// <summary>Lo que llegó del formulario: el servicio, el hueco, el nombre y el teléfono viajan a la siguiente petición.</summary>
+    [Parameter]
+    public AgendaCommandForm Command { get; set; } = new();
 }

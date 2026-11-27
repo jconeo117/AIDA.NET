@@ -1,0 +1,36 @@
+@using System.Globalization
+@using Aida.Arms.Agenda.Wording
+@using Aida.Platform.People
+@inject AgendaWording Text
+
+<div class="panel-card">
+    <input type="hidden" name="Command.Action" value="agendar" />
+    <input type="hidden" name="Command.Service" value="@Command.Service" />
+    <input type="hidden" name="Command.Slot" value="@Command.Slot" />
+    <input type="hidden" name="Command.Name" value="@Command.Name" />
+    <input type="hidden" name="Command.Phone" value="@Command.Phone" />
+    <ul>
+        @foreach (var person in People)
+        {
+            <li>
+                <span>@person.Name · @DocumentText(person)</span>
+                <button type="submit" name="Command.Client" value="@person.Id.ToString(CultureInfo.InvariantCulture)">@Text["same_phone_this"]</button>
+            </li>
+        }
+    </ul>
+    <button type="submit" name="Command.Client" value="new_confirmed">@Text["same_phone_new"]</button>
+</div>
+
+@code {
+    /// <summary>Las personas que ya tienen ese teléfono, en el orden del rechazo.</summary>
+    [Parameter, EditorRequired]
+    public IReadOnlyList<Person> People { get; set; } = [];
+
+    /// <summary>Lo que llegó del formulario, para reenviarlo con la respuesta del operador.</summary>
+    [Parameter, EditorRequired]
+    public AgendaCommandForm Command { get; set; } = null!;
+
+    // El tipo y el número, o un guion si la persona no tiene documento.
+    private static string DocumentText(Person person) =>
+        person.Details.DocumentType is { } type ? $"{type} {person.Details.DocumentNumber}" : "—";
+}

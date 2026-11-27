@@ -37,9 +37,11 @@
 - **La agenda migra al arrancar** (su esquema 3): copia sus contactos a la plataforma conservando sus ids, rehace su
   tabla de citas sin la clave foránea y borra `agenda_clients`, todo en una transacción.
 - **Al agendar, la persona se dice explícitamente**: `client=<id>` para una persona conocida, o `client=new` para
-  crearla (o reutilizar la que tenga el mismo teléfono y el mismo nombre). Sin `client`, la regla de la 0.1 se
-  conserva tal cual, para que los dorados sigan valiendo; con un teléfono que compartan varias personas, se rechaza
-  (`client_ambiguous`).
+  una nueva. **Si el teléfono ya es de alguien, `client=new` no crea a nadie:** se rechaza con `phone_known` y la
+  pantalla pregunta si es una de esas personas o una nueva de verdad (`client=new_confirmed`). Así se evitan los
+  duplicados por un nombre mal escrito (N015-fix, a petición del usuario).
+  - Sin `client`, la regla de la 0.1 se conserva tal cual, para que los dorados sigan valiendo.
+  - Con un teléfono que compartan varias personas, se rechaza (`client_ambiguous`).
 
 ## Consecuencias
 - **La agenda, la historia y la factura ven a la misma persona.** Corregir un nombre en la ficha lo corrige en todas.

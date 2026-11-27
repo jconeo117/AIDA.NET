@@ -140,43 +140,79 @@ public sealed class BookClientTests : IDisposable
     }
 
     [Fact]
-    public void Client_new_con_telefono_de_madre_y_nombre_de_hijo_crea_al_hijo_y_madre_no_cambia()
+    public void Client_new_con_telefono_de_madre_y_nombre_de_hijo_devuelve_phone_known_y_no_crea()
     {
         using var work = AgendaWork.Begin(_db, _sealer, _personKeys);
         var madre = work.People.Add("Madre", "3004440000");
         work.Commit();
 
-        using var workBook = AgendaWork.Begin(_db, _sealer, _personKeys);
-        var res = ExecuteBook(workBook, client: "new", name: "Niño", phone: "3004440000");
-        Assert.Equal(ToolStatus.Done, res.Status);
-        workBook.Commit();
+        using (var workBook = AgendaWork.Begin(_db, _sealer, _personKeys))
+        {
+            var res = ExecuteBook(workBook, client: "new", name: "Niño", phone: "3004440000");
+            Assert.Equal(ToolStatus.Rejected, res.Status);
+            Assert.Equal("phone_known", res.Reason);
+            Assert.Equal(madre.Id.ToString(), res.Data["people"]);
+        }
 
         using var query = AgendaWork.Begin(_db, _sealer, _personKeys);
         var samePhone = query.People.ByPhone("3004440000");
-        Assert.Equal(2, samePhone.Count);
+        Assert.Single(samePhone);
         Assert.Equal("Madre", samePhone[0].Name);
-        Assert.Equal("Niño", samePhone[1].Name);
-        Assert.Equal(madre.Id, samePhone[0].Id);
     }
 
     [Fact]
-    public void Client_new_mismo_telefono_y_mismo_nombre_plegado_reutiliza_persona()
+    public void Client_new_mismo_telefono_y_mismo_nombre_plegado_devuelve_phone_known()
     {
         using var work = AgendaWork.Begin(_db, _sealer, _personKeys);
         var existente = work.People.Add("Ana Pérez", "3005550000");
         work.Commit();
 
+        using (var workBook = AgendaWork.Begin(_db, _sealer, _personKeys))
+        {
+            var res = ExecuteBook(workBook, client: "new", name: "ana perez", phone: "3005550000");
+            Assert.Equal(ToolStatus.Rejected, res.Status);
+            Assert.Equal("phone_known", res.Reason);
+            Assert.Equal(existente.Id.ToString(), res.Data["people"]);
+        }
+
+        using var query = AgendaWork.Begin(_db, _sealer, _personKeys);
+        var people = query.People.ByPhone("3005550000");
+        Assert.Single(people);
+    }
+
+    [Fact]
+    public void Client_new_telefono_de_dos_personas_devuelve_phone_known_con_ambos_ids()
+    {
+        using var work = AgendaWork.Begin(_db, _sealer, _personKeys);
+        var p1 = work.People.Add("Madre", "3007770000");
+        var p2 = work.People.Add("Padre", "3007770000");
+        work.Commit();
+
         using var workBook = AgendaWork.Begin(_db, _sealer, _personKeys);
-        // «ana perez» sin tildes casa con «Ana Pérez»
-        var res = ExecuteBook(workBook, client: "new", name: "ana perez", phone: "3005550000");
+        var res = ExecuteBook(workBook, client: "new", name: "Hijo", phone: "3007770000");
+        Assert.Equal(ToolStatus.Rejected, res.Status);
+        Assert.Equal("phone_known", res.Reason);
+        Assert.Equal($"{p1.Id},{p2.Id}", res.Data["people"]);
+    }
+
+    [Fact]
+    public void Client_new_confirmed_con_telefono_de_madre_crea_al_hijo_y_madre_no_cambia()
+    {
+        using var work = AgendaWork.Begin(_db, _sealer, _personKeys);
+        var madre = work.People.Add("Madre", "3008880000");
+        work.Commit();
+
+        using var workBook = AgendaWork.Begin(_db, _sealer, _personKeys);
+        var res = ExecuteBook(workBook, client: "new_confirmed", name: "Hijo", phone: "3008880000");
         Assert.Equal(ToolStatus.Done, res.Status);
         workBook.Commit();
 
         using var query = AgendaWork.Begin(_db, _sealer, _personKeys);
-        var people = query.People.ByPhone("3005550000");
-        // M2: Si no se busca por nombre plegado, se habrían creado 2 personas. Debe haber exactamente 1.
-        var person = Assert.Single(people);
-        Assert.Equal(existente.Id, person.Id);
+        var samePhone = query.People.ByPhone("3008880000");
+        Assert.Equal(2, samePhone.Count);
+        Assert.Equal("Madre", samePhone[0].Name);
+        Assert.Equal("Hijo", samePhone[1].Name);
+        Assert.Equal(madre.Id, samePhone[0].Id);
     }
 
     [Fact]
