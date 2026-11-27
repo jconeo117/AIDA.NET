@@ -4,6 +4,9 @@ using Aida.Arms.Agenda.Assistant;
 using Aida.Arms.Agenda.Desk;
 using Aida.Arms.Agenda.Setup;
 using Aida.Arms.Agenda.Wording;
+using Aida.Arms.Health;
+using Aida.Arms.Health.Desk;
+using Aida.Arms.Health.Setup;
 using Aida.Cognition.Interpretation;
 using Aida.Engine.Ontology;
 using Aida.Platform.Assistant;
@@ -49,10 +52,10 @@ public static class AidaWebApp
         builder.Services.AddSingleton(paths);
         builder.Services.AddSingleton(TimeProvider.System);
         builder.Services.AddSingleton(_ => new PlatformDatabase(paths.DatabaseFile));
-        builder.Services.AddSingleton(_ => RoleCatalog.Load(paths.PlatformPackFile("roles.yaml"), AgendaDeclarations.Permissions));
+        builder.Services.AddSingleton(_ => RoleCatalog.Load(paths.PlatformPackFile("roles.yaml"), AgendaDeclarations.Permissions.Concat(HealthDeclarations.Permissions)));
         builder.Services.AddSingleton(_ => ShellWording.Load(paths.PlatformPackFile("ui.yaml")));
         builder.Services.AddSingleton(_ => new PasswordHasher(PasswordHasher.ServerIterations));
-        builder.Services.AddSingleton(provider => new AuditLog(provider.GetRequiredService<PlatformDatabase>(), provider.GetRequiredService<TimeProvider>(), AgendaDeclarations.AuditKinds));
+        builder.Services.AddSingleton(provider => new AuditLog(provider.GetRequiredService<PlatformDatabase>(), provider.GetRequiredService<TimeProvider>(), AgendaDeclarations.AuditKinds.Concat(HealthDeclarations.AuditKinds)));
         builder.Services.AddSingleton<UserStore>();
         builder.Services.AddSingleton(provider => new SessionTracker(
             provider.GetRequiredService<UserStore>(),
@@ -67,6 +70,19 @@ public static class AidaWebApp
         builder.Services.AddSingleton(provider => new RestoreNotice(paths, provider.GetRequiredService<AuditLog>()));
         builder.Services.AddSingleton(_ => AgendaManifest.Load(Path.Combine(agendaPack, "arm.yaml")));
         builder.Services.AddSingleton(_ => AgendaWording.Load(Path.Combine(agendaPack, "ui.yaml")));
+        var healthPack = paths.ArmPackDirectory(HealthDeclarations.ArmId);
+        builder.Services.AddSingleton(_ => HealthManifest.Load(Path.Combine(healthPack, "arm.yaml")));
+        builder.Services.AddSingleton(_ => EncounterTemplate.Load(Path.Combine(healthPack, "encounter.yaml")));
+        builder.Services.AddSingleton(provider => new HealthDesk(
+            provider.GetRequiredService<PlatformDatabase>(),
+            provider.GetRequiredService<AuditLog>(),
+            provider.GetRequiredService<RoleCatalog>(),
+            provider.GetRequiredService<UserStore>(),
+            provider.GetRequiredService<EncounterTemplate>(),
+            provider.GetRequiredService<HealthManifest>().Actions,
+            Reversibility.Reversible,
+            provider.GetRequiredService<MachineKey>(),
+            provider.GetRequiredService<TimeProvider>()));
         builder.Services.AddSingleton(_ => TimeVocabulary.Load(paths.PlatformPackFile("time.yaml")));
         builder.Services.AddSingleton(_ => PersonCatalog.Load(paths.PlatformPackFile("people.yaml")));
         builder.Services.AddSingleton(_ => IntentCatalog.Load(Path.Combine(agendaPack, "intents.yaml"), AgendaDeclarations.Intents));
