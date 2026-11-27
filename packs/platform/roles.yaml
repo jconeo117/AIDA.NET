@@ -8,6 +8,6 @@ roles:
     permissions: [agenda.manage, agenda.block]
   - id: profesional
     label: "Profesional"
-    permissions: [agenda.manage]
+    permissions: [agenda.manage, health.read, health.record, health.sign]
   - id: caja
     label: "Caja"

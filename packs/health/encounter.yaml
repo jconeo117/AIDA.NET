@@ -1,0 +1,31 @@
+# La atención: los apartados de la historia clínica (ADR 0040). Propuesta a confirmar con el abogado y la clínica
+# (ruta 141, A8 y C1). Un apartado obligatorio vacío se firma con «not_recorded», y la pantalla avisa antes.
+not_recorded: "No consta."
+sections:
+  - {id: "motivo_consulta", label: "Motivo de consulta", required: true}
+  - {id: "enfermedad_actual", label: "Enfermedad actual", required: true}
+  - {id: "antecedentes", label: "Antecedentes", required: true}
+  - {id: "examen", label: "Examen oftalmológico", required: true}
+  - {id: "diagnostico", label: "Diagnóstico", required: true}
+  - {id: "plan", label: "Plan y conducta", required: true}
+  - {id: "observaciones", label: "Observaciones", required: false}
+texts:
+  title: "Historia clínica"
+  card_link: "Historia clínica"
+  new_button: "Nueva atención"
+  save_button: "Guardar borrador"
+  review_button: "Revisar y firmar"
+  sign_button: "Firmar"
+  password_label: "Su contraseña, para firmar"
+  missing_warning: "Estos apartados están vacíos y se firmarán como «No consta.»:"
+  draft_of: "Borrador de {0}, {1}"
+  signed_by: "Firmada por {0}, {1}"
+  hash_label: "Huella"
+  back_link: "Volver a la historia"
+  empty_list: "Esta persona no tiene atenciones."
+  complete_link: "Completar en la ficha"
+  reason_incomplete_person: "Faltan el documento, la fecha de nacimiento o el sexo de la persona. Complételos en su ficha."
+  reason_bad_password: "La contraseña no es correcta."
+  reason_wait: "Demasiados intentos. Espere un momento."
+  reason_forbidden: "Su rol no puede hacer esto."
+  reason_failed: "No se pudo guardar. Inténtelo de nuevo."
