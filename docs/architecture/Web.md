@@ -4,8 +4,8 @@
   primer administrador, el bloqueo por puesto y la página de usuarios. N008 trae la pantalla del día de la agenda y
   compone el primer brazo. N009 y N010 completan la agenda (bloqueos, edición, semana, búsqueda y ficha). N011 trae
   Ajustes con la copia de seguridad, y restaurar desde la pantalla del primer administrador. N012 trae la caja del
-  asistente en la agenda.
-- **ADR:** [0011](../adr/0011-brazos-y-comunicacion.md), [0015](../adr/0015-forma-del-codigo.md), [0020](../adr/0020-servidor-en-red-local.md), [0030](../adr/0030-identidad-del-personal.md), [0034](../adr/0034-clave-del-equipo.md), [0035](../adr/0035-lo-que-declara-un-brazo.md), [0036](../adr/0036-copia-de-seguridad.md), [0037](../adr/0037-asistente-sin-llm.md)
+  asistente en la agenda. N016 trae la historia clínica (`/historia/{persona}` y `/historia/atencion/{id}`).
+- **ADR:** [0011](../adr/0011-brazos-y-comunicacion.md), [0015](../adr/0015-forma-del-codigo.md), [0020](../adr/0020-servidor-en-red-local.md), [0030](../adr/0030-identidad-del-personal.md), [0034](../adr/0034-clave-del-equipo.md), [0035](../adr/0035-lo-que-declara-un-brazo.md), [0036](../adr/0036-copia-de-seguridad.md), [0037](../adr/0037-asistente-sin-llm.md), [0039](../adr/0039-autorizar-lo-irreversible.md), [0040](../adr/0040-el-documento-firmado.md)
 
 ## Responsabilidad
 La aplicación de la clínica, en Blazor, servida desde el equipo servidor a los puestos de la red local por HTTPS ([ADR 0020](../adr/0020-servidor-en-red-local.md)). Tiene dos partes:
@@ -21,6 +21,9 @@ La aplicación de la clínica, en Blazor, servida desde el equipo servidor a los
   - **la caja del asistente**, en la agenda y solo para quien puede cambiarla: lo tecleado va por POST, nunca en la
     URL. La frase la entiende `Aida.Cognition` y la convierte en propuesta el brazo. La página abre el panel de siempre,
     ya relleno, y el operador pulsa el botón de siempre ([0037](../adr/0037-asistente-sin-llm.md));
+  - **la historia clínica** (`/historia/{persona}`, `/historia/atencion/{id}`): las atenciones de una persona, el
+    borrador y la firma repitiendo la contraseña. Se abre desde la ficha y desde la cita atendida, solo con `health.read`
+    ([0040](../adr/0040-el-documento-firmado.md));
   - **Ajustes** (`/ajustes`), por ahora con una sola tarjeta: hacer la copia, que se descarga en el navegador y pide
     `snapshot.create`;
   - después, la licencia y las demás tarjetas de Ajustes;
@@ -41,7 +44,7 @@ Todos los proyectos de `src/` salvo `Aida.Guards`.
 ## Expone
 - `AidaWebApp.Build(args, configure)`: construye el servidor sin arrancarlo. Los tests le dan su certificado, sus
   carpetas y su reloj.
-- Las rutas: `/entrar`, `/primer-usuario`, `/bloqueado`, `/usuarios`, `/agenda`, `/ajustes`, `/`, `POST /salir`,
+- Las rutas: `/entrar`, `/primer-usuario`, `/bloqueado`, `/usuarios`, `/agenda`, `/historia/{persona}`, `/historia/atencion/{id}`, `/ajustes`, `/`, `POST /salir`,
   `POST /ajustes/copia` y `POST /primer-usuario/restaurar`.
 
 ## Lo que no hace
