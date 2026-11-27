@@ -172,11 +172,7 @@ public sealed class HealthDesk
     public ToolResult Create(UserAccount user, string workstation, long person, string? reference)
     {
         ArgumentNullException.ThrowIfNull(user);
-        if (!CanRecord(user))
-        {
-            return ToolResult.Rejected("forbidden");
-        }
-
+        if (!CanRecord(user)) return ToolResult.Rejected("forbidden");
         return Run(user, workstation, "crear_atencion",
             new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -199,11 +195,7 @@ public sealed class HealthDesk
     {
         ArgumentNullException.ThrowIfNull(user);
         ArgumentNullException.ThrowIfNull(fields);
-        if (!CanRecord(user))
-        {
-            return ToolResult.Rejected("forbidden");
-        }
-
+        if (!CanRecord(user)) return ToolResult.Rejected("forbidden");
         return Run(user, workstation, "guardar_atencion",
             new Dictionary<string, string>(StringComparer.Ordinal)
             {
@@ -228,10 +220,7 @@ public sealed class HealthDesk
     {
         ArgumentNullException.ThrowIfNull(user);
         ArgumentNullException.ThrowIfNull(password);
-        if (!CanSign(user))
-        {
-            return ToolResult.Rejected("forbidden");
-        }
+        if (!CanSign(user)) return ToolResult.Rejected("forbidden");
 
         UserAccount verified;
         try
@@ -243,10 +232,7 @@ public sealed class HealthDesk
             return ToolResult.Rejected(exception.Error == IdentityError.Wait ? "wait" : "bad_password");
         }
 
-        if (verified.Id != user.Id)
-        {
-            return ToolResult.Rejected("bad_password");
-        }
+        if (verified.Id != user.Id) return ToolResult.Rejected("bad_password");
 
         return Run(user, workstation, "firmar_atencion",
             new Dictionary<string, string>(StringComparer.Ordinal) { ["record"] = record.ToString(CultureInfo.InvariantCulture) },

@@ -81,7 +81,7 @@ public sealed class AgendaMigrationTests
     {
         var repoRoot = FindRepoRoot();
         var rolesPath = Path.Combine(repoRoot, "packs", "platform", "roles.yaml");
-        var roles = RoleCatalog.Load(rolesPath, AgendaDeclarations.Permissions);
+        var roles = RoleCatalog.Load(rolesPath, [.. AgendaDeclarations.Permissions, "health.read", "health.record", "health.sign"]);
         var time = TimeProvider.System;
         var audit = new AuditLog(db, time);
         var hasher = new PasswordHasher(1);

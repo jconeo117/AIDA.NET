@@ -6,9 +6,9 @@ namespace Aida.Platform.Tests.Audit;
 public sealed class AuditKindTests
 {
     [Fact]
-    public void Las_nueve_de_la_plataforma_con_su_nombre()
+    public void Las_once_de_la_plataforma_con_su_nombre()
     {
-        Assert.Equal(9, AuditKind.Platform.Count);
+        Assert.Equal(11, AuditKind.Platform.Count);
         Assert.Equal("session_opened", AuditKind.SessionOpened.Name);
         Assert.Equal("session_closed", AuditKind.SessionClosed.Name);
         Assert.Equal("locked", AuditKind.Locked.Name);
@@ -18,6 +18,8 @@ public sealed class AuditKindTests
         Assert.Equal("password_reset", AuditKind.PasswordReset.Name);
         Assert.Equal("snapshot_created", AuditKind.SnapshotCreated.Name);
         Assert.Equal("snapshot_restored", AuditKind.SnapshotRestored.Name);
+        Assert.Equal("records_listed", AuditKind.RecordsListed.Name);
+        Assert.Equal("record_viewed", AuditKind.RecordViewed.Name);
 
         Assert.Contains(AuditKind.SessionOpened, AuditKind.Platform);
         Assert.Contains(AuditKind.SessionClosed, AuditKind.Platform);
@@ -28,6 +30,8 @@ public sealed class AuditKindTests
         Assert.Contains(AuditKind.PasswordReset, AuditKind.Platform);
         Assert.Contains(AuditKind.SnapshotCreated, AuditKind.Platform);
         Assert.Contains(AuditKind.SnapshotRestored, AuditKind.Platform);
+        Assert.Contains(AuditKind.RecordsListed, AuditKind.Platform);
+        Assert.Contains(AuditKind.RecordViewed, AuditKind.Platform);
     }
 
     [Theory]
